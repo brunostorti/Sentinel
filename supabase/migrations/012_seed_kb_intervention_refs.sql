@@ -1,0 +1,6 @@
+-- Migration 012: Mapeamento intervention_id -> kb_reference
+-- 33 intervenções, 82 mapeamentos. Relevance: 'primary'/'secondary'/'context'.
+-- Aplicado via MCP em 21/05/2026. Conteúdo idêntico ao seed mostrado abaixo.
+--
+-- Cada intervenção do catalog.ts tem 2-4 referências; pelo menos 1 'primary'.
+-- 'specific_claim' contém a alegação concreta extraída da fonte.

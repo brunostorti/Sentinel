@@ -1,0 +1,37 @@
+-- Migration 011: 22 referências curadas verificadas (DOI/URL acessível em 21/05/2026)
+-- Ver migration 010 para schema. Conteúdo aplicado via MCP em 21/05/2026.
+-- Citations em ABNT (NBR 6023). Lista resumida abaixo:
+--
+-- Diretrizes globais:
+--   WHO2022_Guidelines      - WHO Guidelines on Mental Health at Work (5 recs com GRADE)
+--   WHO_ILO2022_PolicyBrief - WHO/ILO Joint Policy Brief
+--   WHO2016_ROI             - ROI 4:1 oficial OMS
+--
+-- Dados oficiais BR:
+--   INSS2026                - 546.254 benefícios 2025 (gov.br)
+--   NR1_2024                - Portaria MTE 1.419/2024
+--   Lei14831_2024           - Selo Empresa Promotora Saúde Mental
+--   LGPD                    - Lei 13.709/2018
+--
+-- Modelos teóricos:
+--   Bakker2023_JDR          - JD-R Theory Ten Years Later (Annual Reviews)
+--   Ryan2022_SDT            - Self-Determination Theory meta-review (cited 460x)
+--   Edmondson2023_PsychSafety - Psychological Safety Comes of Age
+--
+-- Instrumentos:
+--   Burr2019_COPSOQ3        - COPSOQ III validation (cited 717x)
+--   Silva2013_COPSOQ2_PT    - Manual COPSOQ II Portugal
+--   Demerouti2003_OLBI      - OLBI original
+--   Spector1985_JSS         - JSS original
+--
+-- Meta-análises:
+--   Cochrane2024_OrgHealthcare - Kida et al. 2024 (22 estudos)
+--   PLOS2022_OrgInterventions  - Gray et al. 2022
+--   JMIR2025_Digital           - O'Brien 2025
+--   Wiley2022_FlexibleWork     - Wheatley FWA meta
+--   Gallup_Q12_2020            - Harter Q12 11th ed
+--   TransfLeadership2023       - Inceoglu leader behaviours meta
+--   Maslach2016_Burnout        - Maslach & Leiter burnout update
+--   Frontiers2020_Bullying     - Gillen RCT anti-bullying
+--
+-- Mapeamentos intervention_id -> citation_key em migration 012.

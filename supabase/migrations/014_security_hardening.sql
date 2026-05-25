@@ -1,0 +1,15 @@
+-- Migration 014: Hardening de segurança baseado nos advisors do Supabase
+-- Aplicada via MCP em 21/05/2026. Corrige 6 dos 8 issues do Database Linter:
+--
+--  1. certificates INSERT WITH CHECK (true) -> exige company + role
+--  2. reports INSERT WITH CHECK (true) -> exige company_id + status NULL/PENDING
+--  3. survey_progress RLS sem policy -> agora bloqueia acesso direto (USE service_role)
+--  5. RPC functions abertas a anon -> REVOKE EXECUTE FROM anon
+--  6. search_path mutável em get_my_role, get_my_company_id, update_updated_at
+--
+-- Issues NÃO corrigidos nesta migration (precisam ação fora de SQL):
+--  7. Storage bucket reports com policy SELECT pública (TODO: signed URLs)
+--  8. Leaked Password Protection (TODO: habilitar no Supabase Auth dashboard)
+
+-- Cópia exata do que foi aplicado via MCP - ver Database para conteúdo.
+-- Documentação ABNT em /sobre/seguranca.
