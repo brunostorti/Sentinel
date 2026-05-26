@@ -57,3 +57,4 @@ O pilar mais crítico do Sentinel é a garantia de anonimato para os respondente
 * **João Alvarez** — `nuke.gota.io@gmail.com`
 * **Gustavo Hideki** — `gustavohideki124@gmail.com`
 * **Pedro Bertolucci** — `pedrovictorbertolucci@gmail.com`
+* **Pedro Wagner** - `alessandra.pedro.wagner@hotmail.com`
