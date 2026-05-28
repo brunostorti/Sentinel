@@ -182,9 +182,9 @@ export function ActionPlansList({
                   >
                     <span className="truncate text-xs">{s.title}</span>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="h-7 gap-1 px-2 text-xs"
+                      className="h-7 gap-1 px-2.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm shadow-primary/10 transition-all active:scale-95"
                       onClick={() => handleGenerate(s.id)}
                       disabled={generatingForSurvey !== null}
                     >
@@ -249,18 +249,18 @@ export function ActionPlansList({
 
       {/* ─── Grupo: Rejeitados (só mostra se houver) ─── */}
       {rejected.length > 0 && (
-        <Group
-          title="Rejeitados"
-          icon="cancel"
-          accent="zinc"
-          count={rejected.length}
-          open={openGroups.has("REJECTED")}
-          onToggle={() => toggleGroup("REJECTED")}
-        >
-          {sortPlans(rejected).map((p) => (
-            <CompactPlanRow key={p.id} plan={p} />
-          ))}
-        </Group>
+          <Group
+            title="Rejeitados"
+            icon="cancel"
+            accent="zinc"
+            count={rejected.length}
+            open={openGroups.has("REJECTED")}
+            onToggle={() => toggleGroup("REJECTED")}
+          >
+            {sortPlans(rejected).map((p) => (
+              <CompactPlanRow key={p.id} plan={p} />
+            ))}
+          </Group>
       )}
 
       {/* ─── Bulk approve dialog ─── */}
@@ -340,25 +340,33 @@ function Group({
     emerald: "text-emerald-600 dark:text-emerald-400",
     zinc: "text-zinc-500",
   };
+  const hasItems = count > 0;
+
   return (
     <Card className="overflow-hidden">
       <button
-        onClick={onToggle}
-        className="flex w-full items-center gap-3 px-4 py-3 transition hover:bg-accent/40"
+        onClick={hasItems ? onToggle : undefined}
+        disabled={!hasItems}
+        className={`flex w-full items-center gap-3 px-4 py-3 transition ${
+          hasItems ? "hover:bg-accent/40 cursor-pointer" : "cursor-default opacity-80"
+        }`}
       >
-        <Icon
-          name={open ? "expand_more" : "chevron_right"}
-          size={20}
-          className="text-muted-foreground"
-        />
+        {hasItems ? (
+          <Icon
+            name={open ? "expand_more" : "chevron_right"}
+            size={20}
+            className="text-muted-foreground transition-transform duration-200"
+          />
+        ) : (
+          <div className="w-5 h-5 shrink-0" />
+        )}
         <Icon name={icon} size={18} className={colors[accent]} />
-        <p className="flex-1 text-left text-sm font-bold">{title}</p>
-        <span className="tabular-nums text-xs text-muted-foreground">
-          {count}
-        </span>
+        <p className="flex-1 text-left text-sm font-bold">
+          {title} <span className="font-normal text-muted-foreground text-xs ml-1.5">({count})</span>
+        </p>
         {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
       </button>
-      {open && (
+      {hasItems && open && (
         <div className="border-t border-border divide-y divide-border">
           {children}
         </div>

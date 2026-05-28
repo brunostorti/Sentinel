@@ -53,7 +53,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in-up flex items-end justify-between">
+      <div className="animate-fade-in-up flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight">Configurações</h1>
           <p className="mt-1 text-sm text-muted-foreground">

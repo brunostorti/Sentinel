@@ -6,9 +6,13 @@ import { createClient } from "@supabase/supabase-js";
  * (e.g., writing anonymous survey responses).
  */
 export function createAdminClient() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key) {
+    console.warn("Warning: Neither SUPABASE_SERVICE_ROLE_KEY nor NEXT_PUBLIC_SUPABASE_ANON_KEY is set.");
+  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    key || "placeholder-key",
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }

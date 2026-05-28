@@ -52,19 +52,19 @@ export function DimensionsRadar({ scores }: DimensionsRadarProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-            <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.6} />
+        <ResponsiveContainer width="100%" height={320}>
+          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+            <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.25} />
             <PolarAngleAxis
               dataKey="category"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 12, fontWeight: 600, fill: "hsl(var(--foreground))" }}
             />
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               stroke="hsl(var(--border))"
-              strokeOpacity={0.4}
+              strokeOpacity={0.2}
             />
             <Tooltip
               contentStyle={{

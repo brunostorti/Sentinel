@@ -89,7 +89,7 @@ export function DashboardContent({
       : selectedSurvey?.title ?? "";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-14">
       {/* Header */}
       <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -101,11 +101,11 @@ export function DashboardContent({
 
         {/* Survey selector */}
         {hasSurveys && (
-          <div className="relative">
+          <div className="relative w-full sm:w-auto sm:max-w-xs">
             <select
               value={selectedSurveyId}
               onChange={(e) => setSelectedSurveyId(e.target.value)}
-              className="appearance-none rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="appearance-none w-full truncate rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="general">Visão Geral (todas as pesquisas)</option>
               {surveys.map((s) => (

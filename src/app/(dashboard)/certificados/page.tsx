@@ -107,10 +107,16 @@ export default function CertificadosPage() {
                   <Icon name="assignment_turned_in" size={24} />
                 </div>
                 <div>
-                  <h3 className="font-bold line-clamp-1">{survey.title}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Fechada em {new Date(survey.closed_at).toLocaleDateString()}
-                  </p>
+                  <h3 className="font-bold text-sm leading-snug">{survey.title}</h3>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      Fechada em {new Date(survey.closed_at).toLocaleDateString()}
+                    </p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                      Pronto para emissão
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="mt-auto pt-4 flex gap-2">

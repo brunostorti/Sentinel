@@ -87,7 +87,7 @@ export default async function EmployeesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in-up flex items-center justify-between">
+      <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight">Colaboradores</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -95,7 +95,7 @@ export default async function EmployeesPage() {
           </p>
         </div>
         {canManage && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-center">
             <ImportCSVButton departments={departments ?? []} />
             <AddEmployeeButton departments={departments ?? []} />
           </div>
@@ -103,16 +103,16 @@ export default async function EmployeesPage() {
       </div>
 
       {/* Stats */}
-      <div className="stagger-children grid gap-4 sm:grid-cols-3">
+      <div className="stagger-children grid gap-4 w-full grid-cols-1 sm:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.label} className="card-hover overflow-hidden">
-            <CardContent className="flex items-center gap-4 py-5">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.iconBg}`}>
+          <Card key={stat.label} className="card-hover overflow-hidden w-full shadow-sm border border-border/80 bg-card">
+            <CardContent className="flex items-center gap-4 py-5.5 px-5">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.iconBg}`}>
                 <Icon name={stat.icon} size={22} className={stat.iconColor} />
               </div>
-              <div>
-                <p className="text-2xl font-black tracking-tight">{stat.value}</p>
-                <p className="text-[11px] font-medium text-muted-foreground">{stat.label}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-black tracking-tight text-foreground tabular-nums">{stat.value}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 mt-0.5 truncate">{stat.label}</p>
               </div>
             </CardContent>
           </Card>
