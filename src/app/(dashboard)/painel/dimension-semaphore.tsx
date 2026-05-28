@@ -165,37 +165,39 @@ export function DimensionSemaphore({
                 {category}
               </CardTitle>
             </CardHeader>
-            <CardContent className="stagger-children grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-              {dims.map((dim) => {
-                const config = TRAFFIC_CONFIG[dim.trafficLight];
-                return (
-                  <div
-                    key={dim.dimensionId}
-                    className={`group relative flex items-center gap-3 rounded-xl border p-3.5 transition-all duration-200 hover:shadow-md hover:scale-[1.01] ${config.border} ${config.bg}`}
-                  >
-                    {/* Colored left accent bar */}
-                    <div className={`absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full ${config.dot}`} />
-                    <div className="min-w-0 flex-1 pl-2">
-                      <p className="truncate text-sm font-bold">{dim.name}</p>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <span className={`text-xs font-semibold ${config.color}`}>
-                          {config.label}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {Math.round(dim.displayScore)}/100
-                        </span>
-                      </div>
-                      {/* Mini progress bar */}
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
-                        <div
-                          className={`h-1.5 rounded-full ${config.dot} transition-all duration-500`}
-                          style={{ width: `${Math.round(dim.displayScore)}%` }}
-                        />
+            <CardContent>
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {dims.map((dim) => {
+                  const config = TRAFFIC_CONFIG[dim.trafficLight];
+                  return (
+                    <div
+                      key={dim.dimensionId}
+                      className={`group relative flex items-center gap-3 rounded-xl border p-4.5 transition-all duration-200 hover:shadow-md hover:scale-[1.01] ${config.border} ${config.bg}`}
+                    >
+                      {/* Colored left accent bar */}
+                      <div className={`absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full ${config.dot}`} />
+                      <div className="min-w-0 flex-1 pl-2">
+                        <p className="truncate text-sm font-bold text-foreground">{dim.name}</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className={`text-[11px] font-semibold ${config.color}`}>
+                            {config.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {Math.round(dim.displayScore)}/100
+                          </span>
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+                          <div
+                            className={`h-1.5 rounded-full ${config.dot} transition-all duration-500`}
+                            style={{ width: `${Math.round(dim.displayScore)}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         ))}

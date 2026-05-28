@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Icon } from "@/components/icon";
 import type {
   CompanyProfile,
   CultureType,
@@ -130,9 +131,9 @@ export function ProfileForm({
   return (
     <div className="space-y-4">
       {/* Header com completeness + sugerir valores */}
-      <Card className="flex items-center justify-between p-4">
-        <div className="flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+      <Card className="flex items-center justify-between p-4.5 gap-6">
+        <div className="flex-1 min-w-[200px]">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
             Perfil
           </p>
           <p className="text-lg font-black">{completeness}% completo</p>
@@ -145,6 +146,7 @@ export function ProfileForm({
         </div>
         <Button
           variant="outline"
+          className="h-9 gap-1.5 px-4 text-xs font-bold transition-all active:scale-95 border-primary/20 text-primary hover:bg-primary/5 hover:text-primary shrink-0"
           onClick={handleSuggest}
           disabled={isSuggesting}
         >
@@ -153,7 +155,7 @@ export function ProfileForm({
       </Card>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl bg-muted p-1">
+      <div className="flex flex-wrap gap-1.5 rounded-xl bg-muted/40 border border-border/40 p-1.5">
         {([
           ["company", "Empresa"],
           ["budget", "Orçamento"],
@@ -164,10 +166,10 @@ export function ProfileForm({
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+            className={`flex-1 min-w-[125px] text-center rounded-lg px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 border ${
               tab === key
-                ? "bg-card shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-card text-primary shadow-sm border-border/40"
+                : "text-muted-foreground bg-muted/30 border-transparent hover:bg-muted/80 hover:text-foreground"
             }`}
           >
             {label}
@@ -238,11 +240,14 @@ export function ProfileForm({
                 </select>
               </div>
             </div>
-            <p className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-              Esses dados básicos alimentam o pipeline de IA junto com as
-              outras abas. Setor, porte e regime são usados pra calibrar
-              fornecedores e intervenções.
-            </p>
+            <div className="rounded-lg border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground flex items-start gap-2.5">
+              <Icon name="info" size={16} className="text-primary/70 mt-0.5 shrink-0" />
+              <p>
+                Esses dados básicos alimentam o pipeline de IA junto com as
+                outras abas. Setor, porte e regime são usados pra calibrar
+                fornecedores e intervenções.
+              </p>
+            </div>
           </div>
         )}
 
@@ -309,7 +314,7 @@ export function ProfileForm({
               checked={profile.has_dedicated_hr}
               onChange={(v) => patch("has_dedicated_hr", v)}
             />
-            <div>
+            <div className="mb-6">
               <Label>Tamanho da equipe RH</Label>
               <Input
                 type="number"
@@ -397,7 +402,7 @@ export function ProfileForm({
             />
             <div>
               <Label>UFs onde opera</Label>
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-9 lg:grid-cols-10 gap-1.5 pt-2">
                 {UFS.map((uf) => {
                   const sel = profile.regions?.includes(uf);
                   return (
@@ -411,8 +416,10 @@ export function ProfileForm({
                         patch("regions", Array.from(set));
                         touchReview("regions");
                       }}
-                      className={`rounded-md border px-2 py-1 text-xs ${
-                        sel ? "bg-primary text-primary-foreground" : "bg-card"
+                      className={`rounded-lg border py-1.5 text-center text-xs font-semibold transition-all duration-150 active:scale-90 ${
+                        sel
+                          ? "border-primary bg-primary/5 text-primary shadow-sm"
+                          : "border-border/60 bg-card text-muted-foreground hover:bg-accent/40 hover:text-foreground"
                       }`}
                     >
                       {uf}
@@ -492,8 +499,10 @@ function RadioRow<T extends string>({
             key={v}
             type="button"
             onClick={() => onChange(v)}
-            className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-              sel ? "border-primary bg-primary text-primary-foreground" : "bg-card"
+            className={`rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+              sel
+                ? "border-primary bg-primary/5 text-primary shadow-sm"
+                : "border-border/60 bg-card text-muted-foreground hover:bg-accent/40 hover:text-foreground"
             }`}
           >
             {label}
@@ -555,17 +564,18 @@ function TagInput({
           <Badge
             key={i}
             variant="secondary"
-            className="cursor-pointer"
+            className="cursor-pointer text-xs gap-1 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
             onClick={() => onChange(tags.filter((_, idx) => idx !== i))}
           >
-            {t} ×
+            {t} <span className="opacity-60">×</span>
           </Badge>
         ))}
       </div>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 relative flex items-center">
         <Input
           value={input}
           placeholder={placeholder}
+          className="pr-12"
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -574,9 +584,14 @@ function TagInput({
             }
           }}
         />
-        <Button type="button" variant="outline" onClick={addTag}>
-          Adicionar
-        </Button>
+        <button
+          type="button"
+          onClick={addTag}
+          className="absolute right-3 flex h-5 w-5 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-150 active:scale-90"
+          title="Adicionar"
+        >
+          <Icon name="add" size={14} />
+        </button>
       </div>
     </div>
   );

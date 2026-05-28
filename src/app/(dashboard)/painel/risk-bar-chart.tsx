@@ -35,7 +35,7 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
   });
 
   const data = sorted.map((s) => ({
-    name: s.name.length > 28 ? s.name.slice(0, 26) + "…" : s.name,
+    name: s.name,
     fullName: s.name,
     score: Math.round(s.displayScore),
     trafficLight: s.trafficLight,
@@ -51,7 +51,7 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(350, data.length * 28 + 40)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24 }}>
+          <BarChart data={data} layout="vertical" margin={{ left: 16, right: 24 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} strokeOpacity={0.5} />
             <XAxis
               type="number"
@@ -62,7 +62,7 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
             <YAxis
               type="category"
               dataKey="name"
-              width={180}
+              width={220}
               tick={{ fontSize: 11 }}
               stroke="hsl(var(--muted-foreground))"
             />

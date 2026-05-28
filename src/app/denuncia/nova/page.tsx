@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
@@ -151,10 +150,10 @@ export default function NovaDenunciaPage() {
 
             <div className="space-y-2">
               <Label htmlFor="description">Relato dos Fatos</Label>
-              <Textarea
+              <textarea
                 id="description"
                 placeholder="Descreva o ocorrido com o máximo de detalhes..."
-                className="min-h-[150px] rounded-xl"
+                className="flex min-h-[150px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required

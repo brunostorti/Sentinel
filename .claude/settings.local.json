@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\joaov\\\\Desktop\\\\Sentinel-main\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(xargs head -20)",
+      "Bash(xargs head -30)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__list_projects",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__list_migrations",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__list_tables",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__apply_migration",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__execute_sql",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__get_advisors",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__get_project_url",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__get_publishable_keys",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
+      "mcp__cf25fa5a-5453-4d12-9b7b-82af0d069b60__get_logs",
+      "Skill(firecrawl:firecrawl-cli)",
+      "Skill(firecrawl:firecrawl-cli:*)",
+      "Bash(firecrawl --status)",
+      "Bash(firecrawl login *)",
+      "Bash(firecrawl scrape *)",
+      "Bash(git config *)"
+    ]
+  }
+}
