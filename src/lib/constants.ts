@@ -81,6 +81,7 @@ export const ROUTES = {
     USERS: "/usuarios",
   },
   DASHBOARD: {
+    HOME: "/inicio",
     OVERVIEW: "/painel",
     SURVEYS: "/gerenciar-pesquisas",
     EMPLOYEES: "/colaboradores",

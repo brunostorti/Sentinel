@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
       if (userData?.role === "SUPER_ADMIN") {
         url.pathname = "/empresas";
       } else if (userData) {
-        url.pathname = "/painel";
+        url.pathname = "/inicio";
       } else {
         // Survey participant — redirect to survey list
         url.pathname = "/pesquisas";
@@ -73,7 +73,7 @@ export async function middleware(request: NextRequest) {
   if (SUPER_ADMIN_ROUTES.some((route) => path.startsWith(route))) {
     if (userData.role !== "SUPER_ADMIN") {
       const url = request.nextUrl.clone();
-      url.pathname = "/painel";
+      url.pathname = "/inicio";
       return NextResponse.redirect(url);
     }
   }

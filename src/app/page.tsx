@@ -19,5 +19,5 @@ export default async function RootPage() {
     redirect("/empresas");
   }
 
-  redirect("/painel");
+  redirect("/inicio");
 }

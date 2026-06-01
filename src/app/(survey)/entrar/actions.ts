@@ -120,7 +120,7 @@ export async function loginAdmin(email: string, password: string) {
   }
 
   const redirect =
-    userData.role === "SUPER_ADMIN" ? "/empresas" : "/painel";
+    userData.role === "SUPER_ADMIN" ? "/empresas" : "/inicio";
 
   return { success: true, redirect };
 }
