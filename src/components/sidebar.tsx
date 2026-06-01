@@ -68,6 +68,7 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
     {
       title: "Diagnóstico & Análise",
       items: [
+        { label: "Início", href: ROUTES.DASHBOARD.HOME, icon: "home" },
         { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
         { label: "Pesquisas", href: ROUTES.DASHBOARD.SURVEYS, icon: "assignment" },
         { label: "Relatórios", href: ROUTES.DASHBOARD.REPORTS, icon: "description" },
