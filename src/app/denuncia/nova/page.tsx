@@ -27,13 +27,15 @@ export default function NovaDenunciaPage() {
 
   useEffect(() => {
     async function fetchCompanies() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("companies")
-        .select("id, name")
-        .gt("employee_count", 20);
-      
-      if (data) setCompanies(data);
+      try {
+        const res = await fetch("/api/companies");
+        if (res.ok) {
+          const data = await res.json();
+          setCompanies(data);
+        }
+      } catch (error) {
+        console.error("Error fetching companies:", error);
+      }
     }
     fetchCompanies();
   }, []);

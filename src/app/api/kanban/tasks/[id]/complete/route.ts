@@ -66,6 +66,14 @@ export async function POST(
       .eq("id", id);
   }
 
+  // Atualiza status do plano de ação correspondente para "COMPLETED"
+  if (task.action_plan_id) {
+    await supabase
+      .from("action_plans")
+      .update({ status: "COMPLETED" })
+      .eq("id", task.action_plan_id);
+  }
+
   // Cria company_actions_taken
   // Supabase devolve `action_plans` como array quando vem de FK; pegamos o primeiro.
   const planRaw = task.action_plans as unknown;

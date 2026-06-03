@@ -53,7 +53,7 @@ export default async function PlanoDetalhePage({
        target_department, created_at,
        surveys (id, title),
        questionnaire_scales (name),
-       action_outcomes (intervention_id)`
+       company_actions_taken (outcome, outcome_notes)`
     )
     .eq("id", id)
     .eq("company_id", userData.company_id!)
@@ -62,8 +62,13 @@ export default async function PlanoDetalhePage({
   if (!plan) notFound();
 
   // Resolve intervention_id (pode estar em outcome linkado ou no JSONB; outcomes é o canal canônico)
-  const outcomeArr = plan.action_outcomes as unknown as { intervention_id: string }[] | null;
-  const interventionId = outcomeArr?.[0]?.intervention_id ?? null;
+  // Como simplificamos, também tentamos buscar da tabela outcomes
+  const { data: outcomeData } = await supabase
+    .from("action_outcomes")
+    .select("intervention_id")
+    .eq("action_plan_id", id)
+    .maybeSingle();
+  const interventionId = outcomeData?.intervention_id ?? null;
   const references = interventionId
     ? await getReferencesForIntervention(interventionId)
     : [];
@@ -89,11 +94,14 @@ export default async function PlanoDetalhePage({
   const dim = plan.questionnaire_scales as unknown as { name: string } | null;
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
 
+  const actionTakenArr = plan.company_actions_taken as unknown as { outcome: string; outcome_notes: string }[] | null;
+  const actionTaken = Array.isArray(actionTakenArr) && actionTakenArr.length > 0 ? actionTakenArr[0] : null;
+
   return (
     <PlanDetailView
       planId={plan.id}
       riskLevel={plan.risk_level as "RED" | "YELLOW"}
-      status={plan.status as "PENDING_REVIEW" | "APPROVED" | "REJECTED"}
+      status={plan.status as "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED"}
       dimensionName={dim?.name ?? ""}
       surveyTitle={survey?.title ?? ""}
       timeframe={plan.timeframe as string | null}
@@ -101,6 +109,8 @@ export default async function PlanoDetalhePage({
       recommendation={recommendation}
       canManage={canManage}
       references={references}
+      initialOutcome={actionTaken?.outcome as any}
+      initialOutcomeNotes={actionTaken?.outcome_notes}
     />
   );
 }

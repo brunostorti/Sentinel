@@ -79,7 +79,7 @@ export function buildPerfilCompacto(
 export function buildPerfilNarrativo(
   company: CompanyInfo,
   profile: CompanyProfile,
-  history: { title: string; year: number | null; outcome: string | null }[] = []
+  history: { title: string; year: number | null; outcome: string | null; notes?: string | null }[] = []
 ): string {
   const lines: string[] = [];
 
@@ -191,7 +191,8 @@ export function buildPerfilNarrativo(
         };
         const year = h.year ? `em ${h.year}` : "no passado";
         const out = h.outcome ? outcomeLabel[h.outcome] ?? h.outcome : "sem registro de resultado";
-        return `"${h.title}" ${year} (${out})`;
+        const notesStr = h.notes ? `, observações do RH: "${h.notes}"` : "";
+        return `"${h.title}" ${year} (${out}${notesStr})`;
       })
       .join("; ");
     lines.push(`Já tentou: ${summarized}.`);

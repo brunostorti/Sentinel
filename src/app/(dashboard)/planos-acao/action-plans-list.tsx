@@ -67,6 +67,7 @@ export function ActionPlansList({
 
   const pending = allPlans.filter((p) => p.status === "PENDING_REVIEW");
   const approved = allPlans.filter((p) => p.status === "APPROVED");
+  const completed = allPlans.filter((p) => p.status === "COMPLETED");
   const rejected = allPlans.filter((p) => p.status === "REJECTED");
 
   function sortPlans(arr: PlanView[]) {
@@ -141,7 +142,8 @@ export function ActionPlansList({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Counter label="Pendentes" value={pending.length} accent="amber" />
-          <Counter label="Aprovados" value={approved.length} accent="emerald" />
+          <Counter label="Aprovados" value={approved.length} accent="blue" />
+          <Counter label="Concluídos" value={completed.length} accent="emerald" />
           {rejected.length > 0 && (
             <Counter label="Rejeitados" value={rejected.length} accent="zinc" />
           )}
@@ -234,8 +236,8 @@ export function ActionPlansList({
       {/* ─── Grupo: Aprovados ─── */}
       <Group
         title="Aprovados"
-        icon="check_circle"
-        accent="emerald"
+        icon="play_circle"
+        accent="blue"
         count={approved.length}
         open={openGroups.has("APPROVED")}
         onToggle={() => toggleGroup("APPROVED")}
@@ -244,6 +246,22 @@ export function ActionPlansList({
           <EmptyGroup text="Ainda não aprovou nenhum plano." />
         ) : (
           sortPlans(approved).map((p) => <CompactPlanRow key={p.id} plan={p} />)
+        )}
+      </Group>
+
+      {/* ─── Grupo: Concluídos ─── */}
+      <Group
+        title="Concluídos"
+        icon="check_circle"
+        accent="emerald"
+        count={completed.length}
+        open={openGroups.has("COMPLETED")}
+        onToggle={() => toggleGroup("COMPLETED")}
+      >
+        {completed.length === 0 ? (
+          <EmptyGroup text="Nenhum plano concluído ainda." />
+        ) : (
+          sortPlans(completed).map((p) => <CompactPlanRow key={p.id} plan={p} />)
         )}
       </Group>
 
@@ -298,12 +316,13 @@ function Counter({
 }: {
   label: string;
   value: number;
-  accent: "amber" | "emerald" | "zinc";
+  accent: "amber" | "emerald" | "zinc" | "blue";
 }) {
   const colors = {
     amber: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
     emerald:
       "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+    blue: "bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
     zinc: "bg-zinc-100 text-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400",
   };
   return (
@@ -328,7 +347,7 @@ function Group({
 }: {
   title: string;
   icon: string;
-  accent: "amber" | "emerald" | "zinc";
+  accent: "amber" | "emerald" | "zinc" | "blue";
   count: number;
   open: boolean;
   onToggle: () => void;
@@ -338,6 +357,7 @@ function Group({
   const colors = {
     amber: "text-amber-600 dark:text-amber-400",
     emerald: "text-emerald-600 dark:text-emerald-400",
+    blue: "text-blue-600 dark:text-blue-400",
     zinc: "text-zinc-500",
   };
   const hasItems = count > 0;
@@ -405,6 +425,18 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
             <Badge variant="outline" className="h-5 gap-0.5 text-[10px]">
               <Icon name="gavel" size={10} />
               NR-1
+            </Badge>
+          )}
+          {plan.status === "COMPLETED" && plan.outcome && (
+            <Badge variant="outline" className="h-5 gap-0.5 text-[10px] border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Icon name="check" size={10} />
+              {plan.outcome === "successful"
+                ? "Funcionou bem"
+                : plan.outcome === "partial"
+                ? "Parcial"
+                : plan.outcome === "unsuccessful"
+                ? "Não funcionou"
+                : "Em andamento"}
             </Badge>
           )}
           <span className="text-[11px] text-muted-foreground">

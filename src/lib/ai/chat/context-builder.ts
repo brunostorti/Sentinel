@@ -60,7 +60,7 @@ export async function buildChatSystemPrompt(
   // Histórico
   const { data: history } = await admin
     .from("company_actions_taken")
-    .select("title, year_started, outcome")
+    .select("title, year_started, outcome, outcome_notes")
     .eq("company_id", companyId)
     .order("year_started", { ascending: false, nullsFirst: false })
     .limit(10);
@@ -70,10 +70,11 @@ export async function buildChatSystemPrompt(
         company,
         profile,
         (history ?? []).map(
-          (h: { title: string; year_started: number | null; outcome: string | null }) => ({
+          (h: { title: string; year_started: number | null; outcome: string | null; outcome_notes: string | null }) => ({
             title: h.title,
             year: h.year_started,
             outcome: h.outcome,
+            notes: h.outcome_notes,
           })
         )
       )

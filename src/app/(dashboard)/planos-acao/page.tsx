@@ -64,7 +64,8 @@ export default async function ActionPlansPage() {
       timeframe,
       created_at,
       surveys (id, title),
-      questionnaire_scales (name)
+      questionnaire_scales (name),
+      company_actions_taken (outcome, outcome_notes)
     `
     )
     .eq("company_id", companyId)
@@ -96,6 +97,9 @@ export default async function ActionPlansPage() {
       compliance_extra: raw.compliance_extra ?? [],
     };
 
+    const actionTakenArr = p.company_actions_taken as unknown as { outcome: string; outcome_notes: string }[] | null;
+    const actionTaken = Array.isArray(actionTakenArr) && actionTakenArr.length > 0 ? actionTakenArr[0] : null;
+
     return {
       id: p.id,
       riskLevel: p.risk_level as "RED" | "YELLOW",
@@ -112,6 +116,8 @@ export default async function ActionPlansPage() {
       priority: p.priority as string | null,
       effort: p.effort as string | null,
       timeframe: p.timeframe as string | null,
+      outcome: actionTaken?.outcome as PlanView["outcome"] ?? null,
+      outcomeNotes: actionTaken?.outcome_notes ?? null,
     };
   });
 
