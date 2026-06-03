@@ -19,14 +19,15 @@ const RISK = {
 
 const STATUS = {
   PENDING_REVIEW: { cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", label: "Pendente", icon: "schedule" },
-  APPROVED: { cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400", label: "Aprovado", icon: "check_circle" },
+  APPROVED: { cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", label: "Aprovado", icon: "play_circle" },
+  COMPLETED: { cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400", label: "Concluído", icon: "check_circle" },
   REJECTED: { cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", label: "Rejeitado", icon: "cancel" },
 };
 
 interface Props {
   planId: string;
   riskLevel: "RED" | "YELLOW";
-  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED";
   dimensionName: string;
   surveyTitle: string;
   timeframe: string | null;
@@ -34,6 +35,8 @@ interface Props {
   recommendation: AIRecommendation;
   canManage: boolean;
   references: KbReferenceWithRelevance[];
+  initialOutcome?: "successful" | "partial" | "unsuccessful" | "in_progress" | null;
+  initialOutcomeNotes?: string | null;
 }
 
 type Tab = "plano" | "chat";
@@ -49,15 +52,37 @@ export function PlanDetailView({
   recommendation,
   canManage,
   references,
+  initialOutcome,
+  initialOutcomeNotes,
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("plano");
   const [isPending, startTransition] = useTransition();
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [outcome, setOutcome] = useState(initialOutcome ?? "successful");
+  const [notes, setNotes] = useState(initialOutcomeNotes || "");
 
   const risk = RISK[riskLevel];
   const stat = STATUS[status];
+
+  function handleSaveEfficacy() {
+    if (!outcome) return;
+    startTransition(async () => {
+      const res = await fetch(`/api/action-plans/${planId}/efficacy`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ outcome, notes: notes || undefined }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Falha ao salvar feedback.");
+        return;
+      }
+      toast.success("Notas de eficácia salvas.");
+      router.refresh();
+    });
+  }
 
   function handleApprove() {
     startTransition(async () => {
@@ -153,9 +178,15 @@ export function PlanDetailView({
             </div>
           )}
           {status === "APPROVED" && (
+            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+              <Icon name="play_circle" size={12} />
+              Tarefa no Kanban
+            </Badge>
+          )}
+          {status === "COMPLETED" && (
             <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
               <Icon name="check_circle" size={12} />
-              Tarefa no Kanban
+              Plano Concluído
             </Badge>
           )}
         </div>
@@ -187,8 +218,57 @@ export function PlanDetailView({
         <div
           className={`${
             tab === "plano" ? "flex" : "hidden"
-          } min-h-0 flex-1 flex-col overflow-y-auto bg-muted/20 px-4 py-6 sm:px-6 lg:flex lg:basis-[65%]`}
+          } min-h-0 flex-1 flex-col overflow-y-auto bg-muted/20 px-4 py-6 sm:px-6 lg:flex lg:basis-[65%] space-y-6`}
         >
+          {status === "COMPLETED" && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-55/50 dark:bg-emerald-950/20 p-4 space-y-4 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                  <Icon name="verified" size={18} />
+                  <span>Avaliação de Eficácia e Aprendizado</span>
+                </div>
+                <Button
+                  onClick={handleSaveEfficacy}
+                  disabled={isPending}
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 px-4 rounded-lg"
+                >
+                  {isPending ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Como foi a ação?</label>
+                  <select
+                    value={outcome || ""}
+                    onChange={(e) => setOutcome(e.target.value as any)}
+                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                  >
+                    <option value="successful">🟢 Funcionou bem (Alta adesão/impacto)</option>
+                    <option value="partial">🟡 Resultado parcial (Adesão média/baixa)</option>
+                    <option value="unsuccessful">🔴 Não funcionou (Nenhum impacto)</option>
+                    <option value="in_progress">🔵 Ainda em andamento</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[11px] text-muted-foreground">
+                    A IA usará o feedback e as notas abaixo como referência para sugerir planos futuros.
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Notas de Aprendizado</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Descreva por que funcionou ou não, detalhes sobre adesão, sugestões para a próxima vez..."
+                  className="w-full rounded-md border border-input bg-card p-3 text-sm"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
           <PlanV2
             recommendation={recommendation}
             targetDepartment={targetDepartment}

@@ -260,6 +260,7 @@ export async function runPipeline(
       report,
       profile,
       company,
+      history,
     });
     console.log(`[pipeline ${run_id}] Stage 3 OK — ${plans.length} planos gerados pelo LLM`);
 

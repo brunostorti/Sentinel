@@ -11,7 +11,7 @@ import type {
   CuratedSelection,
   AnalystReport,
 } from "./types";
-import type { CompanyProfile } from "../profile/schema";
+import type { CompanyProfile, CompanyActionTaken } from "../profile/schema";
 import { buildPerfilNarrativo } from "../profile/narrative";
 import { getInterventionById } from "../knowledge-base/catalog";
 import { getProvidersForIntervention } from "../knowledge-base/providers-br";
@@ -110,11 +110,19 @@ export async function runConsultant(args: {
   report: AnalystReport;
   profile: CompanyProfile;
   company: CompanyInfo;
+  history?: CompanyActionTaken[];
 }): Promise<ConsultantPlanItem[]> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
 
-  const perfilNarrativo = buildPerfilNarrativo(args.company, args.profile);
+  const historyMapped = args.history?.map((h) => ({
+    title: h.title,
+    year: h.year_started,
+    outcome: h.outcome,
+    notes: h.outcome_notes,
+  })) ?? [];
+
+  const perfilNarrativo = buildPerfilNarrativo(args.company, args.profile, historyMapped);
   const prioritizedNames = new Map(
     args.report.prioritized_dimensions.map((d) => [d.dimension_id, d.dimension_name])
   );

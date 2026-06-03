@@ -22,21 +22,17 @@ export default function AcompanharDenunciaPage() {
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("reports")
-        .select("status, created_at, occurrence_type")
-        .eq("protocol", protocol)
-        .single();
-
-      if (error || !data) {
+      const res = await fetch(`/api/reports/track?protocol=${encodeURIComponent(protocol)}`);
+      if (!res.ok) {
         toast.error("Protocolo não encontrado.");
         setReport(null);
       } else {
+        const data = await res.json();
         setReport(data);
       }
     } catch (error) {
       toast.error("Erro ao buscar protocolo.");
+      setReport(null);
     } finally {
       setLoading(false);
     }

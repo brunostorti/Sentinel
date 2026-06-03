@@ -9,7 +9,7 @@ export interface PlanView {
   id: string;
   riskLevel: "RED" | "YELLOW";
   recommendation: Recommendation;
-  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "AI_GENERATION_FAILED";
+  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED" | "AI_GENERATION_FAILED";
   createdAt: string;
   surveyId: string;
   surveyTitle: string;
@@ -17,4 +17,6 @@ export interface PlanView {
   priority: string | null;
   effort: string | null;
   timeframe: string | null;
+  outcome?: "successful" | "partial" | "unsuccessful" | "in_progress" | null;
+  outcomeNotes?: string | null;
 }

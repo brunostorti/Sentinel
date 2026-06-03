@@ -76,6 +76,7 @@ export async function runCurator(args: {
       title: h.title,
       year: h.year_started,
       outcome: h.outcome,
+      notes: h.outcome_notes,
     }))
   );
 
