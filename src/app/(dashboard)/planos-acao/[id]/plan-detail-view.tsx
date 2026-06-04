@@ -13,15 +13,15 @@ import type { AIRecommendation } from "@/lib/ai/pipeline/types";
 import type { KbReferenceWithRelevance } from "@/lib/ai/knowledge-base/references";
 
 const RISK = {
-  RED: { cls: "bg-red-500 text-white", label: "Risco" },
-  YELLOW: { cls: "bg-amber-500 text-white", label: "Intermédio" },
+  RED:    { cls: "bg-red-500 text-white",   label: "Risco",      icon: "error" },
+  YELLOW: { cls: "bg-amber-500 text-white", label: "Intermédio", icon: "warning" },
 };
 
 const STATUS = {
-  PENDING_REVIEW: { cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", label: "Pendente", icon: "schedule" },
-  APPROVED: { cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", label: "Aprovado", icon: "play_circle" },
-  COMPLETED: { cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400", label: "Concluído", icon: "check_circle" },
-  REJECTED: { cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", label: "Rejeitado", icon: "cancel" },
+  PENDING_REVIEW: { cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", label: "Pendente",  icon: "schedule" },
+  APPROVED:       { cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",     label: "Aprovado",  icon: "play_circle" },
+  COMPLETED:      { cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400", label: "Concluído", icon: "check_circle" },
+  REJECTED:       { cls: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",         label: "Rejeitado", icon: "cancel" },
 };
 
 interface Props {
@@ -118,74 +118,69 @@ export function PlanDetailView({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      {/* ─── Top bar ─── */}
-      <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur">
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/20">
+
+      {/* ─── Top bar limpa ─── */}
+      <div className="shrink-0 border-b border-border bg-card">
+        <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
+          {/* Voltar */}
           <Link
             href="/planos-acao"
-            className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
           >
             <Icon name="arrow_back" size={14} />
             Planos
           </Link>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge className={`gap-1 ${risk.cls}`}>
-                <Icon name={riskLevel === "RED" ? "error" : "warning"} size={11} />
-                {risk.label}
+          {/* Badges */}
+          <div className="ml-2 flex items-center gap-1.5 flex-wrap">
+            <Badge className={`gap-1 text-[10px] font-bold uppercase tracking-wider ${risk.cls}`}>
+              <Icon name={risk.icon} size={11} />
+              {risk.label}
+            </Badge>
+            <Badge className={`gap-1 text-[10px] font-bold uppercase tracking-wider ${stat.cls}`}>
+              <Icon name={stat.icon} size={11} />
+              {stat.label}
+            </Badge>
+            {recommendation.nr1_compliance && (
+              <Badge variant="outline" className="gap-1 text-[10px] font-bold uppercase tracking-wider">
+                <Icon name="gavel" size={11} />
+                NR-1
               </Badge>
-              <Badge className={`gap-1 ${stat.cls}`}>
-                <Icon name={stat.icon} size={11} />
-                {stat.label}
-              </Badge>
-              {recommendation.nr1_compliance && (
-                <Badge variant="outline" className="gap-1">
-                  <Icon name="gavel" size={11} />
-                  NR-1
-                </Badge>
-              )}
-            </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{dimensionName}</span>
-              {surveyTitle && ` · ${surveyTitle}`}
-              {timeframe && ` · ${timeframe}`}
-            </p>
+            )}
           </div>
 
-          {/* Ações (sticky, sempre visíveis) */}
+          <div className="flex-1" />
+
+          {/* Ações */}
           {canManage && status === "PENDING_REVIEW" && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowRejectModal(true)}
                 disabled={isPending}
               >
-                <Icon name="close" size={14} />
                 Rejeitar
               </Button>
               <Button
                 size="sm"
                 onClick={handleApprove}
                 disabled={isPending}
-                className="shadow-sm shadow-primary/20"
               >
-                <Icon name="check" size={14} />
                 {isPending ? "..." : "Aprovar"}
               </Button>
             </div>
           )}
           {status === "APPROVED" && (
-            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-              <Icon name="play_circle" size={12} />
+            <Badge className="shrink-0 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+              <Icon name="play_circle" size={12} className="mr-1" />
               Tarefa no Kanban
             </Badge>
           )}
           {status === "COMPLETED" && (
-            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-              <Icon name="check_circle" size={12} />
+            <Badge className="shrink-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <Icon name="check_circle" size={12} className="mr-1" />
               Plano Concluído
             </Badge>
           )}
@@ -213,75 +208,96 @@ export function PlanDetailView({
       </div>
 
       {/* ─── Split view ─── */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* Plano */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+
+        {/* ── Painel esquerdo: plano ── */}
         <div
           className={`${
             tab === "plano" ? "flex" : "hidden"
-          } min-h-0 flex-1 flex-col overflow-y-auto bg-muted/20 px-4 py-6 sm:px-6 lg:flex lg:basis-[65%] space-y-6`}
+          } min-h-0 flex-1 flex-col overflow-y-auto lg:flex lg:basis-[62%] lg:max-w-[62%]`}
         >
-          {status === "COMPLETED" && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-55/50 dark:bg-emerald-950/20 p-4 space-y-4 shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
-                  <Icon name="verified" size={18} />
-                  <span>Avaliação de Eficácia e Aprendizado</span>
-                </div>
-                <Button
-                  onClick={handleSaveEfficacy}
-                  disabled={isPending}
-                  size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 px-4 rounded-lg"
-                >
-                  {isPending ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Como foi a ação?</label>
-                  <select
-                    value={outcome || ""}
-                    onChange={(e) => setOutcome(e.target.value as any)}
-                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
-                  >
-                    <option value="successful">🟢 Funcionou bem (Alta adesão/impacto)</option>
-                    <option value="partial">🟡 Resultado parcial (Adesão média/baixa)</option>
-                    <option value="unsuccessful">🔴 Não funcionou (Nenhum impacto)</option>
-                    <option value="in_progress">🔵 Ainda em andamento</option>
-                  </select>
-                </div>
-                <div className="flex flex-col justify-center">
-                  <span className="text-[11px] text-muted-foreground">
-                    A IA usará o feedback e as notas abaixo como referência para sugerir planos futuros.
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">Notas de Aprendizado</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Descreva por que funcionou ou não, detalhes sobre adesão, sugestões para a próxima vez..."
-                  className="w-full rounded-md border border-input bg-card p-3 text-sm"
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
+          {/* Título do plano — destaque visual */}
+          <div className="shrink-0 px-6 pt-8 pb-6 sm:px-8">
+            <h1 className="text-3xl font-bold tracking-tight leading-tight text-primary">
+              {dimensionName}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {[surveyTitle, timeframe].filter(Boolean).join(" · ")}
+            </p>
+          </div>
 
-          <PlanV2
-            recommendation={recommendation}
-            targetDepartment={targetDepartment}
-            timeframe={timeframe}
-            references={references}
-          />
+          {/* Conteúdo do plano */}
+          <div className="flex-1 space-y-5 px-6 pb-8 sm:px-8">
+
+            {/* Avaliação de eficácia (só quando COMPLETED) */}
+            {status === "COMPLETED" && (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                    <Icon name="verified" size={18} />
+                    Avaliação de Eficácia e Aprendizado
+                  </div>
+                  <Button
+                    onClick={handleSaveEfficacy}
+                    disabled={isPending}
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 px-4 rounded-lg"
+                  >
+                    {isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
+                      Como foi a ação?
+                    </label>
+                    <select
+                      value={outcome || ""}
+                      onChange={(e) => setOutcome(e.target.value as any)}
+                      className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                    >
+                      <option value="successful">🟢 Funcionou bem (Alta adesão/impacto)</option>
+                      <option value="partial">🟡 Resultado parcial (Adesão média/baixa)</option>
+                      <option value="unsuccessful">🔴 Não funcionou (Nenhum impacto)</option>
+                      <option value="in_progress">🔵 Ainda em andamento</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-[11px] text-muted-foreground">
+                      A IA usará o feedback e as notas abaixo como referência para sugerir planos futuros.
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase block mb-1">
+                    Notas de Aprendizado
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Descreva por que funcionou ou não, detalhes sobre adesão, sugestões para a próxima vez..."
+                    className="w-full rounded-md border border-input bg-card p-3 text-sm"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Conteúdo 5W2H */}
+            <PlanV2
+              recommendation={recommendation}
+              targetDepartment={targetDepartment}
+              timeframe={timeframe}
+              references={references}
+            />
+          </div>
         </div>
 
-        {/* Chat */}
+        {/* ── Painel direito: chat ── */}
         <div
           className={`${
             tab === "chat" ? "flex" : "hidden"
-          } min-h-0 flex-1 flex-col border-l border-border bg-card lg:flex lg:basis-[35%] lg:min-w-[360px]`}
+          } min-h-0 flex-col border-l border-border bg-card lg:flex lg:basis-[38%] lg:max-w-[38%]`}
         >
           <PlanChatPanel planId={planId} />
         </div>
