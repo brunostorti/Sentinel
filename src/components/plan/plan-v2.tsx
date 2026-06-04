@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Visualização de plano de ação no formato matriz 5W2H.
  *
@@ -10,10 +12,9 @@
  *   How      → vendors + internal_alternative + prerequisites + leading_indicators
  *              + monitoring_cadence + implementation_risks + communication_plan
  *   How much → investment + expected_return
- *
- * NR-1 + compliance_extra: selos no header (não viram célula da matriz).
  */
 
+import { useState } from "react";
 import type { AIRecommendation } from "@/lib/ai/pipeline/types";
 import type { KbReferenceWithRelevance } from "@/lib/ai/knowledge-base/references";
 import { Card } from "@/components/ui/card";
@@ -27,54 +28,32 @@ interface PlanV2Props {
   references?: KbReferenceWithRelevance[];
 }
 
-/* ─── Visual: cores e ícones por célula 5W2H ─── */
-
+/* Cor única por célula da matriz 5W2H — usada APENAS no estado ativo da aba
+ * e no badge do cabeçalho da aba ativa. O restante do conteúdo permanece neutro. */
 const CELLS = {
-  what:    { letter: "W",  label: "What",     pt: "O que fazer",        icon: "task_alt",        accent: "from-blue-500 to-blue-600",       bg: "bg-blue-50 dark:bg-blue-950/30",       text: "text-blue-700 dark:text-blue-400" },
-  why:     { letter: "W",  label: "Why",      pt: "Por quê",            icon: "psychology",      accent: "from-violet-500 to-violet-600",   bg: "bg-violet-50 dark:bg-violet-950/30",   text: "text-violet-700 dark:text-violet-400" },
-  where:   { letter: "W",  label: "Where",    pt: "Onde aplicar",       icon: "place",           accent: "from-emerald-500 to-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400" },
-  when:    { letter: "W",  label: "When",     pt: "Quando",             icon: "schedule",        accent: "from-amber-500 to-amber-600",     bg: "bg-amber-50 dark:bg-amber-950/30",     text: "text-amber-700 dark:text-amber-400" },
-  who:     { letter: "W",  label: "Who",      pt: "Quem executa",       icon: "group",           accent: "from-rose-500 to-rose-600",       bg: "bg-rose-50 dark:bg-rose-950/30",       text: "text-rose-700 dark:text-rose-400" },
-  how:     { letter: "H",  label: "How",      pt: "Como fazer",         icon: "build",           accent: "from-cyan-500 to-cyan-600",       bg: "bg-cyan-50 dark:bg-cyan-950/30",       text: "text-cyan-700 dark:text-cyan-400" },
-  howMuch: { letter: "H$", label: "How much", pt: "Quanto custa",       icon: "payments",        accent: "from-teal-600 to-teal-700",       bg: "bg-teal-50 dark:bg-teal-950/30",       text: "text-teal-700 dark:text-teal-400" },
+  what:    { letter: "W",  label: "What",     pt: "O que fazer",  icon: "help_center",       hex: "#2563eb", tint: "rgb(37 99 235 / 0.08)" },
+  why:     { letter: "W",  label: "Why",      pt: "Por quê",      icon: "psychology",        hex: "#7c3aed", tint: "rgb(124 58 237 / 0.08)" },
+  where:   { letter: "W",  label: "Where",    pt: "Onde aplicar", icon: "location_on",       hex: "#059669", tint: "rgb(5 150 105 / 0.08)" },
+  when:    { letter: "W",  label: "When",     pt: "Quando",       icon: "calendar_month",    hex: "#d97706", tint: "rgb(217 119 6 / 0.08)" },
+  who:     { letter: "W",  label: "Who",      pt: "Quem executa", icon: "groups",            hex: "#e11d48", tint: "rgb(225 29 72 / 0.08)" },
+  how:     { letter: "H",  label: "How",      pt: "Como fazer",   icon: "settings_suggest",  hex: "#0891b2", tint: "rgb(8 145 178 / 0.08)" },
+  howMuch: { letter: "H$", label: "How much", pt: "Quanto custa", icon: "payments",          hex: "#0d9488", tint: "rgb(13 148 136 / 0.08)" },
 } as const;
 
 type CellKey = keyof typeof CELLS;
-
-/* ─── Cabeçalho do card 5W2H ─── */
-function CellHeader({ k }: { k: CellKey }) {
-  const c = CELLS[k];
-  return (
-    <div className="flex items-center gap-3 border-b border-border/60 pb-3 mb-3">
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${c.accent} text-white font-black text-sm shadow-sm`}
-      >
-        {c.letter}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className={`text-[10px] font-bold uppercase tracking-widest ${c.text}`}>
-          {c.label}
-        </p>
-        <p className="text-sm font-bold leading-tight">{c.pt}</p>
-      </div>
-      <Icon name={c.icon} size={20} className={c.text} />
-    </div>
-  );
-}
+const CELL_KEYS = Object.keys(CELLS) as CellKey[];
 
 /* ─── Componente principal ─── */
 
 export function PlanV2({ recommendation: r, targetDepartment, timeframe, references = [] }: PlanV2Props) {
-  const hasInvestment =
-    r.investment?.total_annual && r.investment.total_annual !== "N/D";
-  const hasReturn =
-    r.expected_return?.payback_period && r.expected_return.payback_period !== "N/D";
+  const [activeTab, setActiveTab] = useState<CellKey>("what");
 
-  // Lookup citation_key -> KbReference para enriquecer impact_metrics
+  const hasInvestment = r.investment?.total_annual && r.investment.total_annual !== "N/D";
+  const hasReturn = r.expected_return?.payback_period && r.expected_return.payback_period !== "N/D";
+
   const refByKey = new Map<string, KbReferenceWithRelevance>();
   for (const ref of references) {
     refByKey.set(ref.citation_key, ref);
-    // Lookup tolerante: case-insensitive, sem espaços
     refByKey.set(ref.citation_key.toLowerCase(), ref);
   }
   function resolveRef(key: string | undefined | null) {
@@ -82,540 +61,579 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
     return refByKey.get(key) ?? refByKey.get(key.toLowerCase()) ?? null;
   }
 
+  const cell = CELLS[activeTab];
+
   return (
     <div className="space-y-5">
-      {/* ═══ Elevator pitch: ação imediata + KPIs principais ═══ */}
+
+      {/* ═══ Card de resumo: Ação imediata + KPIs ═══ */}
       {r.quick_action && (
-        <Card className="relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent p-5">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/5" />
-          <div className="relative flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15">
-              <Icon name="bolt" size={20} className="text-primary" />
+        <Card className="overflow-hidden border-border bg-card p-0 shadow-sm">
+
+          {/* Faixa: ação imediata */}
+          <div className="flex items-center gap-4 px-6 py-5 sm:px-8">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Icon name="bolt" size={24} filled />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
                 Ação imediata — Primeiros 30 dias
               </p>
-              <p className="mt-1 text-sm font-medium leading-relaxed">
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-foreground">
                 {r.quick_action}
               </p>
             </div>
           </div>
 
-          {/* Mini-KPIs em linha */}
-          {(hasInvestment || hasReturn || r.internal_capacity_required) && (
-            <div className="relative mt-4 grid grid-cols-2 gap-3 border-t border-border/60 pt-3 sm:grid-cols-4">
-              {hasInvestment && (
-                <MiniKpi icon="payments" label="Investimento" value={r.investment.total_annual} />
-              )}
+          {/* KPIs em linha enxuta */}
+          {(hasInvestment || hasReturn || r.internal_capacity_required || r.expected_return?.conservative) && (
+            <div className="grid grid-cols-2 items-stretch divide-x divide-y divide-border border-t border-border bg-muted/20 md:grid-cols-4 md:divide-y-0">
+              {hasInvestment && <KpiCell icon="payments" label="Investimento" value={r.investment.total_annual} />}
               {r.expected_return?.conservative && r.expected_return.conservative !== "N/D" && (
-                <MiniKpi icon="trending_up" label="Retorno conservador" value={r.expected_return.conservative} />
+                <KpiCell icon="trending_up" label="Retorno" value={r.expected_return.conservative} />
               )}
-              {hasReturn && (
-                <MiniKpi icon="timer" label="Payback" value={r.expected_return.payback_period} />
-              )}
+              {hasReturn && <KpiCell icon="schedule" label="Payback" value={r.expected_return.payback_period} />}
               {r.internal_capacity_required && (
-                <MiniKpi icon="person" label="Capacidade interna" value={r.internal_capacity_required} />
+                <KpiCell icon="group" label="Capacidade" value={r.internal_capacity_required} />
               )}
             </div>
           )}
         </Card>
       )}
 
-      {/* ═══ Selo de compliance no topo (se houver) ═══ */}
+      {/* ═══ Conformidade legal — barra discreta ═══ */}
       {(r.nr1_compliance || (r.compliance_extra && r.compliance_extra.length > 0)) && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2 dark:border-violet-900 dark:bg-violet-950/20">
-          <Icon name="gavel" size={16} className="text-violet-600" />
-          <p className="text-xs font-semibold text-violet-700 dark:text-violet-400">
-            Conformidade legal:
-          </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Icon name="verified_user" size={14} className="text-primary" />
+            <span className="font-medium">Conformidade legal:</span>
+          </div>
           {r.nr1_compliance && (
-            <span className="text-xs text-violet-700 dark:text-violet-300">
-              {r.nr1_compliance}
-            </span>
+            <span className="text-foreground/80">{r.nr1_compliance}</span>
           )}
-          {r.compliance_extra?.map((c, i) => (
-            <Badge key={i} variant="outline" className="text-[10px]">
-              {c}
-            </Badge>
-          ))}
+          {r.compliance_extra && r.compliance_extra.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {r.compliance_extra.map((c, i) => (
+                <Badge key={i} variant="outline" className="text-[10px] font-medium">
+                  {c}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ═══ Matriz 5W2H ═══ */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* WHAT */}
-        <Card className={`p-5 ${CELLS.what.bg}`}>
-          <CellHeader k="what" />
-          <p className="text-sm font-semibold leading-snug">{r.title}</p>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {r.description}
+      {/* ═══ Card da matriz 5W2H ═══ */}
+      <Card className="overflow-hidden border-border bg-card p-0 shadow-sm">
+
+        {/* Barra de abas — coloridas (uma cor por célula 5W2H) */}
+        <nav className="flex overflow-x-auto border-b border-border bg-card">
+          {CELL_KEYS.map((key) => {
+            const c = CELLS[key];
+            const isActive = activeTab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                style={isActive ? { color: c.hex, borderColor: c.hex, backgroundColor: c.tint } : undefined}
+                className={`relative flex min-w-[110px] flex-1 flex-col items-center gap-1 border-b-2 px-3 py-3.5 transition-colors duration-200
+                  ${isActive
+                    ? ""
+                    : "border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  }`}
+              >
+                <Icon name={c.icon} size={20} filled={isActive} />
+                <span className="text-xs font-bold tracking-wide">{c.label}</span>
+                <span
+                  className="text-[10px]"
+                  style={isActive ? { color: c.hex, opacity: 0.7 } : undefined}
+                >
+                  {c.pt}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Cabeçalho da aba ativa — cor da célula no badge e no label */}
+        <div
+          className="flex items-center gap-4 border-b border-border/60 px-6 pt-6 pb-5 sm:px-8"
+          style={{ backgroundColor: cell.tint }}
+        >
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl font-black text-lg text-white shadow-sm"
+            style={{ backgroundColor: cell.hex }}
+          >
+            {cell.letter}
+          </div>
+          <div className="min-w-0">
+            <p
+              className="text-[11px] font-bold uppercase tracking-widest"
+              style={{ color: cell.hex }}
+            >
+              {cell.label}
+            </p>
+            <h2 className="mt-0.5 text-2xl font-bold tracking-tight text-foreground">
+              {cell.pt}
+            </h2>
+          </div>
+        </div>
+
+        {/* Conteúdo da aba ativa */}
+        <div className="p-6 sm:p-8">
+          {activeTab === "what" && <TabWhat r={r} />}
+          {activeTab === "why" && <TabWhy r={r} resolveRef={resolveRef} />}
+          {activeTab === "where" && <TabWhere r={r} targetDepartment={targetDepartment ?? null} />}
+          {activeTab === "when" && <TabWhen r={r} timeframe={timeframe ?? null} />}
+          {activeTab === "who" && <TabWho r={r} />}
+          {activeTab === "how" && <TabHow r={r} />}
+          {activeTab === "howMuch" && <TabHowMuch r={r} />}
+        </div>
+      </Card>
+
+      {/* ═══ Referências científicas ═══ */}
+      {references.length > 0 && (
+        <Card className="border-border bg-muted/20 p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-3 border-b border-border/60 pb-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Icon name="menu_book" size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Embasamento científico
+              </p>
+              <p className="text-sm font-bold leading-tight">Referências usadas na construção deste plano</p>
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              {references.length} {references.length === 1 ? "referência" : "referências"}
+            </Badge>
+          </div>
+          <div className="space-y-3 text-xs">
+            {references.map((ref) => <ReferenceItem key={ref.citation_key} ref={ref} />)}
+          </div>
+          <p className="mt-4 rounded-lg border border-border bg-card/60 p-3 text-[11px] italic text-muted-foreground">
+            ⚠ Plano gerado com assistência de IA baseada nas referências acima. Não substitui avaliação por profissional habilitado em saúde ocupacional ou psicologia do trabalho.
           </p>
         </Card>
-
-        {/* WHY */}
-        <Card className={`p-5 ${CELLS.why.bg}`}>
-          <CellHeader k="why" />
-          <p className="text-sm leading-relaxed">{r.rationale}</p>
-
-          {r.risk_if_not_acted && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50/50 p-3 dark:border-red-900 dark:bg-red-950/20">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-red-700 dark:text-red-400">
-                ⚠ Se não agir
-              </p>
-              <p className="mt-1 text-xs leading-relaxed">{r.risk_if_not_acted}</p>
-            </div>
-          )}
-
-          {r.impact_metrics && r.impact_metrics.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Impacto esperado (evidência)
-              </p>
-              {r.impact_metrics.slice(0, 3).map((m, i) => {
-                const resolved = resolveRef(m.evidence?.study_or_case);
-                const fallbackUrl = m.evidence?.url_or_doi;
-                const url = resolved?.url ?? fallbackUrl ?? null;
-                const label = resolved
-                  ? `${resolved.authors.split(";")[0].trim()} (${resolved.year})`
-                  : `${m.evidence?.study_or_case ?? ""}${m.evidence?.year ? " (" + m.evidence.year + ")" : ""}`;
-                return (
-                  <div key={i} className="rounded border border-border/60 bg-card/60 p-2 text-xs">
-                    <p className="font-semibold">
-                      {m.metric}: <span className="text-violet-600 dark:text-violet-400">{m.change}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      {label}
-                      {url && (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener"
-                          className="ml-1 text-primary underline"
-                        >
-                          fonte ↗
-                        </a>
-                      )}
-                      {resolved?.certainty_level && (
-                        <Badge variant="outline" className="ml-2 text-[9px]">
-                          certeza {resolved.certainty_level}
-                        </Badge>
-                      )}
-                    </p>
-                    {(resolved?.notes || m.evidence?.br_context) && (
-                      <p className="mt-1 italic text-muted-foreground">
-                        {resolved?.notes ?? m.evidence?.br_context}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        {/* WHERE */}
-        <Card className={`p-5 ${CELLS.where.bg}`}>
-          <CellHeader k="where" />
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Departamento alvo
-              </p>
-              <p className="mt-1 font-medium">
-                {!targetDepartment || targetDepartment === "all"
-                  ? "Toda a empresa"
-                  : targetDepartment}
-              </p>
-            </div>
-
-            {r.communication_plan?.channels && r.communication_plan.channels.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Canais de comunicação
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {r.communication_plan.channels.map((ch, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">
-                      {ch}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {r.communication_plan?.key_message && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Mensagem-chave
-                </p>
-                <p className="mt-1 italic leading-relaxed text-muted-foreground">
-                  &ldquo;{r.communication_plan.key_message}&rdquo;
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* WHEN */}
-        <Card className={`p-5 ${CELLS.when.bg}`}>
-          <CellHeader k="when" />
-          <div className="space-y-3 text-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              {timeframe && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Janela total
-                  </p>
-                  <p className="font-semibold">{timeframe}</p>
-                </div>
-              )}
-              {r.time_to_first_value && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Primeiros sinais
-                  </p>
-                  <p className="font-semibold">{r.time_to_first_value}</p>
-                </div>
-              )}
-            </div>
-
-            {r.roadmap && r.roadmap.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Roadmap
-                </p>
-                <ol className="space-y-2">
-                  {r.roadmap.map((step, i) => (
-                    <li key={i} className="flex gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-amber-800 dark:bg-amber-900 dark:text-amber-300">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold">{step.phase}</p>
-                        <p className="text-xs text-muted-foreground">{step.deliverable}</p>
-                        <Badge variant="outline" className="mt-0.5 text-[10px]">
-                          {step.owner_role}
-                        </Badge>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {r.communication_plan?.timing && (
-              <div className="rounded border border-border/60 bg-card/60 p-2 text-xs">
-                <span className="font-semibold">Comunicar:</span>{" "}
-                {r.communication_plan.timing}
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* WHO */}
-        <Card className={`p-5 ${CELLS.who.bg}`}>
-          <CellHeader k="who" />
-          {r.stakeholders && (
-            <div className="space-y-3 text-sm">
-              {r.stakeholders.accountable && (
-                <RaciRow label="Aprova (Accountable)" value={r.stakeholders.accountable} highlight />
-              )}
-              {r.stakeholders.responsible && r.stakeholders.responsible.length > 0 && (
-                <RaciRow label="Executa (Responsible)" value={r.stakeholders.responsible.join(", ")} />
-              )}
-              {r.stakeholders.consulted && r.stakeholders.consulted.length > 0 && (
-                <RaciRow label="Consultado (Consulted)" value={r.stakeholders.consulted.join(", ")} />
-              )}
-              {r.stakeholders.informed && r.stakeholders.informed.length > 0 && (
-                <RaciRow label="Informado (Informed)" value={r.stakeholders.informed.join(", ")} />
-              )}
-            </div>
-          )}
-
-          {r.internal_capacity_required && (
-            <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50/50 p-3 dark:border-rose-900 dark:bg-rose-950/20">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">
-                Capacidade interna necessária
-              </p>
-              <p className="mt-1 text-xs">{r.internal_capacity_required}</p>
-            </div>
-          )}
-        </Card>
-
-        {/* HOW — full width (mais conteúdo) */}
-        <Card className={`p-5 lg:col-span-2 ${CELLS.how.bg}`}>
-          <CellHeader k="how" />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Vendors */}
-            {r.vendors && r.vendors.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Fornecedores candidatos (Brasil)
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {r.vendors.map((v, i) => (
-                    <div key={i} className="rounded-lg border border-border/60 bg-card/60 p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-bold">{v.name}</p>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {v.price_range}
-                        </Badge>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">{v.modality}</p>
-                      <p className="mt-1 text-xs leading-relaxed">{v.why_fit}</p>
-                      {v.contact_url && (
-                        <a
-                          href={v.contact_url}
-                          target="_blank"
-                          rel="noopener"
-                          className="mt-1 inline-block text-[11px] text-primary underline"
-                        >
-                          {v.contact_url} ↗
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {r.internal_alternative && (
-                  <div className="mt-2 rounded-lg border border-dashed border-border bg-card/40 p-3 text-xs">
-                    <p className="font-bold text-muted-foreground">Alternativa interna (sem fornecedor)</p>
-                    <p className="mt-1">{r.internal_alternative}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pré-requisitos */}
-            {r.prerequisites && r.prerequisites.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Pré-requisitos
-                </p>
-                <ul className="space-y-1 text-xs">
-                  {r.prerequisites.map((p, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-cyan-600">▸</span>
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Leading indicators */}
-            {r.leading_indicators && r.leading_indicators.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  KPIs intermediários
-                </p>
-                <div className="space-y-2">
-                  {r.leading_indicators.map((m, i) => (
-                    <div key={i} className="rounded border border-border/60 bg-card/60 p-2 text-xs">
-                      <p className="font-semibold">{m.metric}</p>
-                      <p className="text-muted-foreground">
-                        Meta: {m.target} • {m.measurement}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                {r.monitoring_cadence && (
-                  <p className="mt-2 text-[11px] italic text-muted-foreground">
-                    Cadência: {r.monitoring_cadence}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Riscos de execução */}
-            {r.implementation_risks && r.implementation_risks.length > 0 && (
-              <div className="md:col-span-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Riscos de execução + mitigação
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {r.implementation_risks.map((ir, i) => (
-                    <div key={i} className="rounded border border-amber-200 bg-amber-50/40 p-2 text-xs dark:border-amber-900 dark:bg-amber-950/20">
-                      <p className="font-semibold">⚠ {ir.risk}</p>
-                      <p className="mt-1 text-muted-foreground">
-                        <span className="font-semibold">Mitigação:</span> {ir.mitigation}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* HOW MUCH — full width */}
-        <Card className={`p-5 lg:col-span-2 ${CELLS.howMuch.bg}`}>
-          <CellHeader k="howMuch" />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Investimento */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                Investimento
-              </p>
-              <p className="text-2xl font-black text-teal-700 dark:text-teal-400">
-                {r.investment?.total_annual ?? "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {r.investment?.per_employee_month ?? ""}
-              </p>
-              {r.investment?.breakdown && (
-                <div className="mt-2 rounded border border-border/60 bg-card/60 p-2 text-[11px] leading-relaxed">
-                  <p className="font-semibold text-muted-foreground">Detalhamento</p>
-                  <p>{r.investment.breakdown}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Retorno */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                Retorno esperado
-              </p>
-              <div className="space-y-2 text-xs">
-                <div>
-                  <p className="font-bold text-emerald-700 dark:text-emerald-400">Conservador</p>
-                  <p className="leading-relaxed">{r.expected_return?.conservative ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="font-bold text-emerald-700 dark:text-emerald-400">Otimista</p>
-                  <p className="leading-relaxed">{r.expected_return?.optimistic ?? "—"}</p>
-                </div>
-                <div className="rounded bg-card/60 p-2">
-                  <p className="font-semibold">
-                    ⏱ Payback: {r.expected_return?.payback_period ?? "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* REFERÊNCIAS — full width (lista científica completa) */}
-        {references.length > 0 && (
-          <Card className="lg:col-span-2 bg-zinc-50/50 p-5 dark:bg-zinc-950/40">
-            <div className="mb-3 flex items-center gap-3 border-b border-border/60 pb-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-600 to-zinc-700 text-white shadow-sm">
-                <Icon name="menu_book" size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400">
-                  Embasamento científico
-                </p>
-                <p className="text-sm font-bold leading-tight">
-                  Referências usadas na construção deste plano
-                </p>
-              </div>
-              <Badge variant="outline" className="text-[10px]">
-                {references.length}{" "}
-                {references.length === 1 ? "referência" : "referências"}
-              </Badge>
-            </div>
-            <div className="space-y-3 text-xs">
-              {references.map((ref) => (
-                <ReferenceItem key={ref.citation_key} ref={ref} />
-              ))}
-            </div>
-            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] italic text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-              ⚠ Plano gerado com assistência de IA baseada nas referências
-              acima. Não substitui avaliação por profissional habilitado em
-              saúde ocupacional ou psicologia do trabalho.
-            </p>
-          </Card>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
-/* ─── Subcomponentes ─── */
+/* ═══════════════════════════════════════
+   CONTEÚDO DE CADA ABA — limpo, monocromático
+═══════════════════════════════════════ */
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+function TabWhat({ r }: { r: AIRecommendation }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <SectionLabel>Título da ação</SectionLabel>
+        <h3 className="text-xl font-bold tracking-tight leading-snug text-foreground">{r.title}</h3>
+      </div>
+      {r.description && (
+        <div>
+          <SectionLabel>Descrição detalhada</SectionLabel>
+          <p className="text-base leading-relaxed text-foreground/90">{r.description}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabWhy({ r, resolveRef }: { r: AIRecommendation; resolveRef: (k: string | undefined | null) => KbReferenceWithRelevance | null }) {
+  return (
+    <div className="space-y-6">
+      {r.rationale && (
+        <div>
+          <SectionLabel>Justificativa</SectionLabel>
+          <p className="text-base leading-relaxed text-foreground/90">{r.rationale}</p>
+        </div>
+      )}
+
+      {r.risk_if_not_acted && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-foreground mb-1.5">
+            <Icon name="warning" size={14} className="mr-1 inline -mt-0.5" />
+            Consequências se não agir
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{r.risk_if_not_acted}</p>
+        </div>
+      )}
+
+      {r.impact_metrics && r.impact_metrics.length > 0 && (
+        <div>
+          <SectionLabel>Impacto esperado (evidência)</SectionLabel>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {r.impact_metrics.slice(0, 4).map((m, i) => {
+              const resolved = resolveRef(m.evidence?.study_or_case);
+              const fallbackUrl = m.evidence?.url_or_doi;
+              const url = resolved?.url ?? fallbackUrl ?? null;
+              const label = resolved
+                ? `${resolved.authors.split(";")[0].trim()} (${resolved.year})`
+                : `${m.evidence?.study_or_case ?? ""}${m.evidence?.year ? " (" + m.evidence.year + ")" : ""}`;
+              return (
+                <div key={i} className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm font-semibold">{m.metric}</p>
+                  <p className="mt-1 text-sm font-bold text-primary">{m.change}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {label}
+                    {url && (
+                      <a href={url} target="_blank" rel="noopener" className="ml-1 text-primary underline">
+                        fonte ↗
+                      </a>
+                    )}
+                  </p>
+                  {(resolved?.notes || m.evidence?.br_context) && (
+                    <p className="mt-1.5 text-[11px] italic text-muted-foreground">
+                      {resolved?.notes ?? m.evidence?.br_context}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabWhere({ r, targetDepartment }: { r: AIRecommendation; targetDepartment: string | null }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <SectionLabel>Departamento alvo</SectionLabel>
+        <p className="text-2xl font-bold tracking-tight text-foreground">
+          {!targetDepartment || targetDepartment === "all" ? "Toda a empresa" : targetDepartment}
+        </p>
+      </div>
+
+      {r.communication_plan?.channels && r.communication_plan.channels.length > 0 && (
+        <div>
+          <SectionLabel>Canais de comunicação</SectionLabel>
+          <div className="flex flex-wrap gap-2">
+            {r.communication_plan.channels.map((ch, i) => (
+              <Badge key={i} variant="secondary" className="px-3 py-1 text-xs font-medium">{ch}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {r.communication_plan?.key_message && (
+        <div>
+          <SectionLabel>Mensagem-chave</SectionLabel>
+          <div className="rounded-lg border-l-2 border-primary/40 bg-muted/30 p-4">
+            <p className="text-sm italic leading-relaxed text-muted-foreground">
+              &ldquo;{r.communication_plan.key_message}&rdquo;
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabWhen({ r, timeframe }: { r: AIRecommendation; timeframe: string | null }) {
+  return (
+    <div className="space-y-6">
+      {(timeframe || r.time_to_first_value) && (
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+          {timeframe && (
+            <div className="bg-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Janela total</p>
+              <p className="mt-1 text-xl font-bold tracking-tight text-foreground">{timeframe}</p>
+            </div>
+          )}
+          {r.time_to_first_value && (
+            <div className="bg-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Primeiros sinais</p>
+              <p className="mt-1 text-xl font-bold tracking-tight text-foreground">{r.time_to_first_value}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {r.roadmap && r.roadmap.length > 0 && (
+        <div>
+          <SectionLabel>Roadmap de execução</SectionLabel>
+          <div className="relative space-y-3">
+            <div className="absolute left-[19px] top-3 bottom-3 w-px bg-border" />
+            {r.roadmap.map((step, i) => (
+              <div key={i} className="relative flex items-start gap-4">
+                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-sm font-bold text-primary">
+                  {i + 1}
+                </div>
+                <div className="flex-1 rounded-lg border border-border bg-card p-4 min-w-0">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="text-sm font-semibold">{step.phase}</p>
+                    <Badge variant="outline" className="text-[10px] shrink-0">{step.owner_role}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{step.deliverable}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {r.communication_plan?.timing && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+          <span className="font-semibold">Comunicar: </span>
+          <span className="text-muted-foreground">{r.communication_plan.timing}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabWho({ r }: { r: AIRecommendation }) {
+  const raciItems = [
+    { label: "Aprova (Accountable)", value: r.stakeholders?.accountable, highlight: true },
+    { label: "Executa (Responsible)", value: r.stakeholders?.responsible?.join(", ") },
+    { label: "Consultado (Consulted)", value: r.stakeholders?.consulted?.join(", ") },
+    { label: "Informado (Informed)", value: r.stakeholders?.informed?.join(", ") },
+  ].filter((item) => item.value);
+
+  return (
+    <div className="space-y-6">
+      {raciItems.length > 0 && (
+        <div>
+          <SectionLabel>Matriz RACI</SectionLabel>
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {raciItems.map((item, i) => (
+              <div
+                key={i}
+                className={`flex items-start gap-4 p-4 ${item.highlight ? "bg-primary/5" : "bg-card"}`}
+              >
+                <div className="w-44 shrink-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                </div>
+                <p className="text-sm font-medium text-foreground">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {r.internal_capacity_required && (
+        <div>
+          <SectionLabel>Capacidade interna necessária</SectionLabel>
+          <p className="text-sm leading-relaxed text-foreground/90">{r.internal_capacity_required}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabHow({ r }: { r: AIRecommendation }) {
+  return (
+    <div className="space-y-6">
+      {r.vendors && r.vendors.length > 0 && (
+        <div>
+          <SectionLabel>Fornecedores candidatos (Brasil)</SectionLabel>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {r.vendors.map((v, i) => (
+              <div key={i} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="text-sm font-bold">{v.name}</p>
+                  <Badge variant="secondary" className="text-[10px] shrink-0">{v.price_range}</Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">{v.modality}</p>
+                <p className="text-xs leading-relaxed">{v.why_fit}</p>
+                {v.contact_url && (
+                  <a href={v.contact_url} target="_blank" rel="noopener" className="mt-2 inline-block text-[11px] text-primary underline">
+                    {v.contact_url} ↗
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+          {r.internal_alternative && (
+            <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/20 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                Alternativa interna (sem fornecedor)
+              </p>
+              <p className="text-xs leading-relaxed">{r.internal_alternative}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {r.prerequisites && r.prerequisites.length > 0 && (
+          <div>
+            <SectionLabel>Pré-requisitos</SectionLabel>
+            <ul className="space-y-2">
+              {r.prerequisites.map((p, i) => (
+                <li key={i} className="flex gap-2 text-sm">
+                  <Icon name="check_circle" size={16} className="mt-0.5 shrink-0 text-primary/70" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {r.leading_indicators && r.leading_indicators.length > 0 && (
+          <div>
+            <SectionLabel>KPIs intermediários</SectionLabel>
+            <div className="space-y-2">
+              {r.leading_indicators.map((m, i) => (
+                <div key={i} className="rounded-lg border border-border bg-card p-3">
+                  <p className="text-sm font-semibold">{m.metric}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Meta: {m.target} · {m.measurement}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {r.monitoring_cadence && (
+              <p className="mt-2 text-xs italic text-muted-foreground">Cadência: {r.monitoring_cadence}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {r.implementation_risks && r.implementation_risks.length > 0 && (
+        <div>
+          <SectionLabel>Riscos de execução e mitigação</SectionLabel>
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {r.implementation_risks.map((ir, i) => (
+              <div key={i} className="p-4">
+                <p className="text-sm font-semibold flex items-start gap-2">
+                  <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  {ir.risk}
+                </p>
+                <p className="mt-1.5 text-xs text-muted-foreground pl-6">
+                  <span className="font-semibold text-foreground">Mitigação: </span>{ir.mitigation}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabHowMuch({ r }: { r: AIRecommendation }) {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+        <div className="bg-card p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Investimento anual</p>
+          <p className="text-3xl font-bold tracking-tight text-foreground">{r.investment?.total_annual ?? "—"}</p>
+          {r.investment?.per_employee_month && (
+            <p className="mt-1 text-xs text-muted-foreground">{r.investment.per_employee_month}</p>
+          )}
+        </div>
+        <div className="bg-card p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Período de payback</p>
+          <p className="text-3xl font-bold tracking-tight text-primary">{r.expected_return?.payback_period ?? "—"}</p>
+        </div>
+      </div>
+
+      {r.investment?.breakdown && (
+        <div>
+          <SectionLabel>Detalhamento do investimento</SectionLabel>
+          <p className="text-sm leading-relaxed text-foreground/90">{r.investment.breakdown}</p>
+        </div>
+      )}
+
+      {(r.expected_return?.conservative || r.expected_return?.optimistic) && (
+        <div>
+          <SectionLabel>Cenários de retorno</SectionLabel>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {r.expected_return?.conservative && r.expected_return.conservative !== "N/D" && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Conservador</p>
+                <p className="text-sm leading-relaxed">{r.expected_return.conservative}</p>
+              </div>
+            )}
+            {r.expected_return?.optimistic && r.expected_return.optimistic !== "N/D" && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Otimista</p>
+                <p className="text-sm leading-relaxed">{r.expected_return.optimistic}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   SUBCOMPONENTES AUXILIARES
+═══════════════════════════════════════ */
+
+function KpiCell({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1.5 px-4 py-4 sm:px-5">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Icon name={icon} size={13} />
+        <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-[13px] font-semibold leading-snug text-foreground break-words">
+        {value}
+      </p>
+    </div>
+  );
+}
 
 const RELEVANCE_LABEL: Record<string, { label: string; cls: string }> = {
-  primary: { label: "Primária", cls: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
-  secondary: { label: "Secundária", cls: "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300" },
-  context: { label: "Contexto", cls: "bg-zinc-50 text-zinc-500 dark:bg-zinc-950 dark:text-zinc-400" },
+  primary:   { label: "Primária",   cls: "bg-primary/10 text-primary" },
+  secondary: { label: "Secundária", cls: "bg-muted text-muted-foreground" },
+  context:   { label: "Contexto",   cls: "bg-muted/50 text-muted-foreground/80" },
 };
 
 const EVIDENCE_TYPE_LABEL: Record<string, string> = {
-  guideline: "Diretriz",
+  guideline:         "Diretriz",
   systematic_review: "Revisão sistemática",
-  meta_analysis: "Meta-análise",
-  rct: "Ensaio randomizado",
-  observational: "Observacional",
-  government_data: "Dado oficial",
-  theoretical: "Teórico",
-  validation_study: "Validação",
-  book: "Livro",
+  meta_analysis:     "Meta-análise",
+  rct:               "Ensaio randomizado",
+  observational:     "Observacional",
+  government_data:   "Dado oficial",
+  theoretical:       "Teórico",
+  validation_study:  "Validação",
+  book:              "Livro",
 };
 
 function ReferenceItem({ ref }: { ref: KbReferenceWithRelevance }) {
   const rel = RELEVANCE_LABEL[ref.relevance] ?? RELEVANCE_LABEL.secondary;
   return (
-    <div className="rounded-lg border border-border/60 bg-card/80 p-3">
+    <div className="rounded-lg border border-border bg-card p-3">
       <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
         <Badge className={`text-[9px] ${rel.cls}`}>{rel.label}</Badge>
         <Badge variant="outline" className="text-[9px]">
           {EVIDENCE_TYPE_LABEL[ref.evidence_type] ?? ref.evidence_type}
         </Badge>
         {ref.certainty_level && (
-          <Badge variant="outline" className="text-[9px]">
-            Certeza {ref.certainty_level}
-          </Badge>
+          <Badge variant="outline" className="text-[9px]">Certeza {ref.certainty_level}</Badge>
         )}
         {ref.region === "brazil" && (
-          <Badge variant="outline" className="border-green-300 text-[9px] text-green-700">
-            🇧🇷 BR
-          </Badge>
+          <Badge variant="outline" className="text-[9px]">BR</Badge>
         )}
-        <span className="font-mono text-[10px] text-muted-foreground">
-          [{ref.citation_key}]
-        </span>
+        <span className="font-mono text-[10px] text-muted-foreground">[{ref.citation_key}]</span>
       </div>
-      <p className="leading-snug">
-        {ref.abnt_citation}
-      </p>
+      <p className="leading-snug">{ref.abnt_citation}</p>
       {ref.specific_claim && (
-        <p className="mt-1.5 rounded border-l-2 border-primary/50 bg-primary/5 p-1.5 pl-2 italic text-muted-foreground">
+        <p className="mt-1.5 rounded border-l-2 border-primary/40 bg-muted/40 p-1.5 pl-2 italic text-muted-foreground">
           → <strong>Alegação usada:</strong> {ref.specific_claim}
         </p>
       )}
-      <a
-        href={ref.url}
-        target="_blank"
-        rel="noopener"
-        className="mt-1.5 inline-block text-[11px] text-primary underline"
-      >
+      <a href={ref.url} target="_blank" rel="noopener" className="mt-1.5 inline-block text-[11px] text-primary underline">
         Acessar fonte ↗
       </a>
-    </div>
-  );
-}
-
-function MiniKpi({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <Icon name={icon} size={16} className="mt-0.5 text-primary" />
-      <div className="min-w-0">
-        <p className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {label}
-        </p>
-        <p className="truncate text-xs font-semibold">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function RaciRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className={highlight ? "rounded border border-rose-300 bg-rose-100/40 p-2 dark:border-rose-800 dark:bg-rose-950/30" : ""}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm font-medium">{value}</p>
     </div>
   );
 }
