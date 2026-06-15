@@ -100,6 +100,7 @@ export interface AIRecommendation {
   description: string;
   quick_action: string;
   rationale: string;
+  recommendation_status: "MITIGAR" | "RESOLVER" | "TRANSFERIR" | "ACEITAR";
 
   // Execução
   roadmap: {

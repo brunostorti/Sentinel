@@ -114,6 +114,21 @@ export function PlanCard({
               <Icon name={status.icon} size={10} />
               {status.label}
             </span>
+            {rec.recommendation_status && (
+              <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                rec.recommendation_status === "MITIGAR" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+                rec.recommendation_status === "RESOLVER" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                rec.recommendation_status === "TRANSFERIR" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+                "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              }`}>
+                <Icon name={
+                  rec.recommendation_status === "MITIGAR" ? "shield" :
+                  rec.recommendation_status === "RESOLVER" ? "build" :
+                  rec.recommendation_status === "TRANSFERIR" ? "swap_horiz" : "check"
+                } size={10} />
+                {rec.recommendation_status}
+              </span>
+            )}
             {rec.nr1_compliance && (
               <span className="inline-flex items-center gap-0.5 rounded-md bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
                 <Icon name="gavel" size={10} />

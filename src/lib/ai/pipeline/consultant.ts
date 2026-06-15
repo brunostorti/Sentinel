@@ -204,6 +204,7 @@ ${referencesBlock || "(nenhuma referência curada)"}
       "description": "3-4 frases",
       "quick_action": "primeiros 30 dias, 1-2 frases",
       "rationale": "por que ISSO para ESTA empresa (cite perfil)",
+      "recommendation_status": "Escolha exatamente um: MITIGAR, RESOLVER, TRANSFERIR ou ACEITAR",
       "roadmap": [
         { "phase": "Semana 1-2", "deliverable": "...", "owner_role": "..." }
       ],

@@ -55,8 +55,12 @@ const EVIDENCE_TYPE_LABEL: Record<string, string> = {
   book: "Livro",
 };
 
-export default async function MetodologiaPage() {
+import { InstrumentChoices } from "./instrument-choices";
+
+export default async function MetodologiaPage(props: { searchParams?: Promise<{ tab?: string }> }) {
   const allRefs = await listAllReferences();
+  const searchParams = await props.searchParams;
+  const tab = searchParams?.tab || "metodologia";
 
   // Agrupa por categoria
   const grouped = EVIDENCE_GROUPS.map((g) => ({
@@ -84,7 +88,33 @@ export default async function MetodologiaPage() {
         </p>
       </div>
 
-      {/* KPIs */}
+      {/* Tabs Navigation */}
+      <div className="flex gap-6 border-b border-border/60">
+        <Link 
+          href="?tab=metodologia" 
+          className={`pb-3 text-sm font-bold uppercase tracking-widest transition-colors ${
+            tab === 'metodologia' 
+              ? 'border-b-2 border-primary text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Base Científica
+        </Link>
+        <Link 
+          href="?tab=pesquisas" 
+          className={`pb-3 text-sm font-bold uppercase tracking-widest transition-colors ${
+            tab === 'pesquisas' 
+              ? 'border-b-2 border-primary text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Escolhas de Pesquisa
+        </Link>
+      </div>
+
+      {tab === "metodologia" ? (
+        <>
+          {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           icon="library_books"
@@ -241,6 +271,10 @@ export default async function MetodologiaPage() {
           </li>
         </ul>
       </Card>
+      </>
+      ) : (
+        <InstrumentChoices />
+      )}
 
       {/* Footer com links cross unificados */}
       <div className="flex flex-wrap items-center gap-3 border-t border-border/80 pt-6">

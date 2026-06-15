@@ -57,7 +57,7 @@ export function ActionPlansList({
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortBy>("priority");
   const [openGroups, setOpenGroups] = useState<Set<string>>(
-    new Set(["PENDING_REVIEW"])
+    new Set(["MITIGAR", "RESOLVER", "TRANSFERIR", "ACEITAR", "APPROVED", "COMPLETED"])
   );
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
@@ -66,6 +66,11 @@ export function ActionPlansList({
   );
 
   const pending = allPlans.filter((p) => p.status === "PENDING_REVIEW");
+  const pendingMitigar = pending.filter(p => p.recommendation.recommendation_status === "MITIGAR" || !p.recommendation.recommendation_status);
+  const pendingResolver = pending.filter(p => p.recommendation.recommendation_status === "RESOLVER");
+  const pendingTransferir = pending.filter(p => p.recommendation.recommendation_status === "TRANSFERIR");
+  const pendingAceitar = pending.filter(p => p.recommendation.recommendation_status === "ACEITAR");
+
   const approved = allPlans.filter((p) => p.status === "APPROVED");
   const completed = allPlans.filter((p) => p.status === "COMPLETED");
   const rejected = allPlans.filter((p) => p.status === "REJECTED");
@@ -201,37 +206,96 @@ export function ActionPlansList({
         </Card>
       )}
 
-      {/* ─── Grupo: Pendentes (sempre destacado, ação primária) ─── */}
-      <Group
-        title="Aguardando revisão"
-        icon="schedule"
-        accent="amber"
-        count={pending.length}
-        open={openGroups.has("PENDING_REVIEW")}
-        onToggle={() => toggleGroup("PENDING_REVIEW")}
-        action={
-          canManage && pending.length > 0 ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 gap-1 text-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowBulkConfirm(true);
-              }}
-            >
-              <Icon name="done_all" size={12} />
-              Aprovar todos
-            </Button>
-          ) : null
-        }
-      >
-        {pending.length === 0 ? (
+      {/* ─── Bulk approve actions ─── */}
+      {canManage && pending.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
+            onClick={() => setShowBulkConfirm(true)}
+          >
+            <Icon name="done_all" size={16} />
+            Aprovar todos os {pending.length} pendentes
+          </Button>
+        </div>
+      )}
+
+      {/* ─── Grupos de Recomendação (Pendentes) ─── */}
+      {pending.length > 0 && (
+        <div className="space-y-4 relative">
+          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-amber-500/20 rounded-r-md" />
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-2">Aguardando Revisão</h2>
+          
+          <Group
+            title="Mitigar Riscos"
+            icon="shield"
+            accent="amber"
+            count={pendingMitigar.length}
+            open={openGroups.has("MITIGAR")}
+            onToggle={() => toggleGroup("MITIGAR")}
+          >
+            {pendingMitigar.length === 0 ? null : (
+              sortPlans(pendingMitigar).map((p) => <CompactPlanRow key={p.id} plan={p} />)
+            )}
+          </Group>
+
+          <Group
+            title="Resolver Problemas"
+            icon="build"
+            accent="blue"
+            count={pendingResolver.length}
+            open={openGroups.has("RESOLVER")}
+            onToggle={() => toggleGroup("RESOLVER")}
+          >
+            {pendingResolver.length === 0 ? null : (
+              sortPlans(pendingResolver).map((p) => <CompactPlanRow key={p.id} plan={p} />)
+            )}
+          </Group>
+
+          <Group
+            title="Transferir Responsabilidade"
+            icon="swap_horiz"
+            accent="zinc"
+            count={pendingTransferir.length}
+            open={openGroups.has("TRANSFERIR")}
+            onToggle={() => toggleGroup("TRANSFERIR")}
+          >
+            {pendingTransferir.length === 0 ? null : (
+              sortPlans(pendingTransferir).map((p) => <CompactPlanRow key={p.id} plan={p} />)
+            )}
+          </Group>
+
+          <Group
+            title="Aceitar Risco"
+            icon="check"
+            accent="emerald"
+            count={pendingAceitar.length}
+            open={openGroups.has("ACEITAR")}
+            onToggle={() => toggleGroup("ACEITAR")}
+          >
+            {pendingAceitar.length === 0 ? null : (
+              sortPlans(pendingAceitar).map((p) => <CompactPlanRow key={p.id} plan={p} />)
+            )}
+          </Group>
+        </div>
+      )}
+
+      {pending.length === 0 && (
+        <Group
+          title="Aguardando revisão"
+          icon="schedule"
+          accent="amber"
+          count={0}
+          open={false}
+          onToggle={() => {}}
+        >
           <EmptyGroup text="Nenhum plano aguardando revisão." />
-        ) : (
-          sortPlans(pending).map((p) => <CompactPlanRow key={p.id} plan={p} />)
-        )}
-      </Group>
+        </Group>
+      )}
+
+      <div className="h-4" />
+      <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-2">Planos Processados</h2>
 
       {/* ─── Grupo: Aprovados ─── */}
       <Group
@@ -425,6 +489,21 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
             <Badge variant="outline" className="h-5 gap-0.5 text-[10px]">
               <Icon name="gavel" size={10} />
               NR-1
+            </Badge>
+          )}
+          {rec.recommendation_status && (
+            <Badge variant="outline" className={`h-5 gap-0.5 text-[10px] ${
+              rec.recommendation_status === "MITIGAR" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+              rec.recommendation_status === "RESOLVER" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+              rec.recommendation_status === "TRANSFERIR" ? "bg-purple-500/10 text-purple-600 border-purple-500/20" :
+              "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+            }`}>
+              <Icon name={
+                rec.recommendation_status === "MITIGAR" ? "shield" :
+                rec.recommendation_status === "RESOLVER" ? "build" :
+                rec.recommendation_status === "TRANSFERIR" ? "swap_horiz" : "check"
+              } size={10} />
+              {rec.recommendation_status}
             </Badge>
           )}
           {plan.status === "COMPLETED" && plan.outcome && (
