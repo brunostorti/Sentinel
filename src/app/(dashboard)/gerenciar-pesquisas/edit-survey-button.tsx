@@ -329,7 +329,11 @@ export function EditSurveyButton({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMatriculaOption("todos")}
+                    onClick={() => {
+                      setMatriculaOption("todos");
+                      setTargetAll(false);
+                      setSelectedDepartments(departments.map(d => d.id));
+                    }}
                     className={`rounded-lg border p-3 text-left transition-colors ${
                       matriculaOption === "todos"
                         ? "border-primary bg-primary/5 text-primary"
