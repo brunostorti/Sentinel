@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import questionsData from "./questions-data.json";
 
 interface QuestionDef {
@@ -15,182 +17,196 @@ interface QuestionDef {
 
 const typedQuestionsData: Record<string, QuestionDef[]> = questionsData as any;
 
-const INSTRUMENTS = [
+const INSTRUMENTS_CARDS = [
   {
     id: "copsoq-ii",
-    title: "COPSOQ II",
-    description: "Copenhagen Psychosocial Questionnaire. Validação brasileira mais utilizada. Avalia amplo espectro de riscos.",
-    versions: [
-      {
-        name: "Versão Curta",
-        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.short).length || 41,
-        recommended: false,
-        desc: "Ideal para empresas pequenas ou pulsos frequentes.",
-        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.short),
-      },
-      {
-        name: "Versão Média",
-        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.medium).length || 76,
-        recommended: true,
-        desc: "Avaliação padrão e completa da organização.",
-        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.medium),
-      },
-      {
-        name: "Versão Longa",
-        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.long).length || 119,
-        recommended: false,
-        desc: "Uso acadêmico ou investigações profundas.",
-        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.long),
-      },
+    title: "COPSOQ II — Versão Portuguesa",
+    subtitle: "119 questões • ~25 minutos",
+    icon: "assignment",
+    color: "bg-blue-100 text-blue-600",
+    desc: "Copenhagen Psychosocial Questionnaire II. Validação portuguesa (N=4.162 trabalhadores). Avalia fatores psicossociais no trabalho em 35 dimensões.",
+    objetivo: "Médias e grandes corporações que buscam conformidade robusta com regulação de saúde mental (Lei 14.831) e avaliação profunda.",
+    metricas: [
+      "Exigências quantitativas, cognitivas e emocionais",
+      "Qualidade de liderança e apoio social",
+      "Interface trabalho-família e satisfação laboral",
+      "Burnout, stress e comportamentos ofensivos"
     ],
-  },
-  {
-    id: "copsoq-iii",
-    title: "COPSOQ III",
-    description: "Versão mais atual do COPSOQ, com atualizações de dimensões internacionais. Menos benchmarking nacional disponível.",
     versions: [
-      {
-        name: "Core Version",
-        count: typedQuestionsData["copsoq-iii"]?.length || 85,
-        recommended: true,
-        desc: "O modelo padrão da nova versão internacional.",
-        questions: typedQuestionsData["copsoq-iii"],
-      },
-    ],
+      { name: "Curta", data: typedQuestionsData["copsoq-ii"]?.filter(q => q.short) },
+      { name: "Média", data: typedQuestionsData["copsoq-ii"]?.filter(q => q.medium) },
+      { name: "Longa", data: typedQuestionsData["copsoq-ii"]?.filter(q => q.long) },
+    ]
   },
   {
     id: "jss",
-    title: "JSS (Job Stress Survey)",
-    description: "Mede especificamente o nível de estresse ocupacional e a severidade percebida de eventos no trabalho.",
-    versions: [
-      {
-        name: "Versão Única",
-        count: typedQuestionsData["jss"]?.length || 30,
-        recommended: false,
-        desc: "Instrumento focado apenas em estresse, não clima geral.",
-        questions: typedQuestionsData["jss"],
-      },
+    title: "JSS — Job Satisfaction Survey",
+    subtitle: "36 questões • ~10 minutos",
+    icon: "emoji_events",
+    color: "bg-purple-100 text-purple-600",
+    desc: "Job Satisfaction Survey de Paul Spector (1985). Tradução e validação brasileira pela UNICAMP (2013). Avalia a satisfação no trabalho em 9 facetas com 36 itens.",
+    objetivo: "Organizações focadas em clima, satisfação interna de equipes, retenção de talentos e relacionamento de liderança.",
+    metricas: [
+      "Satisfação com supervisão e colegas",
+      "Recompensas, benefícios e plano de carreira",
+      "Comunicação interna e natureza do trabalho"
     ],
+    versions: [
+      { name: "Única", data: typedQuestionsData["jss"] }
+    ]
   },
   {
     id: "olbi",
-    title: "OLBI (Oldenburg Burnout)",
-    description: "Instrumento de rápida aplicação exclusivo para detecção de exaustão e desengajamento (Burnout).",
-    versions: [
-      {
-        name: "Versão Única",
-        count: typedQuestionsData["olbi"]?.length || 16,
-        recommended: false,
-        desc: "Excelente para avaliar burnout de forma independente.",
-        questions: typedQuestionsData["olbi"],
-      },
+    title: "OLBI — Oldenburg Burnout Inventory",
+    subtitle: "16 questões • ~5 minutos",
+    icon: "warning",
+    color: "bg-green-100 text-green-600",
+    desc: "Inventário de Burnout de Oldenburg (Demerouti et al., 2003). Avalia duas dimensões centrais do burnout: exaustão e desengajamento. 16 itens com escala Likert de 4 pontos (concordância).",
+    objetivo: "Equipes de alta performance, startups, setores de atendimento ao cliente ou áreas de alto risco de esgotamento profissional.",
+    metricas: [
+      "Exaustão física e fadiga cognitiva",
+      "Distanciamento em relação às tarefas",
+      "Nível de desengajamento"
     ],
+    versions: [
+      { name: "Única", data: typedQuestionsData["olbi"] }
+    ]
   },
+  {
+    id: "copsoq-iii",
+    title: "COPSOQ III — Versão Média",
+    subtitle: "70 questões • ~20 minutos",
+    icon: "science",
+    color: "bg-orange-100 text-orange-600",
+    desc: "Copenhagen Psychosocial Questionnaire, 3a edição (Burr et al., 2019). Versão Média com 70 itens em 26 escalas. Avalia fatores psicossociais no trabalho com escores de 0-100. Escala Work Engagement (UWES) excluída por exigir licença comercial.",
+    objetivo: "Empresas modernas focadas em engajamento, novas dinâmicas laborais e mapeamento de riscos psicossociais atualizado.",
+    metricas: [
+      "Demandas emocionais e ritmo de trabalho",
+      "Clareza e conflito de papéis",
+      "Capital social e confiança organizacional",
+      "Sintomas de estresse, burnout e depressão"
+    ],
+    versions: [
+      { name: "Core Version", data: typedQuestionsData["copsoq-iii"] }
+    ]
+  }
 ];
 
 export function InstrumentChoices() {
-  const [openInstrument, setOpenInstrument] = useState<string | null>("copsoq-ii");
-  const [openVersion, setOpenVersion] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedInstrument, setSelectedInstrument] = useState<typeof INSTRUMENTS_CARDS[0] | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("");
+
+  const handleOpenModal = (inst: typeof INSTRUMENTS_CARDS[0]) => {
+    setSelectedInstrument(inst);
+    setActiveTab(inst.versions[0].name);
+    setModalOpen(true);
+  };
+
+  const activeQuestions = selectedInstrument?.versions.find(v => v.name === activeTab)?.data || [];
 
   return (
-    <div className="space-y-6">
-      <div className="border-b border-border/40 pb-2">
-        <h2 className="text-xl font-black tracking-tight text-foreground">Escolhas de Pesquisa</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Explore os instrumentos psicossociais disponíveis e visualize todas as perguntas de cada versão.
-        </p>
-      </div>
+    <>
+      <div className="grid gap-6 md:grid-cols-2 mt-6">
+        {INSTRUMENTS_CARDS.map((inst) => (
+          <Card key={inst.id} className="border border-border/50 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${inst.color}`}>
+                <Icon name={inst.icon} size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-foreground">{inst.title}</h3>
+                <p className="text-sm text-muted-foreground font-medium">{inst.subtitle}</p>
+              </div>
+            </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {INSTRUMENTS.map((inst) => {
-          const isOpen = openInstrument === inst.id;
-          return (
-            <Card
-              key={inst.id}
-              className={`overflow-hidden transition-colors ${
-                isOpen ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/50"
-              }`}
-            >
-              <button
-                className="flex w-full items-start justify-between p-5 text-left"
-                onClick={() => setOpenInstrument(isOpen ? null : inst.id)}
+            <p className="text-[13px] text-muted-foreground mt-4 leading-relaxed flex-1">
+              {inst.desc}
+            </p>
+
+            <div className="bg-muted/30 p-4 rounded-xl mt-5 border border-border/50">
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                <span className="text-red-500">🎯</span> Objetivo & Perfil Comercial:
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                {inst.objetivo}
+              </p>
+            </div>
+
+            <div className="mt-5 px-1">
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground/80">
+                <span className="text-red-500">☑️</span> Métricas e Dimensões principais:
+              </div>
+              <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1.5 leading-relaxed marker:text-muted-foreground/50">
+                {inst.metricas.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-7 flex gap-3">
+              <button 
+                onClick={() => handleOpenModal(inst)}
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-2.5 text-[13px] font-bold text-foreground hover:bg-muted transition-colors"
               >
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">{inst.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2 pr-4">{inst.description}</p>
-                </div>
-                <Icon
-                  name={isOpen ? "expand_less" : "expand_more"}
-                  size={24}
-                  className="text-muted-foreground transition-transform shrink-0"
-                />
+                <Icon name="visibility" size={16} />
+                Ver Perguntas
               </button>
-
-              {isOpen && (
-                <div className="border-t border-border bg-muted/10 p-5 space-y-5">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Versões Disponíveis</h4>
-                  
-                  {inst.versions.map((v, i) => {
-                    const versionKey = `${inst.id}-${i}`;
-                    const isVersionOpen = openVersion === versionKey;
-                    
-                    return (
-                      <div key={i} className="rounded-xl border border-border bg-card p-4 relative shadow-sm">
-                        {v.recommended && (
-                          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
-                            Recomendado
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between mb-1 mt-1">
-                          <span className="font-bold text-foreground text-sm">{v.name} ({v.count} perguntas)</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-4">{v.desc}</p>
-                        
-                        <button 
-                          onClick={() => setOpenVersion(isVersionOpen ? null : versionKey)}
-                          className="w-full flex items-center justify-between bg-muted/30 p-3 rounded-lg text-xs font-semibold text-foreground/80 border border-border/50 hover:bg-muted/50 transition-colors mb-4"
-                        >
-                          Ver perguntas ({v.count})
-                          <Icon name={isVersionOpen ? "expand_less" : "expand_more"} size={16} />
-                        </button>
-
-                        {isVersionOpen && (
-                          <div className="mb-4 bg-background p-3 rounded-lg text-xs text-muted-foreground border border-border max-h-60 overflow-y-auto">
-                            <ul className="space-y-2">
-                              {v.questions?.map((q, j) => (
-                                <li key={j} className="flex gap-2 pb-2 border-b border-border/40 last:border-0 last:pb-0">
-                                  <span className="opacity-50 font-mono">{j + 1}.</span>
-                                  <span>{q.text}</span>
-                                </li>
-                              ))}
-                              {(!v.questions || v.questions.length === 0) && (
-                                <li className="italic">Lista de perguntas não encontrada.</li>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-
-                        <Link 
-                          href="/gerenciar-pesquisas" 
-                          className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                            v.recommended 
-                              ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                              : "bg-card border border-border text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          Escolher pesquisa
-                          <Icon name="arrow_forward" size={16} />
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
-          );
-        })}
+              <Link 
+                href="/gerenciar-pesquisas"
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#1D5ED8] px-4 py-2.5 text-[13px] font-bold text-white hover:bg-[#1D5ED8]/90 transition-colors shadow-sm"
+              >
+                Usar Pesquisa
+              </Link>
+            </div>
+          </Card>
+        ))}
       </div>
-    </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col p-0 overflow-hidden gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-border bg-muted/20">
+            <DialogTitle className="text-xl font-black">
+              {selectedInstrument?.title} — Perguntas
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Visualize a lista completa de perguntas do instrumento.
+            </p>
+          </DialogHeader>
+
+          {selectedInstrument && selectedInstrument.versions.length > 1 && (
+            <div className="px-6 pt-4 flex gap-2 border-b border-border">
+              {selectedInstrument.versions.map((v) => (
+                <button
+                  key={v.name}
+                  onClick={() => setActiveTab(v.name)}
+                  className={`pb-3 px-2 text-sm font-bold transition-colors border-b-2 ${
+                    activeTab === v.name
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {v.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-3">
+              {activeQuestions?.map((q, idx) => (
+                <div key={idx} className="flex gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-colors">
+                  <span className="font-mono text-muted-foreground text-sm mt-0.5 min-w-[24px]">{idx + 1}.</span>
+                  <p className="text-sm text-foreground/90 leading-relaxed">{q.text}</p>
+                </div>
+              ))}
+              {(!activeQuestions || activeQuestions.length === 0) && (
+                <p className="text-sm text-muted-foreground italic">Lista de perguntas não encontrada.</p>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
