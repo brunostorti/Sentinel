@@ -105,6 +105,10 @@ export default async function InicioPage() {
 
   const steps = [
     {
+      title: "Escolher pesquisas",
+      description: "De acordo com o que mais se encaixa para a sua empresa.",
+    },
+    {
       title: "Criar pesquisa",
       description: "Escolha o instrumento e os setores que vão participar.",
     },
@@ -255,7 +259,7 @@ export default async function InicioPage() {
           <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-primary" />
         </div>
 
-        <div className="relative grid gap-8 md:grid-cols-5">
+        <div className="relative grid gap-8 md:grid-cols-6">
           {/* linha conectora (desktop) */}
           <div className="absolute left-0 top-7 hidden h-px w-full bg-border md:block" />
           {steps.map((step, idx) => (
