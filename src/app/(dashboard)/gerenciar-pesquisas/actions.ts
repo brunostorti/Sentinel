@@ -69,6 +69,76 @@ export async function createSurvey(payload: CreateSurveyPayload) {
   return { success: true };
 }
 
+export async function editSurvey(surveyId: string, payload: CreateSurveyPayload) {
+  if (!payload.title.trim()) {
+    return { error: "Título é obrigatório." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return { error: "Não autenticado." };
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("company_id, role")
+    .eq("auth_id", user.user.id)
+    .single();
+
+  if (!userData || userData.company_id !== payload.companyId) {
+    return { error: "Sem permissão." };
+  }
+
+  if (userData.role !== "HR" && userData.role !== "ADMIN") {
+    return { error: "Apenas RH e Admin podem editar pesquisas." };
+  }
+
+  // Verify survey belongs to company and is DRAFT
+  const { data: survey } = await supabase
+    .from("surveys")
+    .select("id, company_id, status")
+    .eq("id", surveyId)
+    .single();
+
+  if (!survey || survey.company_id !== userData.company_id) {
+    return { error: "Pesquisa não encontrada." };
+  }
+
+  if (survey.status !== "DRAFT") {
+    return { error: "Apenas pesquisas em rascunho podem ser editadas." };
+  }
+
+  const { error } = await supabase
+    .from("surveys")
+    .update({
+      title: payload.title.trim(),
+      instrument_id: payload.instrumentId,
+      version: payload.version,
+      expires_at: payload.expiresAt
+        ? new Date(payload.expiresAt).toISOString()
+        : null,
+    })
+    .eq("id", surveyId);
+
+  if (error) {
+    return { error: "Erro ao editar pesquisa. Tente novamente." };
+  }
+
+  // Clear previous target departments
+  await supabase.from("survey_target_departments").delete().eq("survey_id", surveyId);
+
+  // Save new target departments
+  if (payload.targetDepartmentIds && payload.targetDepartmentIds.length > 0) {
+    const targetRows = payload.targetDepartmentIds.map((deptId) => ({
+      survey_id: surveyId,
+      department_id: deptId,
+    }));
+    await supabase.from("survey_target_departments").insert(targetRows);
+  }
+
+  return { success: true };
+}
+
 export async function activateSurvey(surveyId: string) {
   const supabase = await createClient();
 
