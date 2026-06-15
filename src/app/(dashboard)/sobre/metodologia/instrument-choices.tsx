@@ -3,8 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
+import questionsData from "./questions-data.json";
+
+interface QuestionDef {
+  text: string;
+  short?: boolean;
+  medium?: boolean;
+  long?: boolean;
+}
+
+const typedQuestionsData: Record<string, QuestionDef[]> = questionsData as any;
 
 const INSTRUMENTS = [
   {
@@ -13,31 +22,25 @@ const INSTRUMENTS = [
     description: "Copenhagen Psychosocial Questionnaire. Validação brasileira mais utilizada. Avalia amplo espectro de riscos.",
     versions: [
       {
-        name: "Versão Curta (41)",
+        name: "Versão Curta",
+        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.short).length || 41,
         recommended: false,
         desc: "Ideal para empresas pequenas ou pulsos frequentes.",
-        samples: [
-          "O seu trabalho exige que você trabalhe muito rápido?",
-          "Você se sente esgotado emocionalmente?",
-        ],
+        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.short),
       },
       {
-        name: "Versão Média (76)",
+        name: "Versão Média",
+        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.medium).length || 76,
         recommended: true,
         desc: "Avaliação padrão e completa da organização.",
-        samples: [
-          "Você tem influência sobre a quantidade de trabalho a fazer?",
-          "Seu chefe imediato resolve bem os conflitos?",
-        ],
+        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.medium),
       },
       {
-        name: "Versão Longa (119)",
+        name: "Versão Longa",
+        count: typedQuestionsData["copsoq-ii"]?.filter(q => q.long).length || 119,
         recommended: false,
         desc: "Uso acadêmico ou investigações profundas.",
-        samples: [
-          "Você tem que esconder os seus sentimentos no trabalho?",
-          "Você sofreu ameaças de violência no seu local de trabalho?",
-        ],
+        questions: typedQuestionsData["copsoq-ii"]?.filter(q => q.long),
       },
     ],
   },
@@ -47,13 +50,11 @@ const INSTRUMENTS = [
     description: "Versão mais atual do COPSOQ, com atualizações de dimensões internacionais. Menos benchmarking nacional disponível.",
     versions: [
       {
-        name: "Core Version (85)",
+        name: "Core Version",
+        count: typedQuestionsData["copsoq-iii"]?.length || 85,
         recommended: true,
         desc: "O modelo padrão da nova versão internacional.",
-        samples: [
-          "Existem exigências contraditórias no seu trabalho?",
-          "Você confia na gestão da empresa?",
-        ],
+        questions: typedQuestionsData["copsoq-iii"],
       },
     ],
   },
@@ -63,13 +64,11 @@ const INSTRUMENTS = [
     description: "Mede especificamente o nível de estresse ocupacional e a severidade percebida de eventos no trabalho.",
     versions: [
       {
-        name: "Única (30)",
+        name: "Versão Única",
+        count: typedQuestionsData["jss"]?.length || 30,
         recommended: false,
         desc: "Instrumento focado apenas em estresse, não clima geral.",
-        samples: [
-          "Falta de oportunidade de crescimento?",
-          "Lidar com clientes ou público difíceis?",
-        ],
+        questions: typedQuestionsData["jss"],
       },
     ],
   },
@@ -79,13 +78,11 @@ const INSTRUMENTS = [
     description: "Instrumento de rápida aplicação exclusivo para detecção de exaustão e desengajamento (Burnout).",
     versions: [
       {
-        name: "Única (16)",
+        name: "Versão Única",
+        count: typedQuestionsData["olbi"]?.length || 16,
         recommended: false,
         desc: "Excelente para avaliar burnout de forma independente.",
-        samples: [
-          "Ultimamente, tendo a pensar menos no meu trabalho durante o tempo livre?",
-          "Sinto-me exausto após o dia de trabalho?",
-        ],
+        questions: typedQuestionsData["olbi"],
       },
     ],
   },
@@ -93,13 +90,14 @@ const INSTRUMENTS = [
 
 export function InstrumentChoices() {
   const [openInstrument, setOpenInstrument] = useState<string | null>("copsoq-ii");
+  const [openVersion, setOpenVersion] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
       <div className="border-b border-border/40 pb-2">
         <h2 className="text-xl font-black tracking-tight text-foreground">Escolhas de Pesquisa</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Explore os instrumentos psicossociais disponíveis e visualize as perguntas de cada versão.
+          Explore os instrumentos psicossociais disponíveis e visualize todas as perguntas de cada versão.
         </p>
       </div>
 
@@ -132,42 +130,61 @@ export function InstrumentChoices() {
                 <div className="border-t border-border bg-muted/10 p-5 space-y-5">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Versões Disponíveis</h4>
                   
-                  {inst.versions.map((v, i) => (
-                    <div key={i} className="rounded-xl border border-border bg-card p-4 relative overflow-hidden shadow-sm">
-                      {v.recommended && (
-                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
-                          Recomendado
+                  {inst.versions.map((v, i) => {
+                    const versionKey = `${inst.id}-${i}`;
+                    const isVersionOpen = openVersion === versionKey;
+                    
+                    return (
+                      <div key={i} className="rounded-xl border border-border bg-card p-4 relative shadow-sm">
+                        {v.recommended && (
+                          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
+                            Recomendado
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between mb-1 mt-1">
+                          <span className="font-bold text-foreground text-sm">{v.name} ({v.count} perguntas)</span>
                         </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mb-2 mt-1">
-                        <span className="font-bold text-foreground text-sm">{v.name}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-4">{v.desc}</p>
-                      
-                      <div className="mb-4 bg-muted/30 p-3 rounded-lg text-xs italic text-muted-foreground space-y-2 border border-border/50">
-                        <p className="font-semibold not-italic text-foreground/70">Amostra de Perguntas:</p>
-                        {v.samples.map((q, j) => (
-                          <p key={j} className="flex gap-2">
-                            <span className="opacity-50">•</span>
-                            <span>{q}</span>
-                          </p>
-                        ))}
-                      </div>
+                        <p className="text-xs text-muted-foreground mb-4">{v.desc}</p>
+                        
+                        <button 
+                          onClick={() => setOpenVersion(isVersionOpen ? null : versionKey)}
+                          className="w-full flex items-center justify-between bg-muted/30 p-3 rounded-lg text-xs font-semibold text-foreground/80 border border-border/50 hover:bg-muted/50 transition-colors mb-4"
+                        >
+                          Ver perguntas ({v.count})
+                          <Icon name={isVersionOpen ? "expand_less" : "expand_more"} size={16} />
+                        </button>
 
-                      <Link 
-                        href="/gerenciar-pesquisas" 
-                        className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                          v.recommended 
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                            : "bg-card border border-border text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        Escolher pesquisa
-                        <Icon name="arrow_forward" size={16} />
-                      </Link>
-                    </div>
-                  ))}
+                        {isVersionOpen && (
+                          <div className="mb-4 bg-background p-3 rounded-lg text-xs text-muted-foreground border border-border max-h-60 overflow-y-auto">
+                            <ul className="space-y-2">
+                              {v.questions?.map((q, j) => (
+                                <li key={j} className="flex gap-2 pb-2 border-b border-border/40 last:border-0 last:pb-0">
+                                  <span className="opacity-50 font-mono">{j + 1}.</span>
+                                  <span>{q.text}</span>
+                                </li>
+                              ))}
+                              {(!v.questions || v.questions.length === 0) && (
+                                <li className="italic">Lista de perguntas não encontrada.</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                        <Link 
+                          href="/gerenciar-pesquisas" 
+                          className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                            v.recommended 
+                              ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                              : "bg-card border border-border text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          Escolher pesquisa
+                          <Icon name="arrow_forward" size={16} />
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </Card>
