@@ -1,0 +1,1376 @@
+{
+  "copsoq-ii": [
+    {
+      "dimensionName": "Exigências quantitativas",
+      "orderIndex": 1,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "A sua carga de trabalho acumula-se por ser mal distribuída?"
+    },
+    {
+      "dimensionName": "Exigências quantitativas",
+      "orderIndex": 2,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência não tem tempo para completar todas as tarefas do seu trabalho?"
+    },
+    {
+      "dimensionName": "Exigências quantitativas",
+      "orderIndex": 3,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Fica atrasado/a no seu trabalho?"
+    },
+    {
+      "dimensionName": "Exigências quantitativas",
+      "orderIndex": 4,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem tempo suficiente para as suas tarefas de trabalho?"
+    },
+    {
+      "dimensionName": "Ritmo de trabalho",
+      "orderIndex": 5,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Precisa trabalhar muito rapidamente?"
+    },
+    {
+      "dimensionName": "Ritmo de trabalho",
+      "orderIndex": 6,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Trabalha a um ritmo elevado durante todo o dia?"
+    },
+    {
+      "dimensionName": "Exigências cognitivas",
+      "orderIndex": 7,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho exige que seja bom/boa a propor novas ideias?"
+    },
+    {
+      "dimensionName": "Exigências cognitivas",
+      "orderIndex": 8,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho exige que tome decisões difíceis?"
+    },
+    {
+      "dimensionName": "Exigências cognitivas",
+      "orderIndex": 9,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho requer que memorize muitas coisas?"
+    },
+    {
+      "dimensionName": "Exigências cognitivas",
+      "orderIndex": 10,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho exige atenção constante?"
+    },
+    {
+      "dimensionName": "Exigências emocionais",
+      "orderIndex": 11,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho é emocionalmente desgastante?"
+    },
+    {
+      "dimensionName": "Exigências emocionais",
+      "orderIndex": 12,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho exige que não manifeste a sua opinião?"
+    },
+    {
+      "dimensionName": "Exigências emocionais",
+      "orderIndex": 13,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "São-lhe colocadas exigências emocionais no seu trabalho?"
+    },
+    {
+      "dimensionName": "Exigências emocionais",
+      "orderIndex": 14,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho coloca-o/a em situações emocionalmente perturbadoras?"
+    },
+    {
+      "dimensionName": "Exigências para esconder emoções",
+      "orderIndex": 15,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho exige que esconda os seus sentimentos?"
+    },
+    {
+      "dimensionName": "Exigências para esconder emoções",
+      "orderIndex": 16,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho exige que trate todas as pessoas de forma igual, mesmo que não queira?"
+    },
+    {
+      "dimensionName": "Exigências para esconder emoções",
+      "orderIndex": 17,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho exige que seja simpático/a com todos, independentemente do comportamento deles?"
+    },
+    {
+      "dimensionName": "Influência no trabalho",
+      "orderIndex": 18,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Tem um elevado grau de influência no seu trabalho?"
+    },
+    {
+      "dimensionName": "Influência no trabalho",
+      "orderIndex": 19,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Pode influenciar a quantidade de trabalho que lhe compete a si?"
+    },
+    {
+      "dimensionName": "Influência no trabalho",
+      "orderIndex": 20,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Tem influência sobre o tipo de tarefas que faz?"
+    },
+    {
+      "dimensionName": "Influência no trabalho",
+      "orderIndex": 21,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Participa na escolha das pessoas com quem trabalha?"
+    },
+    {
+      "dimensionName": "Possibilidades de desenvolvimento",
+      "orderIndex": 22,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho exige que tenha iniciativa?"
+    },
+    {
+      "dimensionName": "Possibilidades de desenvolvimento",
+      "orderIndex": 23,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho permite-lhe aprender coisas novas?"
+    },
+    {
+      "dimensionName": "Possibilidades de desenvolvimento",
+      "orderIndex": 24,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Pode usar as suas competências ou conhecimentos no seu trabalho?"
+    },
+    {
+      "dimensionName": "Possibilidades de desenvolvimento",
+      "orderIndex": 25,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "O seu trabalho é variado?"
+    },
+    {
+      "dimensionName": "Significado do trabalho",
+      "orderIndex": 26,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho tem algum significado para si?"
+    },
+    {
+      "dimensionName": "Significado do trabalho",
+      "orderIndex": 27,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Sente que o trabalho que faz é importante?"
+    },
+    {
+      "dimensionName": "Significado do trabalho",
+      "orderIndex": 28,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Sente-se motivado/a e envolvido/a no seu trabalho?"
+    },
+    {
+      "dimensionName": "Compromisso face ao local de trabalho",
+      "orderIndex": 29,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Gosta de falar com os outros sobre o seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Compromisso face ao local de trabalho",
+      "orderIndex": 30,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Sente que os problemas do seu local de trabalho são também seus?"
+    },
+    {
+      "dimensionName": "Compromisso face ao local de trabalho",
+      "orderIndex": 31,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Sente que faz parte de uma comunidade no seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Compromisso face ao local de trabalho",
+      "orderIndex": 32,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Recomendaria um bom amigo a candidatar-se a um cargo no seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Previsibilidade",
+      "orderIndex": 33,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "No seu local de trabalho, é informado/a com antecedência sobre decisões importantes?"
+    },
+    {
+      "dimensionName": "Previsibilidade",
+      "orderIndex": 34,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Recebe toda a informação de que necessita para fazer bem o seu trabalho?"
+    },
+    {
+      "dimensionName": "Transparência do papel laboral",
+      "orderIndex": 35,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho tem objectivos claros?"
+    },
+    {
+      "dimensionName": "Transparência do papel laboral",
+      "orderIndex": 36,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Sabe exactamente quais as suas responsabilidades?"
+    },
+    {
+      "dimensionName": "Transparência do papel laboral",
+      "orderIndex": 37,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Sabe exactamente o que é esperado de si?"
+    },
+    {
+      "dimensionName": "Transparência do papel laboral",
+      "orderIndex": 38,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sabe quais são os seus direitos no trabalho?"
+    },
+    {
+      "dimensionName": "Recompensas (reconhecimento)",
+      "orderIndex": 39,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "O seu trabalho é reconhecido e apreciado pela gestão?"
+    },
+    {
+      "dimensionName": "Recompensas (reconhecimento)",
+      "orderIndex": 40,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "É tratado/a de forma justa no seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Recompensas (reconhecimento)",
+      "orderIndex": 41,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "As suas perspectivas no trabalho são boas?"
+    },
+    {
+      "dimensionName": "Conflitos laborais",
+      "orderIndex": 42,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "São-lhe colocadas exigências contraditórias no trabalho?"
+    },
+    {
+      "dimensionName": "Conflitos laborais",
+      "orderIndex": 43,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Por vezes tem de fazer coisas que deveriam ser feitas de outra maneira?"
+    },
+    {
+      "dimensionName": "Conflitos laborais",
+      "orderIndex": 44,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Por vezes tem de fazer coisas que considera desnecessárias?"
+    },
+    {
+      "dimensionName": "Apoio social de colegas",
+      "orderIndex": 45,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência tem ajuda e apoio dos seus colegas de trabalho?"
+    },
+    {
+      "dimensionName": "Apoio social de colegas",
+      "orderIndex": 46,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência os seus colegas estão dispostos a ouvi-lo/a sobre os seus problemas de trabalho?"
+    },
+    {
+      "dimensionName": "Apoio social de colegas",
+      "orderIndex": 47,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência os seus colegas falam consigo acerca do seu desempenho laboral?"
+    },
+    {
+      "dimensionName": "Apoio social de superiores",
+      "orderIndex": 48,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência o seu superior imediato fala consigo sobre como está a decorrer o seu trabalho?"
+    },
+    {
+      "dimensionName": "Apoio social de superiores",
+      "orderIndex": 49,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência tem ajuda e apoio do seu superior imediato?"
+    },
+    {
+      "dimensionName": "Apoio social de superiores",
+      "orderIndex": 50,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência o seu superior imediato fala consigo em relação ao seu desempenho laboral?"
+    },
+    {
+      "dimensionName": "Comunidade social no trabalho",
+      "orderIndex": 51,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Existe um bom ambiente de trabalho entre si e os seus colegas?"
+    },
+    {
+      "dimensionName": "Comunidade social no trabalho",
+      "orderIndex": 52,
+      "isInverted": true,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Existe uma boa cooperação entre os colegas de trabalho?"
+    },
+    {
+      "dimensionName": "Comunidade social no trabalho",
+      "orderIndex": 53,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "No seu local de trabalho sente-se parte de uma comunidade?"
+    },
+    {
+      "dimensionName": "Qualidade da liderança",
+      "orderIndex": 54,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "A sua chefia directa garante a cada indivíduo boas oportunidades de desenvolvimento profissional?"
+    },
+    {
+      "dimensionName": "Qualidade da liderança",
+      "orderIndex": 55,
+      "isInverted": true,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "A sua chefia directa dá prioridade à satisfação no trabalho?"
+    },
+    {
+      "dimensionName": "Qualidade da liderança",
+      "orderIndex": 56,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "A sua chefia directa é boa a planear o trabalho?"
+    },
+    {
+      "dimensionName": "Qualidade da liderança",
+      "orderIndex": 57,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "A sua chefia directa é boa a resolver conflitos?"
+    },
+    {
+      "dimensionName": "Confiança horizontal",
+      "orderIndex": 58,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Confia nos seus colegas de trabalho?"
+    },
+    {
+      "dimensionName": "Confiança horizontal",
+      "orderIndex": 59,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Os seus colegas retêm informação entre si?"
+    },
+    {
+      "dimensionName": "Confiança horizontal",
+      "orderIndex": 60,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Os seus colegas escondem informação uns dos outros?"
+    },
+    {
+      "dimensionName": "Confiança vertical",
+      "orderIndex": 61,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "A gestão confia nos seus trabalhadores para fazerem bem o seu trabalho?"
+    },
+    {
+      "dimensionName": "Confiança vertical",
+      "orderIndex": 62,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Pode confiar nas informações transmitidas pela gestão?"
+    },
+    {
+      "dimensionName": "Confiança vertical",
+      "orderIndex": 63,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "A gestão esconde informação dos trabalhadores?"
+    },
+    {
+      "dimensionName": "Justiça e respeito",
+      "orderIndex": 64,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Os conflitos são resolvidos de uma forma justa?"
+    },
+    {
+      "dimensionName": "Justiça e respeito",
+      "orderIndex": 65,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "As sugestões dos trabalhadores são tratadas de forma séria pela gestão?"
+    },
+    {
+      "dimensionName": "Justiça e respeito",
+      "orderIndex": 66,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "O trabalho é igualmente distribuído pelos trabalhadores?"
+    },
+    {
+      "dimensionName": "Insegurança laboral",
+      "orderIndex": 67,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Sente-se preocupado/a em ficar desempregado/a?"
+    },
+    {
+      "dimensionName": "Insegurança laboral",
+      "orderIndex": 68,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Sente-se preocupado/a com novas tecnologias que tornem o seu trabalho desnecessário?"
+    },
+    {
+      "dimensionName": "Insegurança laboral",
+      "orderIndex": 69,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sente-se preocupado/a em ser transferido/a para outro local de trabalho?"
+    },
+    {
+      "dimensionName": "Insegurança laboral",
+      "orderIndex": 70,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sente-se preocupado/a em ser substituído/a por outra pessoa?"
+    },
+    {
+      "dimensionName": "Satisfação no trabalho",
+      "orderIndex": 71,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Em relação ao seu trabalho em geral, quão satisfeito/a está com as suas perspectivas futuras?"
+    },
+    {
+      "dimensionName": "Satisfação no trabalho",
+      "orderIndex": 72,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Em relação ao seu trabalho em geral, quão satisfeito/a está com as condições físicas do seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Satisfação no trabalho",
+      "orderIndex": 73,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Em relação ao seu trabalho em geral, quão satisfeito/a está com a forma como as suas capacidades são utilizadas?"
+    },
+    {
+      "dimensionName": "Satisfação no trabalho",
+      "orderIndex": 74,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Em relação ao seu trabalho em geral, quão satisfeito/a está com o seu trabalho de uma forma global?"
+    },
+    {
+      "dimensionName": "Conflito trabalho/família",
+      "orderIndex": 75,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Sente que o seu trabalho lhe exige muita energia que acaba por afectar a sua vida privada negativamente?"
+    },
+    {
+      "dimensionName": "Conflito trabalho/família",
+      "orderIndex": 76,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Sente que o seu trabalho lhe exige muito tempo que acaba por afectar a sua vida privada negativamente?"
+    },
+    {
+      "dimensionName": "Conflito trabalho/família",
+      "orderIndex": 77,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "A sua família e os seus amigos dizem-lhe que trabalha demais?"
+    },
+    {
+      "dimensionName": "Conflito trabalho/família",
+      "orderIndex": 78,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sente que o seu trabalho lhe exige muita atenção que acaba por afectar a sua vida privada negativamente?"
+    },
+    {
+      "dimensionName": "Confiança na gestão",
+      "orderIndex": 79,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "A gestão do seu local de trabalho é confiável?"
+    },
+    {
+      "dimensionName": "Confiança na gestão",
+      "orderIndex": 80,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "A gestão oculta informação dos trabalhadores?"
+    },
+    {
+      "dimensionName": "Confiança na gestão",
+      "orderIndex": 81,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Os trabalhadores podem expressar as suas opiniões e sentimentos?"
+    },
+    {
+      "dimensionName": "Justiça organizacional",
+      "orderIndex": 82,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Os seus colegas são tratados de forma justa no local de trabalho?"
+    },
+    {
+      "dimensionName": "Justiça organizacional",
+      "orderIndex": 83,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "A gestão trata os trabalhadores de forma justa?"
+    },
+    {
+      "dimensionName": "Justiça organizacional",
+      "orderIndex": 84,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Há favoritismo no seu local de trabalho?"
+    },
+    {
+      "dimensionName": "Auto-eficácia",
+      "orderIndex": 85,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Consigo sempre resolver problemas, se me esforçar o suficiente."
+    },
+    {
+      "dimensionName": "Auto-eficácia",
+      "orderIndex": 86,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "É-me fácil seguir os meus planos e atingir os meus objectivos."
+    },
+    {
+      "dimensionName": "Auto-eficácia",
+      "orderIndex": 87,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Em geral, consigo lidar com o que me aparece pelo caminho."
+    },
+    {
+      "dimensionName": "Auto-eficácia",
+      "orderIndex": 88,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Se estou com problemas, geralmente consigo encontrar uma solução."
+    },
+    {
+      "dimensionName": "Saúde geral",
+      "orderIndex": 89,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Em geral, sente que a sua saúde é..."
+    },
+    {
+      "dimensionName": "Saúde geral",
+      "orderIndex": 90,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Considera que a sua saúde é suficiente para desempenhar as suas funções actuais?"
+    },
+    {
+      "dimensionName": "Problemas em dormir",
+      "orderIndex": 91,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência dormiu mal e de forma inquieta?"
+    },
+    {
+      "dimensionName": "Problemas em dormir",
+      "orderIndex": 92,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência teve dificuldade em adormecer?"
+    },
+    {
+      "dimensionName": "Problemas em dormir",
+      "orderIndex": 93,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência acordou demasiado cedo e não conseguiu voltar a adormecer?"
+    },
+    {
+      "dimensionName": "Problemas em dormir",
+      "orderIndex": 94,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência acordou várias vezes e teve dificuldade em voltar a adormecer?"
+    },
+    {
+      "dimensionName": "Burnout",
+      "orderIndex": 95,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu fisicamente exausto/a?"
+    },
+    {
+      "dimensionName": "Burnout",
+      "orderIndex": 96,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu emocionalmente exausto/a?"
+    },
+    {
+      "dimensionName": "Burnout",
+      "orderIndex": 97,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu esgotado/a?"
+    },
+    {
+      "dimensionName": "Burnout",
+      "orderIndex": 98,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu cansado/a?"
+    },
+    {
+      "dimensionName": "Stress",
+      "orderIndex": 99,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu stressado/a?"
+    },
+    {
+      "dimensionName": "Stress",
+      "orderIndex": 100,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência sentiu tensão?"
+    },
+    {
+      "dimensionName": "Stress",
+      "orderIndex": 101,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu irritável?"
+    },
+    {
+      "dimensionName": "Stress",
+      "orderIndex": 102,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu ansioso/a?"
+    },
+    {
+      "dimensionName": "Sintomas depressivos",
+      "orderIndex": 103,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência se sentiu triste?"
+    },
+    {
+      "dimensionName": "Sintomas depressivos",
+      "orderIndex": 104,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Com que frequência sentiu falta de interesse pelas coisas do dia-a-dia?"
+    },
+    {
+      "dimensionName": "Sintomas depressivos",
+      "orderIndex": 105,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência sentiu que não tinha esperança no futuro?"
+    },
+    {
+      "dimensionName": "Sintomas depressivos",
+      "orderIndex": 106,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu desanimado/a?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 107,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Tem sido alvo de insultos ou provocações verbais?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 108,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Tem sido exposto/a a assédio sexual indesejado?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 109,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Tem sido exposto/a a ameaças de violência?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 110,
+      "isInverted": false,
+      "short": true,
+      "medium": true,
+      "long": true,
+      "text": "Tem sido exposto/a a violência física?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 111,
+      "isInverted": false,
+      "short": false,
+      "medium": true,
+      "long": true,
+      "text": "Tem sido alvo de perseguição ou intimidação (bullying)?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 112,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua idade?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 113,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa do seu sexo?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 114,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua etnia?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 115,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua orientação sexual?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 116,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua religião?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 117,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua deficiência?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 118,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de discriminação por causa da sua nacionalidade?"
+    },
+    {
+      "dimensionName": "Comportamentos ofensivos",
+      "orderIndex": 119,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Tem sido alvo de outro tipo de assédio?"
+    },
+    {
+      "dimensionName": "Conflito família/trabalho",
+      "orderIndex": 120,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sente que a sua vida privada lhe exige tanta energia que acaba por afectar o seu trabalho negativamente?"
+    },
+    {
+      "dimensionName": "Conflito família/trabalho",
+      "orderIndex": 121,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Sente que a sua vida privada lhe exige tanto tempo que acaba por afectar o seu trabalho negativamente?"
+    },
+    {
+      "dimensionName": "Conflito família/trabalho",
+      "orderIndex": 122,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Os seus problemas pessoais ou familiares tiram-lhe concentração no trabalho?"
+    },
+    {
+      "dimensionName": "Vitalidade",
+      "orderIndex": 123,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu cheio/a de energia?"
+    },
+    {
+      "dimensionName": "Vitalidade",
+      "orderIndex": 124,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu cheio/a de vida e vigor?"
+    },
+    {
+      "dimensionName": "Vitalidade",
+      "orderIndex": 125,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu activo/a e com vontade de fazer coisas?"
+    },
+    {
+      "dimensionName": "Saúde mental",
+      "orderIndex": 126,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu calmo/a e tranquilo/a?"
+    },
+    {
+      "dimensionName": "Saúde mental",
+      "orderIndex": 127,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu feliz?"
+    },
+    {
+      "dimensionName": "Saúde mental",
+      "orderIndex": 128,
+      "isInverted": false,
+      "short": false,
+      "medium": false,
+      "long": true,
+      "text": "Com que frequência se sentiu nervoso/a?"
+    }
+  ],
+  "copsoq-iii": [],
+  "jss": [
+    {
+      "scaleName": "Pagamento",
+      "orderIndex": 1,
+      "isInverted": false,
+      "text": "Sinto que estou sendo pago de forma justa pelo trabalho que faço."
+    },
+    {
+      "scaleName": "Pagamento",
+      "orderIndex": 10,
+      "isInverted": true,
+      "text": "Os aumentos são poucos e distantes entre si."
+    },
+    {
+      "scaleName": "Pagamento",
+      "orderIndex": 19,
+      "isInverted": true,
+      "text": "Sinto-me desvalorizado pela organização quando penso no que me pagam."
+    },
+    {
+      "scaleName": "Pagamento",
+      "orderIndex": 28,
+      "isInverted": false,
+      "text": "Sinto-me satisfeito com minhas chances de aumento salarial."
+    },
+    {
+      "scaleName": "Promoção",
+      "orderIndex": 2,
+      "isInverted": true,
+      "text": "No meu trabalho, há realmente muito pouca chance de promoção."
+    },
+    {
+      "scaleName": "Promoção",
+      "orderIndex": 11,
+      "isInverted": false,
+      "text": "Aqueles que fazem bem o seu trabalho têm uma boa chance de serem promovidos."
+    },
+    {
+      "scaleName": "Promoção",
+      "orderIndex": 20,
+      "isInverted": false,
+      "text": "As pessoas progridem aqui tão rápido quanto em outros lugares."
+    },
+    {
+      "scaleName": "Promoção",
+      "orderIndex": 33,
+      "isInverted": false,
+      "text": "Estou satisfeito com as minhas chances de promoção."
+    },
+    {
+      "scaleName": "Supervisão",
+      "orderIndex": 3,
+      "isInverted": false,
+      "text": "Meu supervisor é bastante competente em fazer seu trabalho."
+    },
+    {
+      "scaleName": "Supervisão",
+      "orderIndex": 12,
+      "isInverted": true,
+      "text": "Meu supervisor é injusto comigo."
+    },
+    {
+      "scaleName": "Supervisão",
+      "orderIndex": 21,
+      "isInverted": true,
+      "text": "Meu supervisor demonstra pouco interesse nos sentimentos dos subordinados."
+    },
+    {
+      "scaleName": "Supervisão",
+      "orderIndex": 30,
+      "isInverted": false,
+      "text": "Gosto do meu supervisor."
+    },
+    {
+      "scaleName": "Benefícios",
+      "orderIndex": 4,
+      "isInverted": true,
+      "text": "Não estou satisfeito com os benefícios que recebo."
+    },
+    {
+      "scaleName": "Benefícios",
+      "orderIndex": 13,
+      "isInverted": false,
+      "text": "Os benefícios que recebemos são tão bons quanto os que a maioria das outras organizações oferece."
+    },
+    {
+      "scaleName": "Benefícios",
+      "orderIndex": 22,
+      "isInverted": false,
+      "text": "O pacote de benefícios que temos é justo."
+    },
+    {
+      "scaleName": "Benefícios",
+      "orderIndex": 29,
+      "isInverted": true,
+      "text": "Há benefícios que não temos e que deveríamos ter."
+    },
+    {
+      "scaleName": "Recompensas",
+      "orderIndex": 5,
+      "isInverted": false,
+      "text": "Quando faço um bom trabalho, recebo o devido reconhecimento."
+    },
+    {
+      "scaleName": "Recompensas",
+      "orderIndex": 14,
+      "isInverted": true,
+      "text": "Não sinto que o trabalho que faço é apreciado."
+    },
+    {
+      "scaleName": "Recompensas",
+      "orderIndex": 23,
+      "isInverted": true,
+      "text": "Há poucas recompensas para aqueles que trabalham aqui."
+    },
+    {
+      "scaleName": "Recompensas",
+      "orderIndex": 32,
+      "isInverted": true,
+      "text": "Não sinto que meus esforços são recompensados da forma que deveriam ser."
+    },
+    {
+      "scaleName": "Procedimentos",
+      "orderIndex": 6,
+      "isInverted": true,
+      "text": "Muitas das nossas regras e procedimentos dificultam um bom trabalho."
+    },
+    {
+      "scaleName": "Procedimentos",
+      "orderIndex": 15,
+      "isInverted": false,
+      "text": "Meus esforços para fazer um bom trabalho raramente são bloqueados por burocracia."
+    },
+    {
+      "scaleName": "Procedimentos",
+      "orderIndex": 24,
+      "isInverted": true,
+      "text": "Tenho muito o que fazer no trabalho."
+    },
+    {
+      "scaleName": "Procedimentos",
+      "orderIndex": 31,
+      "isInverted": true,
+      "text": "Tenho muita papelada."
+    },
+    {
+      "scaleName": "Colegas de Trabalho",
+      "orderIndex": 7,
+      "isInverted": false,
+      "text": "Gosto das pessoas com quem trabalho."
+    },
+    {
+      "scaleName": "Colegas de Trabalho",
+      "orderIndex": 16,
+      "isInverted": true,
+      "text": "Acho que tenho que trabalhar mais no meu emprego por causa da incompetência das pessoas com quem trabalho."
+    },
+    {
+      "scaleName": "Colegas de Trabalho",
+      "orderIndex": 25,
+      "isInverted": false,
+      "text": "Gosto dos meus colegas de trabalho."
+    },
+    {
+      "scaleName": "Colegas de Trabalho",
+      "orderIndex": 34,
+      "isInverted": true,
+      "text": "Há muita briga e discussão no trabalho."
+    },
+    {
+      "scaleName": "Natureza do Trabalho",
+      "orderIndex": 8,
+      "isInverted": true,
+      "text": "Às vezes, sinto que meu trabalho não tem sentido."
+    },
+    {
+      "scaleName": "Natureza do Trabalho",
+      "orderIndex": 17,
+      "isInverted": false,
+      "text": "Gosto de fazer as coisas que faço no trabalho."
+    },
+    {
+      "scaleName": "Natureza do Trabalho",
+      "orderIndex": 27,
+      "isInverted": false,
+      "text": "Sinto um senso de orgulho ao fazer o meu trabalho."
+    },
+    {
+      "scaleName": "Natureza do Trabalho",
+      "orderIndex": 35,
+      "isInverted": false,
+      "text": "Meu trabalho é agradável."
+    },
+    {
+      "scaleName": "Comunicação",
+      "orderIndex": 9,
+      "isInverted": false,
+      "text": "A comunicação parece boa nesta organização."
+    },
+    {
+      "scaleName": "Comunicação",
+      "orderIndex": 18,
+      "isInverted": true,
+      "text": "Os objetivos desta organização não são claros para mim."
+    },
+    {
+      "scaleName": "Comunicação",
+      "orderIndex": 26,
+      "isInverted": true,
+      "text": "Muitas vezes sinto que não sei o que está acontecendo na organização."
+    },
+    {
+      "scaleName": "Comunicação",
+      "orderIndex": 36,
+      "isInverted": true,
+      "text": "As tarefas do meu trabalho não são totalmente explicadas."
+    }
+  ],
+  "olbi": []
+}
