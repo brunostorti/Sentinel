@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { CreateSurveyButton } from "./create-survey-button";
+import { EditSurveyButton } from "./edit-survey-button";
 import { SurveyActions } from "./survey-actions";
 
 const STATUS_CONFIG = {
@@ -67,15 +68,18 @@ export default async function SurveyManagementPage() {
     .order("name");
 
   let surveyTargets: Record<string, string[]> = {};
+  let surveyTargetIds: Record<string, string[]> = {};
   if (surveyIds.length > 0) {
     const { data: targets } = await supabase
       .from("survey_target_departments")
-      .select("survey_id, departments(name)")
+      .select("survey_id, department_id, departments(name)")
       .in("survey_id", surveyIds);
 
-    for (const t of (targets ?? []) as unknown as { survey_id: string; departments: { name: string } | null }[]) {
+    for (const t of (targets ?? []) as unknown as { survey_id: string; department_id: string; departments: { name: string } | null }[]) {
       if (!surveyTargets[t.survey_id]) surveyTargets[t.survey_id] = [];
+      if (!surveyTargetIds[t.survey_id]) surveyTargetIds[t.survey_id] = [];
       if (t.departments?.name) surveyTargets[t.survey_id].push(t.departments.name);
+      if (t.department_id) surveyTargetIds[t.survey_id].push(t.department_id);
     }
   }
 
@@ -191,10 +195,29 @@ export default async function SurveyManagementPage() {
                   )}
 
                   {canCreate && (
-                    <SurveyActions
-                      surveyId={survey.id}
-                      status={survey.status}
-                    />
+                    <div className="flex gap-2 w-full pt-1">
+                      {status.label === "Rascunho" && counts.responded === 0 && (
+                        <EditSurveyButton
+                          companyId={userData.company_id}
+                          departments={departments ?? []}
+                          instruments={instruments ?? []}
+                          survey={{
+                            id: survey.id,
+                            title: survey.title,
+                            instrument_id: survey.instrument_id,
+                            version: survey.version,
+                            expires_at: survey.expires_at,
+                            targetDepartments: surveyTargetIds[survey.id] || [],
+                          }}
+                        />
+                      )}
+                      <div className="flex-1">
+                        <SurveyActions
+                          surveyId={survey.id}
+                          status={survey.status}
+                        />
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>

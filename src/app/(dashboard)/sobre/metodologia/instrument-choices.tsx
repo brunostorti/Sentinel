@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import questionsData from "./questions-data.json";
 
 interface QuestionDef {
@@ -192,7 +191,7 @@ export function InstrumentChoices() {
             </div>
           )}
 
-          <ScrollArea className="flex-1 p-6">
+          <div className="flex-1 p-6 overflow-y-auto">
             <div className="space-y-3">
               {activeQuestions?.map((q, idx) => (
                 <div key={idx} className="flex gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/30 transition-colors">
@@ -204,7 +203,7 @@ export function InstrumentChoices() {
                 <p className="text-sm text-muted-foreground italic">Lista de perguntas não encontrada.</p>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </>
