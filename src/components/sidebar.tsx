@@ -13,36 +13,6 @@ interface NavItem {
   icon: string;
 }
 
-const DASHBOARD_NAV: NavItem[] = [
-  { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
-  { label: "Assistente", href: ROUTES.DASHBOARD.ASSISTANT, icon: "chat" },
-  { label: "Pesquisas", href: ROUTES.DASHBOARD.SURVEYS, icon: "assignment" },
-  {
-    label: "Colaboradores",
-    href: ROUTES.DASHBOARD.EMPLOYEES,
-    icon: "group",
-  },
-  {
-    label: "Planos de Ação",
-    href: ROUTES.DASHBOARD.ACTION_PLANS,
-    icon: "lightbulb",
-  },
-  { label: "Kanban", href: ROUTES.DASHBOARD.KANBAN, icon: "view_kanban" },
-  { label: "Relatórios", href: ROUTES.DASHBOARD.REPORTS, icon: "description" },
-  { label: "Denúncias", href: ROUTES.DASHBOARD.INCIDENTS, icon: "gavel" },
-  { label: "Certificados", href: ROUTES.DASHBOARD.CERTIFICATES, icon: "verified" },
-  {
-    label: "Configurações",
-    href: ROUTES.DASHBOARD.SETTINGS,
-    icon: "settings",
-  },
-  {
-    label: "Metodologia",
-    href: ROUTES.DASHBOARD.METHODOLOGY,
-    icon: "menu_book",
-  },
-];
-
 const SUPER_ADMIN_NAV: NavItem[] = [
   { label: "Painel", href: ROUTES.SUPER_ADMIN.DASHBOARD, icon: "dashboard" },
   {

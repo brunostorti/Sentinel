@@ -253,7 +253,15 @@ export function PlanDetailView({
                     </label>
                     <select
                       value={outcome || ""}
-                      onChange={(e) => setOutcome(e.target.value as any)}
+                      onChange={(e) =>
+                        setOutcome(
+                          e.target.value as
+                            | "successful"
+                            | "partial"
+                            | "unsuccessful"
+                            | "in_progress"
+                        )
+                      }
                       className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
                     >
                       <option value="successful">🟢 Funcionou bem (Alta adesão/impacto)</option>

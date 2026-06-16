@@ -101,7 +101,6 @@ export const ROUTES = {
   },
   SURVEY: {
     LOGIN: "/entrar",
-    CONSENT: "/consentimento",
     ANSWER: "/responder",
     THANKS: "/obrigado",
   },

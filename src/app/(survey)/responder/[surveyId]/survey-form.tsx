@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
+import { SurveyResultCard } from "@/components/survey-result-card";
+import { invertScore, toTrafficLight } from "@/lib/copsoq/scoring";
+import type { ScoringDirection, TrafficLight } from "@/lib/constants";
 import { submitSurveyResponse } from "./actions";
 
 interface ResponseOption {
@@ -17,6 +20,8 @@ interface Question {
   text: string;
   dimensionName: string;
   category: string;
+  scoringDirection: ScoringDirection;
+  isInverted: boolean;
   orderIndex: number;
   responseOptions: ResponseOption[] | null;
 }
@@ -38,13 +43,18 @@ const DEFAULT_LIKERT: ResponseOption[] = [
   { value: 100, label: "Sempre / Extremamente" },
 ];
 
-import { SurveyResultCard } from "@/components/survey-result-card";
-
 interface DimensionScore {
   name: string;
   score: number;
   riskLevel: "favorável" | "intermédio" | "risco";
 }
+
+/** Map the canonical traffic light to the PT-BR label shown to the employee */
+const LIGHT_TO_LABEL: Record<TrafficLight, DimensionScore["riskLevel"]> = {
+  GREEN: "favorável",
+  YELLOW: "intermédio",
+  RED: "risco",
+};
 
 export default function SurveyForm({
   surveyId,
@@ -119,50 +129,31 @@ export default function SurveyForm({
       return;
     }
 
-    // Calculate individual feedback results
+    // Calculate individual feedback results using the canonical scoring engine,
+    // so the risk colors match the HR dashboard (applies inversion + per-dimension
+    // scoring direction from the DB, instead of hardcoded thresholds).
     const dimensionMap = new Map<string, number[]>();
+    const directionMap = new Map<string, ScoringDirection>();
     for (const q of questions) {
-      const score = answers[q.id];
+      const raw = answers[q.id];
+      const adjusted = q.isInverted ? invertScore(raw) : raw;
       const scores = dimensionMap.get(q.dimensionName) || [];
-      scores.push(score);
+      scores.push(adjusted);
       dimensionMap.set(q.dimensionName, scores);
+      directionMap.set(q.dimensionName, q.scoringDirection);
     }
 
-    const calculatedResults: DimensionScore[] = Array.from(dimensionMap.entries()).map(
-      ([name, scores]) => {
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        
-        // Traffic light logic (0-100 scale)
-        // Red < 33.25, Yellow 33.25-66.5, Green > 66.5 (for favorable dimensions)
-        // Reversed for risk dimensions
-        
-        const riskOriented = [
-          "Exigências Quantitativas", 
-          "Exigências Cognitivas", 
-          "Exigências Emocionais",
-          "Insegurança no Emprego",
-          "Conflitos Trabalho-Família",
-          "Burnout",
-          "Stress",
-          "Comportamentos Ofensivos"
-        ];
-        
-        const isRisk = riskOriented.some(r => name.includes(r));
-        let riskLevel: "favorável" | "intermédio" | "risco";
-
-        if (isRisk) {
-          if (avg > 66.5) riskLevel = "risco";
-          else if (avg < 33.25) riskLevel = "favorável";
-          else riskLevel = "intermédio";
-        } else {
-          if (avg > 66.5) riskLevel = "favorável";
-          else if (avg < 33.25) riskLevel = "risco";
-          else riskLevel = "intermédio";
-        }
-
-        return { name, score: avg, riskLevel };
-      }
-    );
+    const calculatedResults: DimensionScore[] = Array.from(
+      dimensionMap.entries()
+    ).map(([name, scores]) => {
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const direction = directionMap.get(name) ?? "HIGH_IS_RISK";
+      return {
+        name,
+        score: avg,
+        riskLevel: LIGHT_TO_LABEL[toTrafficLight(avg, direction)],
+      };
+    });
 
     setResults(calculatedResults);
     setSubmitting(false);

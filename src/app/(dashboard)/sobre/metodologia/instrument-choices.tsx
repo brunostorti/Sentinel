@@ -14,7 +14,7 @@ interface QuestionDef {
   long?: boolean;
 }
 
-const typedQuestionsData: Record<string, QuestionDef[]> = questionsData as any;
+const typedQuestionsData = questionsData as Record<string, QuestionDef[]>;
 
 const INSTRUMENTS_CARDS = [
   {

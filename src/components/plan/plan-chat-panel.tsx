@@ -31,6 +31,7 @@ export function PlanChatPanel({ planId }: { planId: string }) {
   const [isPending, startTransition] = useTransition();
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tempIdRef = useRef(0);
 
   useEffect(() => {
     fetch(`/api/chat/threads?kind=plan&resource_id=${planId}`)
@@ -51,13 +52,14 @@ export function PlanChatPanel({ planId }: { planId: string }) {
 
   function send(content: string) {
     if (!content.trim() || isPending) return;
+    const tempId = tempIdRef.current++;
     const userMsg: Message = {
-      id: `tmp-${Date.now()}`,
+      id: `tmp-${tempId}`,
       role: "user",
       content,
       created_at: new Date().toISOString(),
     };
-    const assistantId = `tmp-${Date.now()}-r`;
+    const assistantId = `tmp-${tempId}-r`;
     setMessages((m) => [
       ...m,
       userMsg,

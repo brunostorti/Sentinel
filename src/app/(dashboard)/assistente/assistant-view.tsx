@@ -25,6 +25,7 @@ export function AssistantView({ userName }: { userName: string }) {
   const [isPending, startTransition] = useTransition();
   const [loadingHistory, setLoadingHistory] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tempIdRef = useRef(0);
 
   useEffect(() => {
     fetch("/api/chat/threads?kind=company")
@@ -46,13 +47,14 @@ export function AssistantView({ userName }: { userName: string }) {
   function send(content: string) {
     if (!content.trim() || isPending) return;
 
+    const tempId = tempIdRef.current++;
     const userMsg: Message = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${tempId}`,
       role: "user",
       content,
       created_at: new Date().toISOString(),
     };
-    const assistantId = `temp-${Date.now()}-r`;
+    const assistantId = `temp-${tempId}-r`;
     setMessages((m) => [
       ...m,
       userMsg,

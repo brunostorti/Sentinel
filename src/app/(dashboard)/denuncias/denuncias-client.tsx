@@ -156,9 +156,11 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
           ? "Denúncia marcada como Resolvida com sucesso!"
           : "Denúncia reaberta com sucesso!"
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Erro de rede. Tente novamente.");
+      toast.error(
+        error instanceof Error ? error.message : "Erro de rede. Tente novamente."
+      );
     } finally {
       setLoadingId(null);
     }

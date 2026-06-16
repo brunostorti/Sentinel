@@ -16,14 +16,14 @@ export default async function DenunciasAdminPage() {
 
   if (!userData?.company_id) redirect("/painel");
 
-  const { data: reports, error } = await supabase
+  const { data: reports } = await supabase
     .from("reports")
     .select("*")
     .eq("company_id", userData.company_id)
     .order("created_at", { ascending: false });
 
   // Map to matching Report type
-  const typedReports = (reports || []).map((r: any) => ({
+  const typedReports = (reports || []).map((r) => ({
     id: r.id,
     company_id: r.company_id,
     protocol: r.protocol,

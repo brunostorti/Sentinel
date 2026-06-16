@@ -9,6 +9,7 @@ const EMPTY: AIRecommendation = {
   description: "",
   quick_action: "",
   rationale: "",
+  recommendation_status: "MITIGAR",
   roadmap: [],
   prerequisites: [],
   time_to_first_value: "",
@@ -77,8 +78,6 @@ export default async function PlanoDetalhePage({
   const recommendation: AIRecommendation = {
     ...EMPTY,
     ...raw,
-    investment: { ...EMPTY.investment, ...(raw.investment ?? {}) },
-    expected_return: { ...EMPTY.expected_return, ...(raw.expected_return ?? {}) },
     stakeholders: { ...EMPTY.stakeholders, ...(raw.stakeholders ?? {}) },
     communication_plan: { ...EMPTY.communication_plan, ...(raw.communication_plan ?? {}) },
     roadmap: raw.roadmap ?? [],
@@ -109,7 +108,14 @@ export default async function PlanoDetalhePage({
       recommendation={recommendation}
       canManage={canManage}
       references={references}
-      initialOutcome={actionTaken?.outcome as any}
+      initialOutcome={
+        actionTaken?.outcome as
+          | "successful"
+          | "partial"
+          | "unsuccessful"
+          | "in_progress"
+          | null
+      }
       initialOutcomeNotes={actionTaken?.outcome_notes}
     />
   );

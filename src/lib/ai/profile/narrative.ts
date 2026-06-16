@@ -26,11 +26,6 @@ function brl(n: number | null | undefined): string {
   });
 }
 
-function yesNo(v: boolean | null | undefined, yes: string, no: string): string {
-  if (v == null) return "não declarado";
-  return v ? yes : no;
-}
-
 /**
  * Forma COMPACTA — usada pelo Analyst (Stage 1) onde queremos só sinais essenciais.
  * ~3-5 linhas.

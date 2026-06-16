@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -46,8 +46,12 @@ export function EditSurveyButton({
   const [error, setError] = useState("");
 
   const [title, setTitle] = useState(survey.title);
-  const [selectedInstrument, setSelectedInstrument] = useState<Instrument | null>(null);
-  const [version, setVersion] = useState<"SHORT" | "MEDIUM" | "LONG">((survey.version as any) || "SHORT");
+  const [selectedInstrument, setSelectedInstrument] = useState<Instrument | null>(
+    () => instruments.find((i) => i.id === survey.instrument_id) ?? null
+  );
+  const [version, setVersion] = useState<"SHORT" | "MEDIUM" | "LONG">(
+    (survey.version as "SHORT" | "MEDIUM" | "LONG") || "SHORT"
+  );
   const [expiresAt, setExpiresAt] = useState(
     survey.expires_at ? new Date(survey.expires_at).toISOString().split("T")[0] : ""
   );
@@ -56,11 +60,6 @@ export function EditSurveyButton({
   
   // Fake state for mockup
   const [matriculaOption, setMatriculaOption] = useState<string>("manter");
-
-  useEffect(() => {
-    const inst = instruments.find((i) => i.id === survey.instrument_id);
-    if (inst) setSelectedInstrument(inst);
-  }, [survey, instruments]);
 
   const hasVersions = selectedInstrument
     ? VERSIONED_INSTRUMENTS.includes(selectedInstrument.code)
@@ -72,7 +71,7 @@ export function EditSurveyButton({
     setLoading(false);
     // Reset state to initial props
     setTitle(survey.title);
-    setVersion((survey.version as any) || "SHORT");
+    setVersion((survey.version as "SHORT" | "MEDIUM" | "LONG") || "SHORT");
     setExpiresAt(survey.expires_at ? new Date(survey.expires_at).toISOString().split("T")[0] : "");
     setTargetAll(survey.targetDepartments.length === 0);
     setSelectedDepartments(survey.targetDepartments);

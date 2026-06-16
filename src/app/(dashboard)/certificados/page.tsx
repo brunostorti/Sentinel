@@ -59,8 +59,8 @@ export default function CertificadosPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao emitir certificado.");
     } finally {
       setGeneratingId(null);
     }

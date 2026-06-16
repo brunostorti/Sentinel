@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,6 +14,7 @@ import {
 import { TutorialModal } from "@/components/tutorial-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SuggestionsBadge } from "@/components/painel/suggestions-badge";
+import { ROUTES } from "@/lib/constants";
 
 interface HeaderProps {
   userName: string;
@@ -20,6 +22,7 @@ interface HeaderProps {
 }
 
 export function Header({ userName, userEmail }: HeaderProps) {
+  const router = useRouter();
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const initials = userName
@@ -58,22 +61,12 @@ export function Header({ userName, userEmail }: HeaderProps) {
   ];
 
   return (
-    <header className="glass sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/50 px-8">
-      <TutorialModal 
-        isOpen={isTutorialOpen} 
-        onClose={() => setIsTutorialOpen(false)} 
-        slides={tutorialSlides} 
+    <header className="glass sticky top-0 z-30 flex h-16 items-center justify-end border-b border-border/50 px-8">
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        slides={tutorialSlides}
       />
-      
-      {/* Search */}
-      <div className="flex items-center gap-2.5 rounded-xl bg-muted/60 px-4 py-2.5 transition-colors focus-within:bg-muted focus-within:ring-2 focus-within:ring-primary/20">
-        <Icon name="search" size={18} className="text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Buscar..."
-          className="w-48 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-        />
-      </div>
 
       {/* Right side */}
       <div className="flex items-center gap-4">
@@ -84,18 +77,12 @@ export function Header({ userName, userEmail }: HeaderProps) {
         <ThemeToggle />
 
         {/* Help button */}
-        <button 
+        <button
           onClick={() => setIsTutorialOpen(true)}
           className="relative rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
           title="Tutorial de Uso"
         >
           <Icon name="help" size={20} />
-        </button>
-
-        {/* Notifications bell */}
-        <button className="relative rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-          <Icon name="notifications" size={20} />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary animate-pulse-soft" />
         </button>
 
         {/* User menu */}
@@ -112,11 +99,17 @@ export function Header({ userName, userEmail }: HeaderProps) {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2.5">
+            <DropdownMenuItem
+              onClick={() => router.push(ROUTES.DASHBOARD.SETTINGS)}
+              className="gap-2.5"
+            >
               <Icon name="person" size={16} />
               Meu Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2.5">
+            <DropdownMenuItem
+              onClick={() => router.push("/configuracoes")}
+              className="gap-2.5"
+            >
               <Icon name="settings" size={16} />
               Configurações
             </DropdownMenuItem>

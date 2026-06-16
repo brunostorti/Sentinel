@@ -61,7 +61,8 @@ export default async function SurveyResponsePage({ params }: Props) {
       questionnaire_scales (
         id,
         name,
-        category
+        category,
+        scoring_direction
       ),
       response_formats (
         code,
@@ -103,6 +104,7 @@ export default async function SurveyResponsePage({ params }: Props) {
           id: string;
           name: string;
           category: string;
+          scoring_direction: "HIGH_IS_RISK" | "HIGH_IS_FAVORABLE";
         };
         const fmt = q.response_formats as unknown as {
           code: string;
@@ -113,6 +115,8 @@ export default async function SurveyResponsePage({ params }: Props) {
           text: q.text,
           dimensionName: dim.name,
           category: dim.category,
+          scoringDirection: dim.scoring_direction,
+          isInverted: q.is_inverted,
           orderIndex: q.order_index,
           responseOptions: fmt?.options ?? null,
         };

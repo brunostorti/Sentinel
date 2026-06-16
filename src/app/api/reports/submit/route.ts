@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${companyId}/${fileName}`;
 
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("reports")
         .upload(filePath, file);
 
@@ -65,8 +65,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ protocol });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Report submission error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro ao enviar denúncia";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
