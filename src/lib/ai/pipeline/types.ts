@@ -4,6 +4,7 @@
  */
 
 import type { DimensionScore } from "@/lib/copsoq/types";
+import type { GroundedFacts } from "./grounding";
 
 /* ──────────────────────────────────────────────────────────────────────
  * Contexto compartilhado por todos os estágios
@@ -145,20 +146,20 @@ export interface AIRecommendation {
     timing: string;
   };
 
-  // Custos & retorno
-  investment: {
+  // Custos & retorno — INJETADOS PELO CÓDIGO (grounding), não pelo LLM.
+  investment?: {
     total_annual: string;
     per_employee_month: string;
     breakdown: string;
   };
-  expected_return: {
+  expected_return?: {
     conservative: string;
     optimistic: string;
     payback_period: string;
   };
 
-  // Impacto + evidência reforçada
-  impact_metrics: {
+  // Impacto + evidência reforçada — INJETADO PELO CÓDIGO (catálogo + fontes).
+  impact_metrics?: {
     metric: string;
     change: string;
     evidence: {
@@ -179,6 +180,12 @@ export interface AIRecommendation {
   // Compliance
   nr1_compliance: string | null;
   compliance_extra: string[];
+
+  /**
+   * Pacote de fatos determinístico (grounding). Calculado em código a partir de
+   * dados reais da pesquisa + benchmarks com fonte. O LLM NÃO produz isto.
+   */
+  facts?: GroundedFacts;
 }
 
 /**

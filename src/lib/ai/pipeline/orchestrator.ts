@@ -9,14 +9,16 @@ import {
   fetchSurveyDimensionScores,
   fetchDepartments,
   fetchDepartmentDimensionScores,
+  fetchDepartmentResponseCounts,
   fetchHistoricalTrends,
 } from "@/lib/copsoq/dashboard";
 
 import { runAnalyst } from "./analyst";
 import { runCurator } from "./curator";
 import { runConsultant } from "./consultant";
+import { buildGroundedFacts, timeframeLabel, type GroundedFacts } from "./grounding";
 import { computeOutcomes } from "../learning/outcomes";
-import { CATALOG } from "../knowledge-base/catalog";
+import { CATALOG, getInterventionById } from "../knowledge-base/catalog";
 import { filterAndAnnotate, filterByCategories } from "../knowledge-base/filters";
 import type {
   PipelineContext,
@@ -253,6 +255,61 @@ export async function runPipeline(
       return { status: "completed", plans_created: 0, outcomes_created: 0, run_id };
     }
 
+    // ─── 6.5 Grounding — pacote de fatos determinístico por candidato ──
+    const deptCounts = await fetchDepartmentResponseCounts(admin, surveyId);
+    const deptHeadcount = new Map<string, number>();
+    for (const [deptId, s] of deptCounts) {
+      deptHeadcount.set(deptId, s.invited || s.responses || 0);
+    }
+    const companyHeadcount = company.employee_count ?? totalParticipants ?? 100;
+
+    const scoreByDimIdForGrounding = new Map(
+      scores.map((s) => [s.dimensionId, s])
+    );
+    const dimByNameForGrounding = new Map<string, (typeof scores)[number]>();
+    for (const s of scores) {
+      dimByNameForGrounding.set(s.name.toLowerCase().trim(), s);
+    }
+    const reportByDimForGrounding = new Map(
+      report.prioritized_dimensions.map((d) => [d.dimension_id, d])
+    );
+
+    const groundingByKey = new Map<string, GroundedFacts>();
+    const groundingByIntervention = new Map<string, GroundedFacts>();
+    for (const cand of selection.candidates) {
+      let gdim = scoreByDimIdForGrounding.get(cand.dimension_id);
+      if (!gdim) {
+        const re = reportByDimForGrounding.get(cand.dimension_id);
+        if (re)
+          gdim = dimByNameForGrounding.get(re.dimension_name.toLowerCase().trim());
+      }
+      if (!gdim) continue;
+      const intervention = getInterventionById(cand.intervention_id);
+      if (!intervention) continue;
+      try {
+        const facts = await buildGroundedFacts({
+          admin,
+          surveyId,
+          dim: gdim,
+          intervention,
+          deptBreakdowns,
+          departments,
+          deptHeadcount,
+          companyHeadcount,
+        });
+        groundingByKey.set(`${cand.dimension_id}::${cand.intervention_id}`, facts);
+        groundingByIntervention.set(cand.intervention_id, facts);
+      } catch (e) {
+        console.error(
+          `[pipeline ${run_id}] grounding falhou (${cand.intervention_id}):`,
+          e
+        );
+      }
+    }
+    console.log(
+      `[pipeline ${run_id}] Grounding: fatos calculados para ${groundingByKey.size}/${selection.candidates.length} candidatos`
+    );
+
     // ─── 7. Stage 3 — Consultant ───────────────────────────────────────
     console.log(`[pipeline ${run_id}] Stage 3 (Consultant) iniciando`);
     const plans = await runConsultant({
@@ -261,6 +318,7 @@ export async function runPipeline(
       profile,
       company,
       history,
+      grounding: groundingByKey,
     });
     console.log(`[pipeline ${run_id}] Stage 3 OK — ${plans.length} planos gerados pelo LLM`);
 
@@ -354,6 +412,41 @@ export async function runPipeline(
       const priority: "critica" | "alta" | "media" =
         reportEntry?.severity ?? (dim.trafficLight === "RED" ? "critica" : "alta");
 
+      // ─── Merge dos fatos determinísticos (grounding) na recomendação ──
+      const facts =
+        groundingByKey.get(`${item.dimension_id}::${item.intervention_id}`) ??
+        groundingByIntervention.get(item.intervention_id);
+      const intervention = getInterventionById(item.intervention_id);
+
+      if (facts) {
+        item.recommendation.facts = facts;
+        if (facts.financials) {
+          item.recommendation.investment = {
+            total_annual: facts.financials.investment.value,
+            per_employee_month: facts.financials.investmentPerEmployeeMonth.value,
+            breakdown: facts.financials.investment.formula ?? "",
+          };
+          item.recommendation.expected_return = {
+            conservative: facts.financials.expectedReturnConservative?.value ?? "N/D",
+            optimistic: facts.financials.expectedReturnOptimistic?.value ?? "N/D",
+            payback_period: facts.financials.paybackPeriod,
+          };
+          // year=0 é falsy → a UI omite o ano (catálogo não traz ano por métrica).
+          item.recommendation.impact_metrics = facts.financials.expectedImpacts.map(
+            (e) => ({
+              metric: e.metric,
+              change: e.change,
+              evidence: {
+                study_or_case: e.source,
+                year: 0,
+                url_or_doi: null,
+                br_context: null,
+              },
+            })
+          );
+        }
+      }
+
       planRows.push({
         survey_id: surveyId,
         company_id: companyId,
@@ -362,9 +455,9 @@ export async function runPipeline(
         ai_recommendation: item.recommendation,
         status: "PENDING_REVIEW",
         priority,
-        effort: "medio",
-        timeframe: "3-6 meses",
-        target_department: "all",
+        effort: intervention?.effort ?? "medio",
+        timeframe: intervention ? timeframeLabel(intervention.timeframe) : "3-6 meses",
+        target_department: facts?.department ?? "all",
         universal_category_id: uc_id,
       });
 
