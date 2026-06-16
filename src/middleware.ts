@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_ROUTES = ["/entrar", "/consentimento", "/obrigado", "/validacao", "/denuncia"];
+const PUBLIC_ROUTES = ["/entrar", "/obrigado", "/validacao", "/denuncia"];
 const SURVEY_ROUTES = ["/pesquisas", "/responder"];
 const SUPER_ADMIN_ROUTES = ["/empresas", "/usuarios"];
 

@@ -88,11 +88,11 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
           {/* KPIs em linha enxuta */}
           {(hasInvestment || hasReturn || r.internal_capacity_required || r.expected_return?.conservative) && (
             <div className="grid grid-cols-2 items-stretch divide-x divide-y divide-border border-t border-border bg-muted/20 md:grid-cols-4 md:divide-y-0">
-              {hasInvestment && <KpiCell icon="payments" label="Investimento" value={r.investment.total_annual} />}
+              {hasInvestment && <KpiCell icon="payments" label="Investimento" value={r.investment?.total_annual ?? ""} />}
               {r.expected_return?.conservative && r.expected_return.conservative !== "N/D" && (
                 <KpiCell icon="trending_up" label="Retorno" value={r.expected_return.conservative} />
               )}
-              {hasReturn && <KpiCell icon="schedule" label="Payback" value={r.expected_return.payback_period} />}
+              {hasReturn && <KpiCell icon="schedule" label="Payback" value={r.expected_return?.payback_period ?? ""} />}
               {r.internal_capacity_required && (
                 <KpiCell icon="group" label="Capacidade" value={r.internal_capacity_required} />
               )}
@@ -209,7 +209,7 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
             </Badge>
           </div>
           <div className="space-y-3 text-xs">
-            {references.map((ref) => <ReferenceItem key={ref.citation_key} ref={ref} />)}
+            {references.map((reference) => <ReferenceItem key={reference.citation_key} reference={reference} />)}
           </div>
           <p className="mt-4 rounded-lg border border-border bg-card/60 p-3 text-[11px] italic text-muted-foreground">
             ⚠ Plano gerado com assistência de IA baseada nas referências acima. Não substitui avaliação por profissional habilitado em saúde ocupacional ou psicologia do trabalho.
@@ -250,8 +250,33 @@ function TabWhat({ r }: { r: AIRecommendation }) {
 }
 
 function TabWhy({ r, resolveRef }: { r: AIRecommendation; resolveRef: (k: string | undefined | null) => KbReferenceWithRelevance | null }) {
+  const evidence = r.facts?.surveyEvidence ?? [];
   return (
     <div className="space-y-6">
+      {evidence.length > 0 && (
+        <div>
+          <SectionLabel>O que a pesquisa revelou (dados reais)</SectionLabel>
+          <div className="space-y-2">
+            {evidence.map((e, i) => (
+              <div key={i} className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm font-medium leading-snug text-foreground">
+                  &ldquo;{e.questionText}&rdquo;
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary" className="text-[10px] font-medium">
+                    {e.criticalPercent}% em nível crítico
+                  </Badge>
+                  <span>·</span>
+                  <span>score médio {e.meanScore}/100</span>
+                  <span>·</span>
+                  <span>n = {e.respondents}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {r.rationale && (
         <div>
           <SectionLabel>Justificativa</SectionLabel>
@@ -315,6 +340,11 @@ function TabWhere({ r, targetDepartment }: { r: AIRecommendation; targetDepartme
         <p className="text-2xl font-bold tracking-tight text-foreground">
           {!targetDepartment || targetDepartment === "all" ? "Toda a empresa" : targetDepartment}
         </p>
+        {r.facts && (
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {r.facts.headcount} pessoas no público-alvo · {r.facts.responsesConsidered} respostas analisadas
+          </p>
+        )}
       </div>
 
       {r.communication_plan?.channels && r.communication_plan.channels.length > 0 && (
@@ -568,6 +598,47 @@ function TabHowMuch({ r }: { r: AIRecommendation }) {
           </div>
         </div>
       )}
+
+      {/* Fundamentação determinística: cada número com fórmula + fonte */}
+      {r.facts?.financials && (
+        <div>
+          <SectionLabel>Fundamentação dos números</SectionLabel>
+          <div className="space-y-2">
+            <FactRow f={r.facts.financials.inactionCost} />
+            <FactRow f={r.facts.financials.investment} />
+            {r.facts.financials.expectedReturnConservative && (
+              <FactRow f={r.facts.financials.expectedReturnConservative} />
+            )}
+            {r.facts.financials.expectedReturnOptimistic && (
+              <FactRow f={r.facts.financials.expectedReturnOptimistic} />
+            )}
+          </div>
+          <p className="mt-3 rounded-lg border border-border bg-muted/30 p-3 text-[11px] italic leading-relaxed text-muted-foreground">
+            {r.facts.financials.effectivenessNote}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FactRow({
+  f,
+}: {
+  f: { label: string; value: string; source: string; formula?: string };
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs font-semibold text-muted-foreground">{f.label}</p>
+        <p className="shrink-0 text-sm font-bold text-foreground">{f.value}</p>
+      </div>
+      {f.formula && (
+        <p className="mt-1 font-mono text-[10px] leading-snug text-muted-foreground">
+          {f.formula}
+        </p>
+      )}
+      <p className="mt-1 text-[10px] text-muted-foreground">Fonte: {f.source}</p>
     </div>
   );
 }
@@ -608,30 +679,30 @@ const EVIDENCE_TYPE_LABEL: Record<string, string> = {
   book:              "Livro",
 };
 
-function ReferenceItem({ ref }: { ref: KbReferenceWithRelevance }) {
-  const rel = RELEVANCE_LABEL[ref.relevance] ?? RELEVANCE_LABEL.secondary;
+function ReferenceItem({ reference }: { reference: KbReferenceWithRelevance }) {
+  const rel = RELEVANCE_LABEL[reference.relevance] ?? RELEVANCE_LABEL.secondary;
   return (
     <div className="rounded-lg border border-border bg-card p-3">
       <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
         <Badge className={`text-[9px] ${rel.cls}`}>{rel.label}</Badge>
         <Badge variant="outline" className="text-[9px]">
-          {EVIDENCE_TYPE_LABEL[ref.evidence_type] ?? ref.evidence_type}
+          {EVIDENCE_TYPE_LABEL[reference.evidence_type] ?? reference.evidence_type}
         </Badge>
-        {ref.certainty_level && (
-          <Badge variant="outline" className="text-[9px]">Certeza {ref.certainty_level}</Badge>
+        {reference.certainty_level && (
+          <Badge variant="outline" className="text-[9px]">Certeza {reference.certainty_level}</Badge>
         )}
-        {ref.region === "brazil" && (
+        {reference.region === "brazil" && (
           <Badge variant="outline" className="text-[9px]">BR</Badge>
         )}
-        <span className="font-mono text-[10px] text-muted-foreground">[{ref.citation_key}]</span>
+        <span className="font-mono text-[10px] text-muted-foreground">[{reference.citation_key}]</span>
       </div>
-      <p className="leading-snug">{ref.abnt_citation}</p>
-      {ref.specific_claim && (
+      <p className="leading-snug">{reference.abnt_citation}</p>
+      {reference.specific_claim && (
         <p className="mt-1.5 rounded border-l-2 border-primary/40 bg-muted/40 p-1.5 pl-2 italic text-muted-foreground">
-          → <strong>Alegação usada:</strong> {ref.specific_claim}
+          → <strong>Alegação usada:</strong> {reference.specific_claim}
         </p>
       )}
-      <a href={ref.url} target="_blank" rel="noopener" className="mt-1.5 inline-block text-[11px] text-primary underline">
+      <a href={reference.url} target="_blank" rel="noopener" className="mt-1.5 inline-block text-[11px] text-primary underline">
         Acessar fonte ↗
       </a>
     </div>

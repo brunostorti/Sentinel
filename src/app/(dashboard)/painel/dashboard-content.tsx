@@ -10,7 +10,6 @@ import { CriticalAreas } from "./critical-areas";
 import { RiskBarChart } from "./risk-bar-chart";
 import { DimensionSemaphore } from "./dimension-semaphore";
 import { TrendsChart } from "./trends-chart";
-import { DepartmentComparison } from "./department-comparison";
 
 interface SurveyOption {
   id: string;

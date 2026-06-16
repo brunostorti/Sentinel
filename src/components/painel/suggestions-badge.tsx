@@ -31,7 +31,17 @@ export function SuggestionsBadge() {
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/profile/events?status=pending");
+        const json = (await res.json()) as { events: ProfileEvent[] };
+        if (!cancelled) setEvents(json.events ?? []);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function display(n: number): string {

@@ -23,7 +23,13 @@
       "Bash(firecrawl --status)",
       "Bash(firecrawl login *)",
       "Bash(firecrawl scrape *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(Sort-Object)",
+      "Bash(echo \"---EXIT: $?---\")",
+      "Bash(echo \"---TSC EXIT: $?---\")",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(git add *)"
     ]
   }
 }

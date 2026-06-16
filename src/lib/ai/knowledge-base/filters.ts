@@ -15,7 +15,6 @@ import {
 } from "./catalog";
 import type {
   CompanyProfile,
-  CompanyActionTaken,
   ActionOutcome,
 } from "../profile/schema";
 

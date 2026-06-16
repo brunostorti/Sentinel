@@ -46,8 +46,9 @@ export async function POST(
     }
 
     return NextResponse.json({ status: "success" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Report status update route error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro ao atualizar status.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

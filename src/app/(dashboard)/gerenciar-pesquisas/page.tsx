@@ -41,8 +41,10 @@ export default async function SurveyManagementPage() {
     .order("created_at", { ascending: false });
 
   const surveyIds = (surveys ?? []).map((s) => s.id);
-  let participantCounts: Record<string, { total: number; responded: number }> =
-    {};
+  const participantCounts: Record<
+    string,
+    { total: number; responded: number }
+  > = {};
 
   if (surveyIds.length > 0) {
     const { data: participants } = await supabase
@@ -67,8 +69,8 @@ export default async function SurveyManagementPage() {
     .eq("company_id", userData.company_id)
     .order("name");
 
-  let surveyTargets: Record<string, string[]> = {};
-  let surveyTargetIds: Record<string, string[]> = {};
+  const surveyTargets: Record<string, string[]> = {};
+  const surveyTargetIds: Record<string, string[]> = {};
   if (surveyIds.length > 0) {
     const { data: targets } = await supabase
       .from("survey_target_departments")

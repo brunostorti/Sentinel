@@ -5,37 +5,53 @@ import { useParams } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { createClient } from "@/lib/supabase/client";
 
+interface CertData {
+  issued_at: string;
+  unique_hash: string;
+  companies:
+    | { name: string; cnpj: string }
+    | { name: string; cnpj: string }[]
+    | null;
+  surveys: { title: string } | { title: string }[] | null;
+}
+
 export default function ValidacaoPage() {
   const params = useParams();
   const hash = params.hash as string;
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [cert, setCert] = useState<CertData | null>(null);
+  const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
-    if (hash) {
-      validateHash(hash);
-    }
-  }, [hash]);
+    if (!hash) return;
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("certificates")
+        .select("*, companies(name, cnpj), surveys(title, closed_at)")
+        .eq("unique_hash", hash)
+        .single();
 
-  async function validateHash(hash: string) {
-    const supabase = createClient();
-    const { data: cert, error } = await supabase
-      .from("certificates")
-      .select("*, companies(name, cnpj), surveys(title, closed_at)")
-      .eq("unique_hash", hash)
-      .single();
-    
-    if (!error && cert) {
-      setData(cert);
-    }
-    setLoading(false);
-  }
+      if (cancelled) return;
+      if (!error && data) {
+        setCert(data as CertData);
+        const expiry = new Date(data.issued_at);
+        expiry.setFullYear(expiry.getFullYear() + 1);
+        setIsValid(expiry.getTime() > Date.now());
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hash]);
 
   if (loading) {
      return <div className="min-h-screen flex items-center justify-center bg-zinc-950"><Icon name="refresh" className="animate-spin text-primary" size={48} /></div>;
   }
 
-  if (!data) {
+  if (!cert) {
      return (
        <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white p-6">
          <Icon name="gpp_bad" size={80} className="text-destructive mb-6" />
@@ -45,10 +61,9 @@ export default function ValidacaoPage() {
      );
   }
 
-  const issuedDate = new Date(data.issued_at);
+  const issuedDate = new Date(cert.issued_at);
   const validUntil = new Date(issuedDate);
   validUntil.setFullYear(validUntil.getFullYear() + 1);
-  const isValid = validUntil.getTime() > Date.now();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white p-6 relative overflow-hidden">
@@ -73,13 +88,13 @@ export default function ValidacaoPage() {
         <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-2">
           <div className="bg-zinc-950 rounded-xl p-5 border border-zinc-800 flex flex-col gap-1 text-left col-span-1 md:col-span-2">
             <span className="text-zinc-500 text-sm font-medium uppercase tracking-wider">Empresa Verificada</span>
-            <span className="text-white text-xl font-bold">{Array.isArray(data.companies) ? data.companies[0]?.name : data.companies?.name}</span>
-            <span className="text-zinc-400 font-mono text-sm mt-1">CNPJ: {Array.isArray(data.companies) ? data.companies[0]?.cnpj : data.companies?.cnpj}</span>
+            <span className="text-white text-xl font-bold">{Array.isArray(cert.companies) ? cert.companies[0]?.name : cert.companies?.name}</span>
+            <span className="text-zinc-400 font-mono text-sm mt-1">CNPJ: {Array.isArray(cert.companies) ? cert.companies[0]?.cnpj : cert.companies?.cnpj}</span>
           </div>
 
           <div className="bg-zinc-950 rounded-xl p-5 border border-zinc-800 flex flex-col gap-1 text-left">
             <span className="text-zinc-500 text-sm font-medium uppercase tracking-wider">Ciclo (Origem)</span>
-            <span className="text-white font-medium">{Array.isArray(data.surveys) ? data.surveys[0]?.title : data.surveys?.title}</span>
+            <span className="text-white font-medium">{Array.isArray(cert.surveys) ? cert.surveys[0]?.title : cert.surveys?.title}</span>
           </div>
 
           <div className="bg-zinc-950 rounded-xl p-5 border border-zinc-800 flex flex-col gap-1 text-left">
@@ -106,7 +121,7 @@ export default function ValidacaoPage() {
         <div className="mt-8 pt-6 border-t border-zinc-800/50 text-center flex flex-col items-center gap-2">
            <span className="text-zinc-500 text-xs uppercase font-bold tracking-widest">Hash de Autenticidade Global</span>
            <p className="text-xs text-zinc-600 font-mono tracking-wider break-all bg-zinc-950 py-2 px-4 rounded-lg select-all border border-zinc-800">
-             {data.unique_hash}
+             {cert.unique_hash}
            </p>
         </div>
       </div>

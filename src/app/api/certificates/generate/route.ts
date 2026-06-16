@@ -155,7 +155,7 @@ export async function POST(req: Request) {
       x: width / 2 - 270, y: height - 90, size: 18, font: helveticaBold, color: primaryColor,
     });
 
-    const companyName = Array.isArray(survey.companies) ? survey.companies[0]?.name : (survey.companies as any)?.name || "Empresa";
+    const companyName = (Array.isArray(survey.companies) ? survey.companies[0]?.name : (survey.companies as { name?: string } | null)?.name) || "Empresa";
     const issuedAt = new Date();
     const validUntil = new Date(issuedAt);
     validUntil.setFullYear(validUntil.getFullYear() + 1);
@@ -195,8 +195,9 @@ export async function POST(req: Request) {
         "Content-Disposition": `attachment; filename="certificado-${survey.company_id}.pdf"`,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Certificate error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro ao gerar certificado";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -9,6 +9,7 @@ const EMPTY_RECOMMENDATION: AIRecommendation = {
   description: "",
   quick_action: "",
   rationale: "",
+  recommendation_status: "MITIGAR",
   roadmap: [],
   prerequisites: [],
   time_to_first_value: "",
@@ -84,8 +85,6 @@ export default async function ActionPlansPage() {
       ...EMPTY_RECOMMENDATION,
       ...raw,
       // Re-aplica nested defaults se ausentes
-      investment: { ...EMPTY_RECOMMENDATION.investment, ...(raw.investment ?? {}) },
-      expected_return: { ...EMPTY_RECOMMENDATION.expected_return, ...(raw.expected_return ?? {}) },
       stakeholders: { ...EMPTY_RECOMMENDATION.stakeholders, ...(raw.stakeholders ?? {}) },
       communication_plan: { ...EMPTY_RECOMMENDATION.communication_plan, ...(raw.communication_plan ?? {}) },
       roadmap: raw.roadmap ?? [],

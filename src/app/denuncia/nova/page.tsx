@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export default function NovaDenunciaPage() {
@@ -69,7 +68,7 @@ export default function NovaDenunciaPage() {
       } else {
         toast.error(result.error || "Erro ao enviar denúncia");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erro de conexão");
     } finally {
       setLoading(false);

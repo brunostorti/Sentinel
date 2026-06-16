@@ -6,15 +6,20 @@ import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+interface TrackedReport {
+  status: string;
+  occurrence_type: string;
+  created_at: string;
+}
 
 export default function AcompanharDenunciaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [protocol, setProtocol] = useState("");
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<TrackedReport | null>(null);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +35,7 @@ export default function AcompanharDenunciaPage() {
         const data = await res.json();
         setReport(data);
       }
-    } catch (error) {
+    } catch {
       toast.error("Erro ao buscar protocolo.");
       setReport(null);
     } finally {

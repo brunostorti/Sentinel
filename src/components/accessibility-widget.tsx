@@ -158,7 +158,7 @@ export function AccessibilityWidget() {
                 </Button>
               </div>
 
-              <DropdownMenuSeparator className="my-2" />
+              <div className="my-2 h-px bg-border" />
 
               <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={reset}>
                 Resetar Configurações
@@ -169,8 +169,4 @@ export function AccessibilityWidget() {
       </AnimatePresence>
     </>
   )
-}
-
-function DropdownMenuSeparator({ className }: { className?: string }) {
-  return <div className={`h-px bg-border ${className}`} />
 }

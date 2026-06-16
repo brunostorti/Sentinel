@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Icon } from "@/components/icon";
-import { Button } from "@/components/ui/button";
 
 export default function DenunciaPage() {
   return (
