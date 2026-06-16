@@ -16,8 +16,8 @@ import { buildPerfilNarrativo } from "../profile/narrative";
 import { getInterventionById } from "../knowledge-base/catalog";
 import { getProvidersForIntervention } from "../knowledge-base/providers-br";
 import { getCasesByIntervention } from "../knowledge-base/cases";
-import { INACTION_COSTS } from "../knowledge-base/catalog";
 import { getReferencesForInterventions, type KbReferenceWithRelevance } from "../knowledge-base/references";
+import type { GroundedFacts } from "./grounding";
 import { extractJsonArray } from "./json-utils";
 
 interface CompanyInfo {
@@ -36,24 +36,57 @@ export interface ConsultantPlanItem {
 
 function buildSelectionBlock(
   selection: CuratedSelection,
-  prioritizedNames: Map<string, string>
+  prioritizedNames: Map<string, string>,
+  grounding: Map<string, GroundedFacts>
 ): string {
   return selection.candidates
     .map((c) => {
       const iv = getInterventionById(c.intervention_id);
       if (!iv) return `- [INTERVENÇÃO DESCONHECIDA: ${c.intervention_id}]`;
       const dimName = prioritizedNames.get(c.dimension_id) ?? c.dimension_id;
+      const facts = grounding.get(`${c.dimension_id}::${c.intervention_id}`);
+
+      const setorAlvo =
+        facts?.department && facts.department !== "all"
+          ? `${facts.department} (${facts.headcount} pessoas)`
+          : `toda a empresa (${facts?.headcount ?? "?"} pessoas)`;
+
+      const evidenceLines =
+        facts?.surveyEvidence && facts.surveyEvidence.length > 0
+          ? facts.surveyEvidence
+              .map(
+                (e) =>
+                  `    • "${e.questionText}" — ${e.criticalPercent}% no nível crítico (n=${e.respondents})`
+              )
+              .join("\n")
+          : "    (sem evidência por pergunta — Regra de 5; foque no diagnóstico da dimensão)";
+
+      const fin = facts?.financials;
+      const finBlock = fin
+        ? [
+            `Investimento (JÁ CALCULADO): ${fin.investment.value}  [${fin.investment.formula}]`,
+            `Custo de inação (JÁ CALCULADO): ${fin.inactionCost.value}  [fonte: ${fin.inactionCost.source}]`,
+            fin.isAdministrative
+              ? "Ação administrativa — sem ROI."
+              : `Retorno estimado: ${fin.expectedReturnConservative?.value} (conservador) a ${fin.expectedReturnOptimistic?.value} (otimista) / ano · payback ${fin.paybackPeriod}`,
+          ].join("\n")
+        : "(sem números financeiros para este item)";
+
       return `### ${dimName}
 dimension_id="${c.dimension_id}"  (USE EXATAMENTE este uuid no output — NÃO invente)
 intervention_id="${iv.intervention_id}"  (USE EXATAMENTE este slug)
 universal_category_code="${iv.universal_category_code}"
+SETOR-ALVO REAL: ${setorAlvo}
 Título base: ${iv.title}
 Descrição base: ${iv.description}
-Categoria: ${iv.universal_category_code}
 Esforço: ${iv.effort} | Timeframe base: ${iv.timeframe}
-Custo/colab/ano: R$${iv.cost_per_employee.min}-${iv.cost_per_employee.max}
 Justificativa do Curator: ${c.personalization_rationale}
-Impactos esperados (catálogo): ${iv.expected_impact.map((e) => `${e.metric} ${e.change_percent > 0 ? "+" : ""}${e.change_percent}% (${e.evidence_source})`).join("; ")}`;
+
+PERGUNTAS REAIS DA PESQUISA QUE PUXARAM O SCORE (cite ao menos uma, literal, no rationale):
+${evidenceLines}
+
+NÚMEROS JÁ CALCULADOS PELO SISTEMA (NÃO recalcule, NÃO invente — apenas referencie em texto quando útil):
+${finBlock}`;
     })
     .join("\n\n");
 }
@@ -111,6 +144,7 @@ export async function runConsultant(args: {
   profile: CompanyProfile;
   company: CompanyInfo;
   history?: CompanyActionTaken[];
+  grounding: Map<string, GroundedFacts>;
 }): Promise<ConsultantPlanItem[]> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
@@ -127,20 +161,24 @@ export async function runConsultant(args: {
     args.report.prioritized_dimensions.map((d) => [d.dimension_id, d.dimension_name])
   );
 
-  const selectionBlock = buildSelectionBlock(args.selection, prioritizedNames);
+  const selectionBlock = buildSelectionBlock(
+    args.selection,
+    prioritizedNames,
+    args.grounding
+  );
   const providersBlock = buildProvidersBlock(args.selection);
   const casesBlock = buildCasesBlock(args.selection);
   const interventionIds = args.selection.candidates.map((c) => c.intervention_id);
   const refsByIntervention = await getReferencesForInterventions(interventionIds);
   const referencesBlock = buildReferencesBlock(refsByIntervention);
-  const employeeCount = args.company.employee_count ?? 100;
 
-  const prompt = `Você é o consultor sênior que escreve o PLANO FINAL para o HR executar. Cada plano deve ser PRAGMÁTICO, ESPECÍFICO e CONFIÁVEL.
+  const prompt = `Você é o consultor sênior que escreve o PLANO FINAL para o RH executar. Cada plano deve ser PRAGMÁTICO, ESPECÍFICO e ANCORADO NOS DADOS REAIS fornecidos.
 
 ## Perfil narrativo da empresa
 ${perfilNarrativo}
 
-## Seleção do Curator (você DEVE escrever um plano para cada item abaixo)
+## Seleção do Curator (escreva um plano para CADA item)
+Cada item traz o SETOR-ALVO REAL, as PERGUNTAS REAIS da pesquisa e os NÚMEROS já calculados pelo sistema.
 ${selectionBlock}
 
 ## Fornecedores brasileiros disponíveis para essas intervenções
@@ -149,119 +187,57 @@ ${providersBlock || "(nenhum fornecedor específico catalogado)"}
 ## Casos setoriais relevantes (use para impact_metrics quando aplicável)
 ${casesBlock || "(nenhum caso setorial específico)"}
 
-## ⭐ REFERÊNCIAS CIENTÍFICAS CURADAS POR INTERVENÇÃO
-USE EXCLUSIVAMENTE estas referências em impact_metrics[].evidence.study_or_case.
-Os campos abaixo (citation_key, alegação) são VERIFICÁVEIS — não invente fontes.
-
+## Referências científicas curadas (verificáveis)
 ${referencesBlock || "(nenhuma referência curada)"}
 
-## Custos de inação (para risk_if_not_acted)
-- Turnover: R$${INACTION_COSTS.turnover.cost_per_employee}/substituição (${INACTION_COSTS.turnover.source})
-- Absenteísmo: R$${INACTION_COSTS.absenteeism.cost_per_day}/dia × ${INACTION_COSTS.absenteeism.avg_days_per_year} dias/ano (${INACTION_COSTS.absenteeism.source})
-- Presenteísmo: R$${INACTION_COSTS.presenteeism.annual_cost_per_employee}/colab/ano (${INACTION_COSTS.presenteeism.source})
-- Processo trabalhista: R$${INACTION_COSTS.lawsuits.avg_cost}/processo (${INACTION_COSTS.lawsuits.source})
-- Multa NR-1: R$${INACTION_COSTS.nr1_penalty.min_fine}-${INACTION_COSTS.nr1_penalty.max_fine}/infração
+## REGRAS CRÍTICAS
 
-## REGRAS
+### Você NÃO escreve números
+- NÃO produza investimento, ROI, retorno, % de impacto ou custos. Esses valores JÁ foram calculados pelo sistema (bloco "NÚMEROS JÁ CALCULADOS") e serão anexados automaticamente ao plano.
+- Se citar um valor no texto (ex.: em risk_if_not_acted), use EXATAMENTE o número fornecido — nunca invente outro.
 
-### Realismo
-- ROI máximo: 5x em 12 meses. NUNCA acima.
-- Efetividade assumida: 30-50% do impacto teórico (não 100%).
-- Se investimento < R$5.000/ano, NÃO calcule ROI — é ação administrativa.
-- Mostre o cálculo no breakdown para ser transparente.
+### Ancoragem nos dados reais (OBRIGATÓRIO)
+- No "rationale", CITE LITERALMENTE ao menos uma das "PERGUNTAS REAIS DA PESQUISA" do item e mencione o SETOR-ALVO REAL. É isso que torna o plano específico desta empresa.
+- Não escreva nada que serviria para qualquer empresa — conecte tudo ao que a pesquisa revelou.
 
 ### Aplicabilidade
 - roadmap: 3-5 etapas com fase (semana/mês), entregável claro e owner_role.
 - prerequisites: o que precisa estar pronto ANTES.
-- vendors: liste 2-3 dos fornecedores acima, com why_fit explicando porque ESTA empresa (cite perfil).
-- leading_indicators: 2-3 KPIs intermediários ANTES da próxima pesquisa (adesão, NPS interno, n° sessões, etc.).
-- communication_plan: como anunciar aos colaboradores.
+- vendors: 2-3 dos fornecedores acima, com why_fit citando o perfil/setor.
+- leading_indicators: 2-3 KPIs intermediários (adesão, NPS interno, n° sessões, etc.).
+- communication_plan: como anunciar aos colaboradores do setor-alvo.
 
-### Compliance
-- nr1_compliance: use só refs verificáveis ("Atende NR-1, Portaria MTE 1.419/2024 — gestão de riscos psicossociais" ou null).
-- compliance_extra: liste se aplicável LGPD (se trata dado de saúde), NR-17 (ergonomia), CLT (jornada).
-
-### Riscos
-- risk_if_not_acted: custo de NÃO fazer, com valores estimados.
+### Compliance & Riscos
+- nr1_compliance: "Atende NR-1, Portaria MTE 1.419/2024 — gestão de riscos psicossociais" ou null.
+- compliance_extra: LGPD, NR-17, CLT quando aplicável.
+- risk_if_not_acted: consequências de não agir (pode referenciar o custo de inação já calculado).
 - implementation_risks: 2-3 itens — o que dá errado AO EXECUTAR + mitigation.
 
-### Evidência (OBRIGATÓRIO)
-- impact_metrics[].evidence.study_or_case = citation_key EXATA do bloco "REFERÊNCIAS CIENTÍFICAS CURADAS" acima (ex: "WHO2022_Guidelines", "Cochrane2024_OrgHealthcare", "INSS2026").
-- evidence.year = ano da referência (ver lista acima).
-- evidence.url_or_doi = NULL (o frontend resolve via lookup da citation_key).
-- evidence.br_context = só se houver caso setorial brasileiro acima OU se a referência for BR (ex: INSS2026, NR1_2024, Lei14831_2024).
-- NUNCA invente citation_keys. Se não tiver referência adequada na lista, omita a métrica.
-
-## OUTPUT — JSON array, um item por candidato do Curator (não invente itens extras).
+## OUTPUT — JSON array, um item por candidato (não invente itens extras, NÃO inclua campos numéricos).
 
 [
   {
-    "dimension_id": "uuid",
-    "intervention_id": "slug do catálogo",
+    "dimension_id": "uuid (exato do item)",
+    "intervention_id": "slug (exato do item)",
     "universal_category_code": "código",
     "recommendation": {
       "title": "≤80 chars",
       "description": "3-4 frases",
       "quick_action": "primeiros 30 dias, 1-2 frases",
-      "rationale": "por que ISSO para ESTA empresa (cite perfil)",
-      "recommendation_status": "Escolha exatamente um: MITIGAR, RESOLVER, TRANSFERIR ou ACEITAR",
-      "roadmap": [
-        { "phase": "Semana 1-2", "deliverable": "...", "owner_role": "..." }
-      ],
+      "rationale": "por que ISSO para ESTE setor — CITE uma pergunta real da pesquisa",
+      "recommendation_status": "MITIGAR | RESOLVER | TRANSFERIR | ACEITAR",
+      "roadmap": [ { "phase": "Semana 1-2", "deliverable": "...", "owner_role": "..." } ],
       "prerequisites": ["..."],
       "time_to_first_value": "...",
       "internal_capacity_required": "...",
-      "stakeholders": {
-        "accountable": "cargo (1)",
-        "responsible": ["..."],
-        "consulted": ["..."],
-        "informed": ["..."]
-      },
-      "vendors": [
-        {
-          "name": "...",
-          "modality": "...",
-          "price_range": "R$X-Y/colab/mês",
-          "contact_url": "https://...",
-          "why_fit": "por que cabe NESSA empresa"
-        }
-      ],
+      "stakeholders": { "accountable": "cargo (1)", "responsible": ["..."], "consulted": ["..."], "informed": ["..."] },
+      "vendors": [ { "name": "...", "modality": "...", "price_range": "R$X-Y/colab/mês", "contact_url": "https://...", "why_fit": "por que cabe NESTE setor" } ],
       "internal_alternative": "variante sem fornecedor externo" ou null,
-      "leading_indicators": [
-        { "metric": "...", "target": "...", "measurement": "..." }
-      ],
+      "leading_indicators": [ { "metric": "...", "target": "...", "measurement": "..." } ],
       "monitoring_cadence": "...",
-      "communication_plan": {
-        "channels": ["..."],
-        "key_message": "...",
-        "timing": "..."
-      },
-      "investment": {
-        "total_annual": "R$ X — R$ Y/ano",
-        "per_employee_month": "R$ X-Y",
-        "breakdown": "cálculo: ${employeeCount} colab × R$X/mês = ..."
-      },
-      "expected_return": {
-        "conservative": "R$ X/ano (30% efetiv.) — cálculo",
-        "optimistic": "R$ Y/ano (50% efetiv.) — cálculo",
-        "payback_period": "X-Y meses"
-      },
-      "impact_metrics": [
-        {
-          "metric": "...",
-          "change": "-X a -Y%",
-          "evidence": {
-            "study_or_case": "...",
-            "year": 2024,
-            "url_or_doi": null,
-            "br_context": "contexto BR ou null"
-          }
-        }
-      ],
-      "risk_if_not_acted": "consequências com valores",
-      "implementation_risks": [
-        { "risk": "...", "mitigation": "..." }
-      ],
+      "communication_plan": { "channels": ["..."], "key_message": "...", "timing": "..." },
+      "risk_if_not_acted": "consequências (pode citar o custo de inação calculado)",
+      "implementation_risks": [ { "risk": "...", "mitigation": "..." } ],
       "nr1_compliance": "..." ou null,
       "compliance_extra": ["..."]
     }
@@ -272,7 +248,7 @@ Devolva APENAS o JSON array.`;
 
   const client = new Anthropic({ apiKey });
   const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 16384,
     messages: [{ role: "user", content: prompt }],
   });
