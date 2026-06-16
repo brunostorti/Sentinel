@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
         let fullReply = "";
         try {
           const anthropicStream = await client.messages.stream({
-            model: "claude-sonnet-4-20250514",
+            model: "claude-sonnet-4-6",
             max_tokens: 2048,
             system: systemPrompt,
             messages: messagesForLLM,
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   // ── Síncrono (fallback / clientes que não querem stream) ─────────
   try {
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2048,
       system: systemPrompt,
       messages: messagesForLLM,
