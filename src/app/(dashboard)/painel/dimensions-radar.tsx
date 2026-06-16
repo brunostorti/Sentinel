@@ -54,23 +54,24 @@ export function DimensionsRadar({ scores }: DimensionsRadarProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={320}>
           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
-            <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.25} />
+            <PolarGrid stroke="var(--border)" strokeOpacity={0.4} />
             <PolarAngleAxis
               dataKey="category"
-              tick={{ fontSize: 12, fontWeight: 600, fill: "hsl(var(--foreground))" }}
+              tick={{ fontSize: 12, fontWeight: 600, fill: "var(--foreground)" }}
             />
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              stroke="hsl(var(--border))"
-              strokeOpacity={0.2}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              stroke="var(--border)"
+              strokeOpacity={0.3}
             />
             <Tooltip
               contentStyle={{
                 borderRadius: "12px",
-                border: "1px solid hsl(var(--border))",
-                backgroundColor: "hsl(var(--background))",
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--popover)",
+                color: "var(--popover-foreground)",
                 fontSize: "12px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               }}

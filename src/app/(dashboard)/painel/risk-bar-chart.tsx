@@ -52,25 +52,26 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(350, data.length * 28 + 40)}>
           <BarChart data={data} layout="vertical" margin={{ left: 16, right: 24 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} strokeOpacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} strokeOpacity={0.5} />
             <XAxis
               type="number"
               domain={[0, 100]}
-              tick={{ fontSize: 11 }}
-              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              stroke="var(--border)"
             />
             <YAxis
               type="category"
               dataKey="name"
               width={220}
-              tick={{ fontSize: 11 }}
-              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 11, fill: "var(--foreground)" }}
+              stroke="var(--border)"
             />
             <Tooltip
               contentStyle={{
                 borderRadius: "12px",
-                border: "1px solid hsl(var(--border))",
-                backgroundColor: "hsl(var(--background))",
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--popover)",
+                color: "var(--popover-foreground)",
                 fontSize: "12px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               }}
@@ -79,7 +80,7 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
                 const item = data.find((d) => d.name === label);
                 return item?.fullName ?? String(label);
               }}
-              cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+              cursor={{ fill: "var(--muted)", opacity: 0.3 }}
             />
             <ReferenceLine x={33} stroke="#f1c40f" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.6} />
             <ReferenceLine x={66} stroke="#2ecc71" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.6} />

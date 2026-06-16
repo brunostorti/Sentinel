@@ -12,9 +12,9 @@ interface HealthGaugeProps {
 }
 
 function getHealthColor(score: number) {
-  if (score >= 66) return { color: "#2ecc71", label: "Bom", ring: "ring-emerald-200" };
-  if (score >= 40) return { color: "#f1c40f", label: "Atenção", ring: "ring-amber-200" };
-  return { color: "#e74c3c", label: "Crítico", ring: "ring-red-200" };
+  if (score >= 66) return { color: "#2ecc71", label: "Bom", ring: "ring-emerald-200 dark:ring-emerald-700" };
+  if (score >= 40) return { color: "#f1c40f", label: "Atenção", ring: "ring-amber-200 dark:ring-amber-700" };
+  return { color: "#e74c3c", label: "Crítico", ring: "ring-red-200 dark:ring-red-700" };
 }
 
 export function HealthGauge({
@@ -67,7 +67,7 @@ export function HealthGauge({
                   animationEasing="ease-out"
                 >
                   <Cell fill={color} />
-                  <Cell fill="hsl(var(--muted))" />
+                  <Cell fill="var(--muted)" />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>

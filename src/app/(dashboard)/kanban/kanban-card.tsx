@@ -104,7 +104,7 @@ export function KanbanCard({
             <div
               className={`flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] ${
                 overdue
-                  ? "bg-red-100 text-red-700 font-semibold"
+                  ? "bg-red-100 text-red-700 font-semibold dark:bg-red-950/50 dark:text-red-400"
                   : "bg-muted/60 text-muted-foreground"
               }`}
             >
