@@ -24,25 +24,25 @@ interface DimensionSemaphoreProps {
 const TRAFFIC_CONFIG = {
   GREEN: {
     label: "Favorável",
-    color: "text-emerald-700 dark:text-emerald-400",
-    bg: "bg-gradient-to-br from-emerald-50 to-emerald-50/30 dark:from-emerald-950/30 dark:to-emerald-950/10",
-    border: "border-emerald-200/60 dark:border-emerald-800",
+    color: "text-emerald-700 dark:text-emerald-300",
+    bg: "bg-gradient-to-br from-emerald-50 to-emerald-50/30 dark:from-card dark:to-card",
+    border: "border-emerald-200/60 dark:border-emerald-600/50",
     dot: "bg-emerald-500",
     icon: "check_circle",
   },
   YELLOW: {
     label: "Intermédio",
-    color: "text-amber-700 dark:text-amber-400",
-    bg: "bg-gradient-to-br from-amber-50 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10",
-    border: "border-amber-200/60 dark:border-amber-800",
+    color: "text-amber-700 dark:text-amber-300",
+    bg: "bg-gradient-to-br from-amber-50 to-amber-50/30 dark:from-card dark:to-card",
+    border: "border-amber-200/60 dark:border-amber-600/50",
     dot: "bg-amber-500",
     icon: "warning",
   },
   RED: {
     label: "Risco",
-    color: "text-red-700 dark:text-red-400",
-    bg: "bg-gradient-to-br from-red-50 to-red-50/30 dark:from-red-950/30 dark:to-red-950/10",
-    border: "border-red-200/60 dark:border-red-800",
+    color: "text-red-700 dark:text-red-300",
+    bg: "bg-gradient-to-br from-red-50 to-red-50/30 dark:from-card dark:to-card",
+    border: "border-red-200/60 dark:border-red-600/50",
     dot: "bg-red-500",
     icon: "error",
   },
@@ -125,16 +125,16 @@ export function DimensionSemaphore({
 
       {/* Anonymity warning */}
       {isAnonymized && (
-        <Card className="animate-scale-in border-dashed border-amber-300/60 bg-gradient-to-r from-amber-50/80 to-amber-50/30">
+        <Card className="animate-scale-in border-dashed border-amber-300/60 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:border-amber-800/40 dark:from-amber-950/40 dark:to-amber-950/20">
           <CardContent className="flex items-center gap-4 py-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100/80">
-              <Icon name="lock" size={22} className="text-amber-600" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100/80 dark:bg-amber-900/40">
+              <Icon name="lock" size={22} className="text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="font-bold text-amber-800">
+              <p className="font-bold text-amber-800 dark:text-amber-300">
                 Dados insuficientes para preservar o anonimato
               </p>
-              <p className="mt-0.5 text-sm text-amber-700/80">
+              <p className="mt-0.5 text-sm text-amber-700/80 dark:text-amber-400/90">
                 São necessárias pelo menos 5 respostas para exibir os
                 resultados deste departamento.
               </p>

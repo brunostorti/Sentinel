@@ -184,8 +184,8 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
 
             {/* Error */}
             {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 dark:bg-red-950/40 dark:border-red-800/50">
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
 

@@ -19,16 +19,16 @@ export function CriticalAreas({ scores }: CriticalAreasProps) {
 
   if (critical.length === 0) {
     return (
-      <Card className="card-hover animate-fade-in-up border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30">
+      <Card className="card-hover animate-fade-in-up border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:border-emerald-800/40 dark:from-emerald-950/40 dark:to-emerald-950/20">
         <CardContent className="flex items-center gap-4 py-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100/80">
-            <Icon name="check_circle" size={26} className="text-emerald-600" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100/80 dark:bg-emerald-900/40">
+            <Icon name="check_circle" size={26} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-base font-bold text-emerald-800">
+            <p className="text-base font-bold text-emerald-800 dark:text-emerald-300">
               Todas as dimensões favoráveis
             </p>
-            <p className="mt-0.5 text-sm text-emerald-600/80">
+            <p className="mt-0.5 text-sm text-emerald-600/80 dark:text-emerald-400/90">
               Nenhuma dimensão em nível de risco ou intermédio.
             </p>
           </div>
@@ -53,8 +53,8 @@ export function CriticalAreas({ scores }: CriticalAreasProps) {
               key={dim.dimensionId}
               className={`group flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:scale-[1.01] ${
                 isRed
-                  ? "border border-red-200/60 bg-gradient-to-r from-red-50 to-red-50/30"
-                  : "border border-amber-200/60 bg-gradient-to-r from-amber-50 to-amber-50/30"
+                  ? "border border-red-200/60 bg-gradient-to-r from-red-50 to-red-50/30 dark:border-red-600/50 dark:bg-none dark:bg-card"
+                  : "border border-amber-200/60 bg-gradient-to-r from-amber-50 to-amber-50/30 dark:border-amber-600/50 dark:bg-none dark:bg-card"
               }`}
             >
               <div
@@ -73,14 +73,14 @@ export function CriticalAreas({ scores }: CriticalAreasProps) {
               <div className="text-right">
                 <p
                   className={`text-lg font-black ${
-                    isRed ? "text-red-600" : "text-amber-600"
+                    isRed ? "text-red-600 dark:text-red-300" : "text-amber-600 dark:text-amber-300"
                   }`}
                 >
                   {Math.round(dim.displayScore)}
                 </p>
                 <p
                   className={`text-[10px] font-semibold ${
-                    isRed ? "text-red-500" : "text-amber-500"
+                    isRed ? "text-red-500 dark:text-red-400" : "text-amber-500 dark:text-amber-400"
                   }`}
                 >
                   {isRed ? "Risco" : "Intermédio"}

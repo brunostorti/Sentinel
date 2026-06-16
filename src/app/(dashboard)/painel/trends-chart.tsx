@@ -96,28 +96,29 @@ export function TrendsChart({ surveys, dimensions }: TrendsChartProps) {
         <CardContent className="pt-6">
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.5} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 12 }}
-                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                stroke="var(--border)"
               />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 12 }}
-                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                stroke="var(--border)"
                 label={{
                   value: "Score",
                   angle: -90,
                   position: "insideLeft",
-                  style: { fontSize: 12 },
+                  style: { fontSize: 12, fill: "var(--muted-foreground)" },
                 }}
               />
               <Tooltip
                 contentStyle={{
                   borderRadius: "12px",
-                  border: "1px solid hsl(var(--border))",
-                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--popover)",
+                  color: "var(--popover-foreground)",
                   fontSize: "12px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                 }}
