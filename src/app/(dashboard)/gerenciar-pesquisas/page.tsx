@@ -168,7 +168,9 @@ export default async function SurveyManagementPage() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Icon name="apartment" size={15} />
-                      {surveyTargets[survey.id]?.length
+                      {surveyTargets[survey.id]?.length === (departments?.length || 0)
+                        ? "Todos os setores"
+                        : surveyTargets[survey.id]?.length
                         ? `${surveyTargets[survey.id].length} setor(es)`
                         : "Todos os setores"}
                     </span>

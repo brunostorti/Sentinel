@@ -40,15 +40,15 @@ export default async function ActionPlansPage() {
   // senão pesquisas ACTIVE com planos sumiriam).
   const { data: surveyRows } = await supabase
     .from("surveys")
-    .select("id, title, status")
+    .select("id, title, status, created_at, instrument_id")
     .eq("company_id", companyId)
     .in("status", ["CLOSED", "ACTIVE"]);
 
   // Mapa de pesquisas-card: começa pelas CLOSED/ACTIVE e garante que
   // qualquer pesquisa referenciada por um plano também apareça.
-  const surveyMap = new Map<string, { id: string; title: string; status: string }>();
+  const surveyMap = new Map<string, { id: string; title: string; status: string; created_at?: string; instrument_id?: string }>();
   for (const s of surveyRows ?? []) {
-    surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status });
+    surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status, created_at: s.created_at, instrument_id: s.instrument_id });
   }
   for (const p of plans) {
     if (p.surveys && !surveyMap.has(p.surveys.id)) {
@@ -110,6 +110,8 @@ export default async function ActionPlansPage() {
       surveyId: s.id,
       title: s.title,
       status: s.status as "CLOSED" | "ACTIVE",
+      createdAt: s.created_at || new Date().toISOString(),
+      instrumentId: s.instrument_id || "",
       counts,
       healthIndex: health?.healthIndex ?? null,
       isAnonymized: health?.isAnonymized ?? false,
@@ -117,7 +119,9 @@ export default async function ActionPlansPage() {
     };
   });
 
-  // Ordena: com planos pendentes primeiro, depois por total de planos
+  // A ordenação inicial será feita no Client Component (SurveyCardsGrid)
+  // pois agora temos opções de ordenação. Passaremos a lista desordenada ou
+  // apenas uma ordenação default (ex: pendentes).
   cards.sort((a, b) => {
     if (b.counts.pending !== a.counts.pending) return b.counts.pending - a.counts.pending;
     return b.counts.total - a.counts.total;
