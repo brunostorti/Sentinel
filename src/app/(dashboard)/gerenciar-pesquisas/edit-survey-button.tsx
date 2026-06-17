@@ -110,7 +110,7 @@ export function EditSurveyButton({
       instrumentId: selectedInstrument.id,
       version: hasVersions ? version : null,
       expiresAt: expiresAt || null,
-      targetDepartmentIds: targetAll ? null : selectedDepartments,
+      targetDepartmentIds: targetAll ? departments.map(d => d.id) : selectedDepartments,
     });
 
     if (result.error) {
@@ -308,66 +308,7 @@ export function EditSurveyButton({
                 </div>
               </div>
 
-              {/* MATRÍCULA DE COLABORADORES MOCKUP */}
-              <div className="space-y-1.5 pt-2 border-t border-border/50">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Matrícula de Colaboradores
-                </Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setMatriculaOption("manter")}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      matriculaOption === "manter"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm">Manter atuais</p>
-                    <p className="text-[10px] opacity-70 mt-0.5">Nenhuma alteração nos participantes.</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMatriculaOption("todos");
-                      setTargetAll(false);
-                      setSelectedDepartments(departments.map(d => d.id));
-                    }}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      matriculaOption === "todos"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm text-foreground">Todos da empresa</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Associa todos os funcionários.</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMatriculaOption("setor")}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      matriculaOption === "setor"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm text-foreground">Pelo Setor</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Associa quem é do setor alvo.</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMatriculaOption("custom")}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      matriculaOption === "custom"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm text-foreground">Customizado</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Seleciona individualmente.</p>
-                  </button>
-                </div>
-              </div>
+
 
               {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

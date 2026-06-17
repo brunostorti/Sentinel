@@ -15,6 +15,8 @@ export interface SurveyCardData {
   surveyId: string;
   title: string;
   status: "CLOSED" | "ACTIVE";
+  createdAt?: string;
+  instrumentId?: string;
   counts: {
     pending: number;
     approved: number;
@@ -42,6 +44,26 @@ interface Props {
 export function SurveyCardsGrid({ cards, canManage, hasAnySurveys, hasApiKey }: Props) {
   const router = useRouter();
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"pending" | "date_desc" | "date_asc" | "type">("pending");
+
+  const sortedCards = [...cards].sort((a, b) => {
+    if (sortBy === "pending") {
+      if (b.counts.pending !== a.counts.pending) return b.counts.pending - a.counts.pending;
+      return b.counts.total - a.counts.total;
+    }
+    if (sortBy === "date_desc") {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    }
+    if (sortBy === "date_asc") {
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    }
+    if (sortBy === "type") {
+      const typeA = a.instrumentId || "";
+      const typeB = b.instrumentId || "";
+      return typeA.localeCompare(typeB);
+    }
+    return 0;
+  });
 
   async function handleGenerate(surveyId: string) {
     setGeneratingFor(surveyId);
@@ -77,17 +99,35 @@ export function SurveyCardsGrid({ cards, canManage, hasAnySurveys, hasApiKey }: 
   }
 
   return (
-    <div className="stagger-children grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {cards.map((card) => (
-        <SurveyCard
-          key={card.surveyId}
-          card={card}
-          canManage={canManage}
-          generating={generatingFor === card.surveyId}
-          anyGenerating={generatingFor !== null}
-          onGenerate={() => handleGenerate(card.surveyId)}
-        />
-      ))}
+    <div>
+      <div className="mb-4 flex items-center justify-end gap-2 animate-fade-in-up">
+        <label className="text-sm text-muted-foreground font-semibold">Ordenar por:</label>
+        <div className="relative">
+          <select
+            className="appearance-none rounded-lg border border-border bg-background px-3 py-1.5 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+          >
+            <option value="pending">Mais pendentes</option>
+            <option value="date_desc">Mais recentes</option>
+            <option value="date_asc">Mais antigas</option>
+            <option value="type">Tipo de pesquisa</option>
+          </select>
+          <Icon name="expand_more" size={16} className="absolute right-2.5 top-2 text-muted-foreground pointer-events-none" />
+        </div>
+      </div>
+      <div className="stagger-children grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {sortedCards.map((card) => (
+          <SurveyCard
+            key={card.surveyId}
+            card={card}
+            canManage={canManage}
+            generating={generatingFor === card.surveyId}
+            anyGenerating={generatingFor !== null}
+            onGenerate={() => handleGenerate(card.surveyId)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -177,13 +217,11 @@ function SurveyCard({
           className="flex flex-1 flex-col"
         >
           {inner}
-          <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary">
-            Ver planos
-            <Icon
-              name="arrow_forward"
-              size={14}
-              className="transition group-hover:translate-x-0.5"
-            />
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <div className="flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-bold text-primary transition-colors group-hover:bg-primary/10">
+              Ver mais
+              <Icon name="arrow_forward" size={14} />
+            </div>
           </div>
         </Link>
       </Card>

@@ -98,7 +98,7 @@ export function CreateSurveyButton({
       instrumentId: selectedInstrument.id,
       version: hasVersions ? version : null,
       expiresAt: expiresAt || null,
-      targetDepartmentIds: targetAll ? null : selectedDepartments,
+      targetDepartmentIds: targetAll ? departments.map(d => d.id) : selectedDepartments,
     });
 
     if (result.error) {
