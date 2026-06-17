@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { sendChatStream } from "@/lib/chat-stream";
 
 /**
- * Painel de chat embutido na página de detalhe do plano.
- * Diferente do PlanChatDrawer (que é flutuante): este vive numa coluna fixa.
+ * Corpo do chat do plano (histórico + sugestões + composer), sem header.
+ * Compartilhado pelo drawer flutuante. A API/stream é inalterada.
  */
 
 interface Message {
@@ -25,7 +25,7 @@ const SUGGESTIONS = [
   "Acelera o roadmap pra 60 dias",
 ];
 
-export function PlanChatPanel({ planId }: { planId: string }) {
+export function PlanChatBody({ planId }: { planId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -97,24 +97,8 @@ export function PlanChatPanel({ planId }: { planId: string }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Header do painel */}
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-          <Icon name="forum" size={16} className="text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold leading-tight">Discutir com a IA</p>
-          <p className="text-[11px] leading-tight text-muted-foreground">
-            Pergunte, refine, simule cenários
-          </p>
-        </div>
-      </div>
-
       {/* Histórico */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
         {!loaded && (
           <p className="text-xs text-muted-foreground">Carregando histórico...</p>
         )}

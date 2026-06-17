@@ -17,6 +17,9 @@ import {
 import { Icon } from "@/components/icon";
 import { bulkApproveActionPlans, generatePlansForSurvey } from "./actions";
 import type { PlanView } from "./types";
+import { Counter } from "./_components/counter";
+import { EmptyState } from "./_components/empty-state";
+import { StrategyBadge } from "./_components/strategy-badge";
 
 interface ActionPlansListProps {
   plans: PlanView[];
@@ -373,32 +376,6 @@ export function ActionPlansList({
    Subcomponents
    ───────────────────────────────────────────────────────────────── */
 
-function Counter({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent: "amber" | "emerald" | "zinc" | "blue";
-}) {
-  const colors = {
-    amber: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-    emerald:
-      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
-    blue: "bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
-    zinc: "bg-zinc-100 text-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400",
-  };
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${colors[accent]}`}
-    >
-      <span className="tabular-nums text-sm font-black">{value}</span>
-      <span className="opacity-80">{label}</span>
-    </div>
-  );
-}
-
 function Group({
   title,
   icon,
@@ -491,21 +468,7 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
               NR-1
             </Badge>
           )}
-          {rec.recommendation_status && (
-            <Badge variant="outline" className={`h-5 gap-0.5 text-[10px] ${
-              rec.recommendation_status === "MITIGAR" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-              rec.recommendation_status === "RESOLVER" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
-              rec.recommendation_status === "TRANSFERIR" ? "bg-purple-500/10 text-purple-600 border-purple-500/20" :
-              "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-            }`}>
-              <Icon name={
-                rec.recommendation_status === "MITIGAR" ? "shield" :
-                rec.recommendation_status === "RESOLVER" ? "build" :
-                rec.recommendation_status === "TRANSFERIR" ? "swap_horiz" : "check"
-              } size={10} />
-              {rec.recommendation_status}
-            </Badge>
-          )}
+          <StrategyBadge status={rec.recommendation_status} />
           {plan.status === "COMPLETED" && plan.outcome && (
             <Badge variant="outline" className="h-5 gap-0.5 text-[10px] border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Icon name="check" size={10} />
@@ -573,22 +536,3 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-border/60 bg-gradient-to-b from-muted/30 to-transparent p-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 ring-1 ring-primary/10">
-        <Icon name={icon} size={32} className="text-primary/40" />
-      </div>
-      <p className="mt-4 text-base font-bold text-foreground/70">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}

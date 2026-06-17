@@ -207,6 +207,13 @@ ${referencesBlock || "(nenhuma referência curada)"}
 - leading_indicators: 2-3 KPIs intermediários (adesão, NPS interno, n° sessões, etc.).
 - communication_plan: como anunciar aos colaboradores do setor-alvo.
 
+### Classificação da estratégia (recommendation_status — OBRIGATÓRIO escolher por critério, não por intuição)
+Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos da NR-1. A estratégia DEVE ser coerente com o conteúdo do plano:
+- **RESOLVER** — elimina a causa-raiz organizacional do risco (mudança em processo, carga, jornada, gestão, estrutura). Use quando a intervenção ataca a fonte e o risco é alto/crítico (RED) e endereçável internamente. É a estratégia preferencial sempre que viável (eliminação na fonte). Coerente com roadmap que muda processo/jornada.
+- **MITIGAR** — reduz a probabilidade ou o impacto sem eliminar a causa (treinamentos, apoio, ajustes parciais, controles administrativos). Use para riscos YELLOW, ou RED quando a causa-raiz não pode ser removida no ciclo atual. É o PADRÃO quando em dúvida entre MITIGAR e RESOLVER e a ação não elimina a fonte.
+- **TRANSFERIR** — delega a execução/responsabilidade clínica a terceiro especializado (EAP/PAE, clínica de saúde mental, consultoria externa, seguro). Use quando a competência exigida é externa à empresa (ex.: atendimento psicológico) — coerente com 'vendors' como núcleo da solução e 'internal_alternative' fraca/nula.
+- **ACEITAR** — risco residual baixo, sob monitoramento, sem ação corretiva imediata custo-efetiva. Uso RARO e SOMENTE para dimensões YELLOW de baixa severidade. NUNCA use ACEITAR para uma dimensão RED — sob a NR-1/Portaria MTE 1.419/2024 e a Lei 14.831 o empregador é LEGALMENTE OBRIGADO a agir sobre riscos identificados.
+
 ### Compliance & Riscos
 - nr1_compliance: "Atende NR-1, Portaria MTE 1.419/2024 — gestão de riscos psicossociais" ou null.
 - compliance_extra: LGPD, NR-17, CLT quando aplicável.
@@ -225,7 +232,7 @@ ${referencesBlock || "(nenhuma referência curada)"}
       "description": "3-4 frases",
       "quick_action": "primeiros 30 dias, 1-2 frases",
       "rationale": "por que ISSO para ESTE setor — CITE uma pergunta real da pesquisa",
-      "recommendation_status": "MITIGAR | RESOLVER | TRANSFERIR | ACEITAR",
+      "recommendation_status": "MITIGAR | RESOLVER | TRANSFERIR | ACEITAR (siga os critérios da seção 'Classificação da estratégia'; jamais ACEITAR em dimensão RED)",
       "roadmap": [ { "phase": "Semana 1-2", "deliverable": "...", "owner_role": "..." } ],
       "prerequisites": ["..."],
       "time_to_first_value": "...",

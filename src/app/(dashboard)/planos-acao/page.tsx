@@ -1,37 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ActionPlansList } from "./action-plans-list";
-import type { PlanView } from "./types";
-import type { AIRecommendation } from "@/lib/ai/pipeline/types";
+import { fetchSurveyDimensionScores } from "@/lib/copsoq/dashboard";
+import { computeHealthIndex } from "@/lib/copsoq/health-index";
+import { SurveyCardsGrid, type SurveyCardData } from "./survey-cards-grid";
 
-const EMPTY_RECOMMENDATION: AIRecommendation = {
-  title: "(sem título)",
-  description: "",
-  quick_action: "",
-  rationale: "",
-  recommendation_status: "MITIGAR",
-  roadmap: [],
-  prerequisites: [],
-  time_to_first_value: "",
-  internal_capacity_required: "",
-  stakeholders: {
-    accountable: "",
-    responsible: [],
-    consulted: [],
-    informed: [],
-  },
-  vendors: [],
-  internal_alternative: null,
-  leading_indicators: [],
-  monitoring_cadence: "",
-  communication_plan: { channels: [], key_message: "", timing: "" },
-  investment: { total_annual: "N/D", per_employee_month: "N/D", breakdown: "N/D" },
-  expected_return: { conservative: "N/D", optimistic: "N/D", payback_period: "N/D" },
-  impact_metrics: [],
-  risk_if_not_acted: "",
-  implementation_risks: [],
-  nr1_compliance: null,
-  compliance_extra: [],
+type PlanCountRow = {
+  id: string;
+  status: string;
+  survey_id: string;
+  surveys: { id: string; title: string; status: string } | null;
 };
 
 export default async function ActionPlansPage() {
@@ -52,96 +29,114 @@ export default async function ActionPlansPage() {
   const companyId = userData.company_id;
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
 
-  const { data: plans } = await supabase
+  // Planos (leves — só o necessário para contagem por status)
+  const { data: planRows } = await supabase
     .from("action_plans")
-    .select(
-      `
-      id,
-      risk_level,
-      ai_recommendation,
-      status,
-      priority,
-      effort,
-      timeframe,
-      created_at,
-      surveys (id, title),
-      questionnaire_scales (name),
-      company_actions_taken (outcome, outcome_notes)
-    `
-    )
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: false });
+    .select("id, status, survey_id, surveys (id, title, status)")
+    .eq("company_id", companyId);
+  const plans = (planRows ?? []) as unknown as PlanCountRow[];
 
-  const { data: closedSurveys } = await supabase
+  // Pesquisas que viram card: CLOSED + ACTIVE (não filtrar CLOSED-only,
+  // senão pesquisas ACTIVE com planos sumiriam).
+  const { data: surveyRows } = await supabase
     .from("surveys")
-    .select("id, title")
+    .select("id, title, status")
     .eq("company_id", companyId)
-    .eq("status", "CLOSED");
+    .in("status", ["CLOSED", "ACTIVE"]);
 
-  const formattedPlans: PlanView[] = (plans ?? []).map((p) => {
-    const raw = (p.ai_recommendation as Partial<AIRecommendation>) ?? {};
-    // Merge com EMPTY_RECOMMENDATION para garantir campos opcionais
-    const recommendation: AIRecommendation = {
-      ...EMPTY_RECOMMENDATION,
-      ...raw,
-      // Re-aplica nested defaults se ausentes
-      stakeholders: { ...EMPTY_RECOMMENDATION.stakeholders, ...(raw.stakeholders ?? {}) },
-      communication_plan: { ...EMPTY_RECOMMENDATION.communication_plan, ...(raw.communication_plan ?? {}) },
-      roadmap: raw.roadmap ?? [],
-      vendors: raw.vendors ?? [],
-      leading_indicators: raw.leading_indicators ?? [],
-      impact_metrics: raw.impact_metrics ?? [],
-      implementation_risks: raw.implementation_risks ?? [],
-      prerequisites: raw.prerequisites ?? [],
-      compliance_extra: raw.compliance_extra ?? [],
-    };
+  // Mapa de pesquisas-card: começa pelas CLOSED/ACTIVE e garante que
+  // qualquer pesquisa referenciada por um plano também apareça.
+  const surveyMap = new Map<string, { id: string; title: string; status: string }>();
+  for (const s of surveyRows ?? []) {
+    surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status });
+  }
+  for (const p of plans) {
+    if (p.surveys && !surveyMap.has(p.surveys.id)) {
+      surveyMap.set(p.surveys.id, {
+        id: p.surveys.id,
+        title: p.surveys.title,
+        status: p.surveys.status,
+      });
+    }
+  }
 
-    const actionTakenArr = p.company_actions_taken as unknown as { outcome: string; outcome_notes: string }[] | null;
-    const actionTaken = Array.isArray(actionTakenArr) && actionTakenArr.length > 0 ? actionTakenArr[0] : null;
+  // Contagens por status, agrupadas por survey
+  const countsBySurvey = new Map<
+    string,
+    SurveyCardData["counts"]
+  >();
+  for (const p of plans) {
+    const c =
+      countsBySurvey.get(p.survey_id) ?? {
+        pending: 0,
+        approved: 0,
+        completed: 0,
+        rejected: 0,
+        total: 0,
+      };
+    c.total++;
+    if (p.status === "PENDING_REVIEW") c.pending++;
+    else if (p.status === "APPROVED") c.approved++;
+    else if (p.status === "COMPLETED") c.completed++;
+    else if (p.status === "REJECTED") c.rejected++;
+    countsBySurvey.set(p.survey_id, c);
+  }
 
+  const surveyList = Array.from(surveyMap.values());
+
+  // Índice de saúde por pesquisa — concorrente (poucas pesquisas por empresa).
+  // TODO: se uma empresa tiver muitas pesquisas, trocar por um RPC batched.
+  const healthBySurvey = await Promise.all(
+    surveyList.map(async (s) => {
+      const { scores, isAnonymized } = await fetchSurveyDimensionScores(supabase, s.id);
+      const healthIndex =
+        isAnonymized || scores.length === 0 ? null : computeHealthIndex(scores);
+      return { surveyId: s.id, healthIndex, isAnonymized };
+    })
+  );
+  const healthMap = new Map(healthBySurvey.map((h) => [h.surveyId, h]));
+
+  const cards: SurveyCardData[] = surveyList.map((s) => {
+    const counts =
+      countsBySurvey.get(s.id) ?? {
+        pending: 0,
+        approved: 0,
+        completed: 0,
+        rejected: 0,
+        total: 0,
+      };
+    const health = healthMap.get(s.id);
     return {
-      id: p.id,
-      riskLevel: p.risk_level as "RED" | "YELLOW",
-      recommendation,
-      status: p.status as PlanView["status"],
-      createdAt: p.created_at,
-      surveyId:
-        (p.surveys as unknown as { id: string; title: string })?.id ?? "",
-      surveyTitle:
-        (p.surveys as unknown as { id: string; title: string })?.title ??
-        "Pesquisa",
-      dimensionName:
-        (p.questionnaire_scales as unknown as { name: string })?.name ?? "",
-      priority: p.priority as string | null,
-      effort: p.effort as string | null,
-      timeframe: p.timeframe as string | null,
-      outcome: actionTaken?.outcome as PlanView["outcome"] ?? null,
-      outcomeNotes: actionTaken?.outcome_notes ?? null,
+      surveyId: s.id,
+      title: s.title,
+      status: s.status as "CLOSED" | "ACTIVE",
+      counts,
+      healthIndex: health?.healthIndex ?? null,
+      isAnonymized: health?.isAnonymized ?? false,
+      hasPlans: counts.total > 0,
     };
   });
 
-  const surveyIdsWithPlans = new Set(formattedPlans.map((p) => p.surveyId));
-  const surveysWithoutPlans = (closedSurveys ?? []).filter(
-    (s) => !surveyIdsWithPlans.has(s.id)
-  );
+  // Ordena: com planos pendentes primeiro, depois por total de planos
+  cards.sort((a, b) => {
+    if (b.counts.pending !== a.counts.pending) return b.counts.pending - a.counts.pending;
+    return b.counts.total - a.counts.total;
+  });
 
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-black tracking-tight">
-          Planos de Ação IA
-        </h1>
+        <h1 className="text-3xl font-black tracking-tight">Planos de Ação IA</h1>
         <p className="mt-1 text-muted-foreground">
-          Recomendações geradas por inteligência artificial com base nos
-          resultados das pesquisas psicossociais.
+          Escolha uma pesquisa para revisar os planos gerados por inteligência
+          artificial a partir dos seus resultados psicossociais.
         </p>
       </div>
 
-      <ActionPlansList
-        plans={formattedPlans}
-        surveysWithoutPlans={surveysWithoutPlans}
+      <SurveyCardsGrid
+        cards={cards}
         canManage={canManage}
-        hasAnySurveys={(closedSurveys?.length ?? 0) > 0}
+        hasAnySurveys={surveyList.length > 0}
         hasApiKey={!!process.env.ANTHROPIC_API_KEY}
       />
     </div>
