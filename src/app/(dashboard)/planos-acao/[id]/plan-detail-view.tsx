@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { PlanV2 } from "@/components/plan/plan-v2";
-import { PlanChatPanel } from "@/components/plan/plan-chat-panel";
+import { PlanChatDrawer } from "@/components/plan/plan-chat-drawer";
+import { PlanOverview } from "./plan-overview";
 import { toast } from "sonner";
 import type { AIRecommendation } from "@/lib/ai/pipeline/types";
 import type { KbReferenceWithRelevance } from "@/lib/ai/knowledge-base/references";
@@ -39,8 +40,6 @@ interface Props {
   initialOutcomeNotes?: string | null;
 }
 
-type Tab = "plano" | "chat";
-
 export function PlanDetailView({
   planId,
   riskLevel,
@@ -56,7 +55,6 @@ export function PlanDetailView({
   initialOutcomeNotes,
 }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("plano");
   const [isPending, startTransition] = useTransition();
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -185,37 +183,11 @@ export function PlanDetailView({
             </Badge>
           )}
         </div>
-
-        {/* Tabs mobile (some em lg) */}
-        <div className="flex gap-1 border-t border-border bg-muted/40 px-4 py-2 lg:hidden">
-          <button
-            onClick={() => setTab("plano")}
-            className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
-              tab === "plano" ? "bg-card shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            📋 Plano
-          </button>
-          <button
-            onClick={() => setTab("chat")}
-            className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition ${
-              tab === "chat" ? "bg-card shadow-sm" : "text-muted-foreground"
-            }`}
-          >
-            💬 Discutir com IA
-          </button>
-        </div>
       </div>
 
-      {/* ─── Split view ─── */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-
-        {/* ── Painel esquerdo: plano ── */}
-        <div
-          className={`${
-            tab === "plano" ? "flex" : "hidden"
-          } min-h-0 flex-1 flex-col overflow-y-auto lg:flex lg:basis-[62%] lg:max-w-[62%]`}
-        >
+      {/* ─── Conteúdo do plano (largura total) ─── */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-col">
           {/* Título do plano — destaque visual */}
           <div className="shrink-0 px-6 pt-8 pb-6 sm:px-8">
             <h1 className="text-3xl font-bold tracking-tight leading-tight text-primary">
@@ -227,7 +199,10 @@ export function PlanDetailView({
           </div>
 
           {/* Conteúdo do plano */}
-          <div className="flex-1 space-y-5 px-6 pb-8 sm:px-8">
+          <div className="flex-1 space-y-5 px-6 pb-24 sm:px-8">
+
+            {/* Visão geral — leitura rápida */}
+            <PlanOverview recommendation={recommendation} timeframe={timeframe} />
 
             {/* Avaliação de eficácia (só quando COMPLETED) */}
             {status === "COMPLETED" && (
@@ -300,16 +275,10 @@ export function PlanDetailView({
             />
           </div>
         </div>
-
-        {/* ── Painel direito: chat ── */}
-        <div
-          className={`${
-            tab === "chat" ? "flex" : "hidden"
-          } min-h-0 flex-col border-l border-border bg-card lg:flex lg:basis-[38%] lg:max-w-[38%]`}
-        >
-          <PlanChatPanel planId={planId} />
-        </div>
       </div>
+
+      {/* ─── Chat flutuante (FAB + drawer) ─── */}
+      <PlanChatDrawer planId={planId} />
 
       {/* ─── Modal de rejeição ─── */}
       {showRejectModal && (

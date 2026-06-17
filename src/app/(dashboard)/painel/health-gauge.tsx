@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DimensionScore } from "@/lib/copsoq/types";
+import { computeHealthIndex, getHealthColor } from "@/lib/copsoq/health-index";
 
 interface HealthGaugeProps {
   scores: DimensionScore[];
@@ -11,28 +12,13 @@ interface HealthGaugeProps {
   responseRate: number;
 }
 
-function getHealthColor(score: number) {
-  if (score >= 66) return { color: "#2ecc71", label: "Bom", ring: "ring-emerald-200 dark:ring-emerald-700" };
-  if (score >= 40) return { color: "#f1c40f", label: "Atenção", ring: "ring-amber-200 dark:ring-amber-700" };
-  return { color: "#e74c3c", label: "Crítico", ring: "ring-red-200 dark:ring-red-700" };
-}
-
 export function HealthGauge({
   scores,
   totalResponses,
   totalParticipants,
   responseRate,
 }: HealthGaugeProps) {
-  const healthIndex =
-    scores.length > 0
-      ? Math.round(
-          scores.reduce((sum, s) => {
-            if (s.trafficLight === "GREEN") return sum + 100;
-            if (s.trafficLight === "YELLOW") return sum + 50;
-            return sum;
-          }, 0) / scores.length
-        )
-      : 0;
+  const healthIndex = computeHealthIndex(scores);
 
   const { color, label, ring } = getHealthColor(healthIndex);
 
