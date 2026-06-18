@@ -17,6 +17,7 @@ export interface SurveyCardData {
   status: "CLOSED" | "ACTIVE";
   createdAt?: string;
   instrumentId?: string;
+  instrumentName?: string;
   counts: {
     pending: number;
     approved: number;
@@ -44,23 +45,30 @@ interface Props {
 export function SurveyCardsGrid({ cards, canManage, hasAnySurveys, hasApiKey }: Props) {
   const router = useRouter();
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"pending" | "date_desc" | "date_asc" | "type">("pending");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"attention" | "date_desc" | "date_asc">("attention");
 
-  const sortedCards = [...cards].sort((a, b) => {
-    if (sortBy === "pending") {
-      if (b.counts.pending !== a.counts.pending) return b.counts.pending - a.counts.pending;
-      return b.counts.total - a.counts.total;
+  // Get unique instrument names for the filter
+  const types = Array.from(new Set(cards.map(c => c.instrumentName).filter(Boolean))) as string[];
+
+  const filteredCards = cards.filter(card => {
+    if (filterType === "all") return true;
+    return card.instrumentName === filterType;
+  });
+
+  const sortedCards = [...filteredCards].sort((a, b) => {
+    if (sortBy === "attention") {
+      // Sort by healthIndex ascending (worst first). Null healthIndex goes to the end.
+      if (a.healthIndex === null && b.healthIndex === null) return 0;
+      if (a.healthIndex === null) return 1;
+      if (b.healthIndex === null) return -1;
+      return a.healthIndex - b.healthIndex;
     }
     if (sortBy === "date_desc") {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     }
     if (sortBy === "date_asc") {
       return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-    }
-    if (sortBy === "type") {
-      const typeA = a.instrumentId || "";
-      const typeB = b.instrumentId || "";
-      return typeA.localeCompare(typeB);
     }
     return 0;
   });
@@ -100,20 +108,37 @@ export function SurveyCardsGrid({ cards, canManage, hasAnySurveys, hasApiKey }: 
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-end gap-2 animate-fade-in-up">
-        <label className="text-sm text-muted-foreground font-semibold">Ordenar por:</label>
-        <div className="relative">
-          <select
-            className="appearance-none rounded-lg border border-border bg-background px-3 py-1.5 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-          >
-            <option value="pending">Mais pendentes</option>
-            <option value="date_desc">Mais recentes</option>
-            <option value="date_asc">Mais antigas</option>
-            <option value="type">Tipo de pesquisa</option>
-          </select>
-          <Icon name="expand_more" size={16} className="absolute right-2.5 top-2 text-muted-foreground pointer-events-none" />
+      <div className="mb-4 flex items-center justify-end gap-3 animate-fade-in-up flex-wrap">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-muted-foreground font-semibold">Tipo:</label>
+          <div className="relative">
+            <select
+              className="appearance-none rounded-lg border border-border bg-background px-3 py-1.5 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">Todos os tipos</option>
+              {types.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+            <Icon name="expand_more" size={16} className="absolute right-2.5 top-2 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-muted-foreground font-semibold">Ordenar por:</label>
+          <div className="relative">
+            <select
+              className="appearance-none rounded-lg border border-border bg-background px-3 py-1.5 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
+              <option value="attention">Maior atenção</option>
+              <option value="date_desc">Mais recentes</option>
+              <option value="date_asc">Mais antigas</option>
+            </select>
+            <Icon name="expand_more" size={16} className="absolute right-2.5 top-2 text-muted-foreground pointer-events-none" />
+          </div>
         </div>
       </div>
       <div className="stagger-children grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

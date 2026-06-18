@@ -4,7 +4,7 @@
  * Idempotência: usa surveys.ai_generation_status para gating + run_id para tracing.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import {
   fetchSurveyDimensionScores,
   fetchDepartments,
@@ -44,7 +44,7 @@ export async function runPipeline(
   surveyId: string,
   companyId: string
 ): Promise<OrchestratorResult> {
-  const admin = createAdminClient();
+  const admin = await createClient();
   const run_id = crypto.randomUUID();
 
   // ─── 1. Idempotência: tenta capturar o "running" lock ─────────────

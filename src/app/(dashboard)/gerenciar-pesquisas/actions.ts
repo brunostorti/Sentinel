@@ -4,10 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
 
-async function enrollParticipants(surveyId: string, targetDeptIds: string[] | null, companyId: string) {
-  const admin = createAdminClient();
-  
-  let employeeQuery = admin
+async function enrollParticipants(supabase: any, surveyId: string, targetDeptIds: string[] | null, companyId: string) {
+  let employeeQuery = supabase
     .from("employees")
     .select("email, department_id")
     .eq("company_id", companyId);
@@ -31,7 +29,7 @@ async function enrollParticipants(surveyId: string, targetDeptIds: string[] | nu
   const BATCH_SIZE = 500;
   for (let i = 0; i < participantRows.length; i += BATCH_SIZE) {
     const batch = participantRows.slice(i, i + BATCH_SIZE);
-    await admin.from("survey_participants").upsert(batch, {
+    await supabase.from("survey_participants").upsert(batch, {
       onConflict: "survey_id,email",
       ignoreDuplicates: true,
     });
@@ -103,7 +101,7 @@ export async function createSurvey(payload: CreateSurveyPayload) {
   }
 
   // Enroll participants at creation time
-  await enrollParticipants(newSurvey.id, payload.targetDepartmentIds, payload.companyId);
+  await enrollParticipants(supabase, newSurvey.id, payload.targetDepartmentIds, payload.companyId);
 
   return { success: true };
 }
@@ -165,8 +163,7 @@ export async function editSurvey(surveyId: string, payload: CreateSurveyPayload)
 
   // Clear previous target departments and participants
   await supabase.from("survey_target_departments").delete().eq("survey_id", surveyId);
-  const admin = createAdminClient();
-  await admin.from("survey_participants").delete().eq("survey_id", surveyId);
+  await supabase.from("survey_participants").delete().eq("survey_id", surveyId);
 
   // Save new target departments
   if (payload.targetDepartmentIds && payload.targetDepartmentIds.length > 0) {
@@ -178,7 +175,7 @@ export async function editSurvey(surveyId: string, payload: CreateSurveyPayload)
   }
 
   // Enroll new participants
-  await enrollParticipants(surveyId, payload.targetDepartmentIds, payload.companyId);
+  await enrollParticipants(supabase, surveyId, payload.targetDepartmentIds, payload.companyId);
 
   return { success: true };
 }
@@ -214,8 +211,6 @@ export async function activateSurvey(surveyId: string) {
     return { error: "Apenas pesquisas em rascunho podem ser ativadas." };
   }
 
-  const admin = createAdminClient();
-
   // Re-enroll to guarantee any late employees are caught
   const { data: targetDepts } = await supabase
     .from("survey_target_departments")
@@ -223,7 +218,7 @@ export async function activateSurvey(surveyId: string) {
     .eq("survey_id", surveyId);
 
   const targetDeptIds = (targetDepts ?? []).map((t) => t.department_id);
-  await enrollParticipants(surveyId, targetDeptIds, userData.company_id);
+  await enrollParticipants(supabase, surveyId, targetDeptIds, userData.company_id);
 
   // Check if anyone is actually enrolled
   const { count } = await supabase
