@@ -43,7 +43,8 @@ export function KanbanCard({
     isDragging,
   } = useSortable({ id: task.id });
 
-  const style = {
+  // DragOverlay handles its own positioning — don't let useSortable interfere
+  const style = isDragOverlay ? undefined : {
     transform: CSS.Translate.toString(transform),
     transition,
   };
@@ -52,13 +53,13 @@ export function KanbanCard({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isDragOverlay ? undefined : setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(isDragOverlay ? {} : attributes)}
+      {...(isDragOverlay ? {} : listeners)}
       className={`group cursor-grab rounded-xl border bg-card p-3.5 transition-all duration-200 active:cursor-grabbing
         ${isDragging ? "opacity-30" : ""}
-        ${isDragOverlay ? "rotate-2 shadow-xl ring-2 ring-primary/30 scale-105" : ""}
+        ${isDragOverlay ? "shadow-xl ring-2 ring-primary/30 cursor-grabbing" : ""}
         ${!isDragging && !isDragOverlay ? "border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5" : ""}
       `}
     >
