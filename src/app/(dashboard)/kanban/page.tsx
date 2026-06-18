@@ -72,9 +72,9 @@ export default async function KanbanPage() {
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-black tracking-tight">Planos de Ação</h1>
+        <h1 className="text-3xl font-black tracking-tight">Kanban de Planos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerencie as intervenções para melhoria da saúde psicossocial.
+          Acompanhe e gerencie as tarefas de intervenção em saúde psicossocial.
         </p>
       </div>
 

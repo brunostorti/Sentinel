@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -23,7 +24,6 @@ import { moveTask, deleteTask } from "./actions";
 import { CreateTaskModal } from "./create-task-modal";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard, type Task } from "./kanban-card";
-import { GeneratePlanModal } from "./generate-plan-modal";
 import { KanbanOutcomeModal } from "@/components/kanban/outcome-modal";
 
 interface Column {
@@ -56,7 +56,6 @@ export function KanbanBoard({
   const [tasks, setTasks] = useState(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [showGenerate, setShowGenerate] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
 
@@ -168,13 +167,6 @@ export function KanbanBoard({
               <Icon name="add" size={18} />
               Nova Tarefa
             </Button>
-            <Button
-              onClick={() => setShowGenerate(true)}
-              className="gap-1.5 rounded-lg"
-            >
-              <Icon name="auto_awesome" size={18} />
-              Gerar Plano de IA
-            </Button>
           </div>
         )}
       </div>
@@ -238,18 +230,26 @@ export function KanbanBoard({
           />
         )}
 
-        {/* Drag overlay — ghost card while dragging */}
-        <DragOverlay>
-          {activeTask && (
-            <KanbanCard
-              task={activeTask}
-              canManage={false}
-              onDelete={() => {}}
-              onEdit={() => {}}
-              isDragOverlay
-            />
+        {/* Drag overlay — ghost card while dragging.
+            Portaled para document.body: o layout (PageTransition) mantém um
+            transform residual (translateY(0) com fill-mode both), que viraria
+            o bloco de contenção do position:fixed do overlay e o deslocaria.
+            No body, o fixed fica relativo à viewport e o card cola no cursor. */}
+        {typeof document !== "undefined" &&
+          createPortal(
+            <DragOverlay>
+              {activeTask && (
+                <KanbanCard
+                  task={activeTask}
+                  canManage={false}
+                  onDelete={() => {}}
+                  onEdit={() => {}}
+                  isDragOverlay
+                />
+              )}
+            </DragOverlay>,
+            document.body
           )}
-        </DragOverlay>
       </DndContext>
 
       {showCreate && (
@@ -269,9 +269,6 @@ export function KanbanBoard({
         />
       )}
 
-      {showGenerate && (
-        <GeneratePlanModal onClose={() => setShowGenerate(false)} />
-      )}
     </>
   );
 }
