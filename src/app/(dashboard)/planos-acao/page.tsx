@@ -40,15 +40,16 @@ export default async function ActionPlansPage() {
   // senão pesquisas ACTIVE com planos sumiriam).
   const { data: surveyRows } = await supabase
     .from("surveys")
-    .select("id, title, status, created_at, instrument_id")
+    .select("id, title, status, created_at, instrument_id, questionnaire_instruments (name)")
     .eq("company_id", companyId)
     .in("status", ["CLOSED", "ACTIVE"]);
 
   // Mapa de pesquisas-card: começa pelas CLOSED/ACTIVE e garante que
   // qualquer pesquisa referenciada por um plano também apareça.
-  const surveyMap = new Map<string, { id: string; title: string; status: string; created_at?: string; instrument_id?: string }>();
+  const surveyMap = new Map<string, { id: string; title: string; status: string; created_at?: string; instrument_id?: string; instrument_name?: string }>();
   for (const s of surveyRows ?? []) {
-    surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status, created_at: s.created_at, instrument_id: s.instrument_id });
+    const instName = (s.questionnaire_instruments as any)?.name || "";
+    surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status, created_at: s.created_at, instrument_id: s.instrument_id, instrument_name: instName });
   }
   for (const p of plans) {
     if (p.surveys && !surveyMap.has(p.surveys.id)) {
@@ -112,6 +113,7 @@ export default async function ActionPlansPage() {
       status: s.status as "CLOSED" | "ACTIVE",
       createdAt: s.created_at || new Date().toISOString(),
       instrumentId: s.instrument_id || "",
+      instrumentName: s.instrument_name || "",
       counts,
       healthIndex: health?.healthIndex ?? null,
       isAnonymized: health?.isAnonymized ?? false,
