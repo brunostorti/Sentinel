@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -231,7 +232,7 @@ export default function LoginPage() {
               </CardContent>
             </Card>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col items-center gap-3">
               <button
                 onClick={() => setIsTutorialOpen(true)}
                 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
@@ -239,6 +240,14 @@ export default function LoginPage() {
                 <Icon name="help" size={14} />
                 Dúvidas no primeiro acesso?
               </button>
+
+              <Link
+                href="/denuncia"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground/80 transition-colors hover:text-primary"
+              >
+                <Icon name="shield" size={14} />
+                Canal de denúncias
+              </Link>
             </div>
 
           </div>

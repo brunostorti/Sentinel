@@ -82,23 +82,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Participation must be > 50%. Found ${(ratio*100).toFixed(1)}%. Gatekeeper blocked.` }, { status: 403 });
     }
 
-    // 4. Gatekeeper: Action plans approved
-    const { data: actionPlans, error: actionPlansError } = await (await supabase)
-      .from("action_plans")
-      .select("status")
-      .eq("survey_id", surveyId);
-
-    if (actionPlansError) {
-      return NextResponse.json({ error: "Error checking action plans." }, { status: 500 });
-    }
-    
-    // We assume there must be at least one action plan (optional, but let's just check if ANY is not approved)
-    if (actionPlans && actionPlans.length > 0) {
-      const allApproved = actionPlans.every(ap => ap.status === "APPROVED");
-      if (!allApproved) {
-        return NextResponse.json({ error: "Not all AI action plans are approved by HR. Gatekeeper blocked." }, { status: 403 });
-      }
-    }
+    // 4. Gatekeeper: NR-1 requires a PGR with an action plan, but it does not
+    // require every recommendation to be approved before a certificate can be issued.
+    // Keep the certificate tied to a closed cycle with enough participation; pending
+    // action plans remain visible in the product workflow.
 
     // 5. Generate Hash & Store Certificate
     const uniqueHash = crypto.randomUUID();

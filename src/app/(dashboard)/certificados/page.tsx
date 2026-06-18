@@ -74,7 +74,7 @@ export default function CertificadosPage() {
             Certificados NR1
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Emita certificados para ciclos de pesquisa concluídos. A emissão está sujeita a regras automatizadas (Gatekeeper).
+            Emita certificados para ciclos de pesquisa fechados com participação suficiente.
           </p>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function CertificadosPage() {
                     </p>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-500/20">
                       <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                      Pronto para emissão
+                      Elegível para emissão
                     </span>
                   </div>
                 </div>
