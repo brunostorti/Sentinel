@@ -4,7 +4,7 @@
  * Idempotência: usa surveys.ai_generation_status para gating + run_id para tracing.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchSurveyDimensionScores,
   fetchDepartments,
@@ -42,9 +42,10 @@ interface OrchestratorResult {
 
 export async function runPipeline(
   surveyId: string,
-  companyId: string
+  companyId: string,
+  onProgress?: (step: number, label: string) => void
 ): Promise<OrchestratorResult> {
-  const admin = await createClient();
+  const admin = createAdminClient();
   const run_id = crypto.randomUUID();
 
   // ─── 1. Idempotência: tenta capturar o "running" lock ─────────────
@@ -75,6 +76,8 @@ export async function runPipeline(
     } catch (e) {
       console.error("computeOutcomes falhou (não-fatal):", e);
     }
+
+    onProgress?.(1, "Carregando dados da pesquisa");
 
     // ─── 2. Busca contexto base ───────────────────────────────────────
     const { data: surveyRow } = await admin
@@ -213,6 +216,7 @@ export async function runPipeline(
     };
 
     // ─── 4. Stage 1 — Analyst ─────────────────────────────────────────
+    onProgress?.(2, "Analisando dimensões em risco");
     console.log(`[pipeline ${run_id}] Stage 1 (Analyst) iniciando — ${scores.length} dimensões, ${scores.filter(s => s.trafficLight === "RED" || s.trafficLight === "YELLOW").length} em risco`);
     const report = await runAnalyst(context, company, profile);
     console.log(`[pipeline ${run_id}] Stage 1 OK — ${report.prioritized_dimensions.length} dimensões priorizadas: ${report.prioritized_dimensions.map(d => d.dimension_name).join(", ")}`);
@@ -231,6 +235,7 @@ export async function runPipeline(
     console.log(`[pipeline ${run_id}] Hard-filters: ${annotated.length} interventions em categorias relevantes (${relevantCategories.join(", ")})`);
 
     // ─── 6. Stage 2 — Curator ─────────────────────────────────────────
+    onProgress?.(3, "Selecionando intervenções aplicáveis");
     console.log(`[pipeline ${run_id}] Stage 2 (Curator) iniciando`);
     const selection = await runCurator({
       report,
@@ -311,6 +316,7 @@ export async function runPipeline(
     );
 
     // ─── 7. Stage 3 — Consultant ───────────────────────────────────────
+    onProgress?.(4, "Redigindo plano de ação");
     console.log(`[pipeline ${run_id}] Stage 3 (Consultant) iniciando`);
     const plans = await runConsultant({
       selection,
@@ -503,6 +509,7 @@ export async function runPipeline(
       .insert(planRows)
       .select("id, dimension_id, ai_recommendation");
     if (insertErr) throw insertErr;
+    console.log(`[pipeline ${run_id}] INSERT OK — ${insertedPlans?.length ?? 0} planos salvos no banco.`);
 
     // Map plan_id → outcome
     const planIdByDim = new Map<string, string>();
