@@ -20,6 +20,13 @@ interface GeneratePlanModalProps {
   onClose: () => void;
 }
 
+const STEPS = [
+  "Carregando dados da pesquisa",
+  "Analisando dimensões em risco",
+  "Selecionando intervenções aplicáveis",
+  "Redigindo plano de ação",
+];
+
 export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
   const router = useRouter();
   const [surveys, setSurveys] = useState<Survey[]>([]);
@@ -30,6 +37,8 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
   const [fetchingData, setFetchingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [plansCreated, setPlansCreated] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -58,28 +67,57 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
     }
     setLoading(true);
     setError(null);
+    setCurrentStep(0);
+
     try {
       const res = await fetch("/api/action-plans/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          surveyId: selectedSurvey,
-          departmentId: selectedDepartment,
-        }),
+        body: JSON.stringify({ surveyId: selectedSurvey, departmentId: selectedDepartment }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Erro ao gerar plano de ação.");
-        return;
+
+      if (!res.body) throw new Error("Sem resposta do servidor.");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = JSON.parse(line.slice(6)) as {
+            step?: number;
+            label?: string;
+            done?: boolean;
+            plans_created?: number;
+            error?: string;
+          };
+
+          if (data.error) {
+            setError(data.error);
+            setLoading(false);
+            return;
+          }
+          if (data.step) setCurrentStep(data.step);
+          if (data.done) {
+            setPlansCreated(data.plans_created ?? 0);
+            setSuccess(true);
+            setLoading(false);
+            setTimeout(() => {
+              onClose();
+              router.push(`/planos-acao/pesquisa/${selectedSurvey}`);
+            }, 2000);
+          }
+        }
       }
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-        router.refresh();
-      }, 1500);
     } catch {
       setError("Erro de conexão. Verifique sua internet e tente novamente.");
-    } finally {
       setLoading(false);
     }
   }
@@ -98,12 +136,14 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
               práticas reais de saúde ocupacional.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="ml-4 shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Icon name="close" size={20} />
-          </button>
+          {!loading && (
+            <button
+              onClick={onClose}
+              className="ml-4 shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Icon name="close" size={20} />
+            </button>
+          )}
         </div>
 
         {success ? (
@@ -112,14 +152,64 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
               <Icon name="check_circle" size={32} />
             </div>
             <p className="font-semibold text-green-700">
-              Plano gerado com sucesso!
+              {plansCreated > 0
+                ? `${plansCreated} plano${plansCreated > 1 ? "s gerados" : " gerado"} com sucesso!`
+                : "Análise concluída!"}
             </p>
             <p className="text-sm text-muted-foreground">
-              O card foi adicionado à coluna &quot;A Definir&quot; do Kanban.
+              {plansCreated > 0
+                ? "Redirecionando para revisão — aprove os planos para adicioná-los ao Kanban."
+                : "Nenhuma dimensão em risco encontrada nesta pesquisa."}
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-5 py-2">
+            {/* Barra de progresso */}
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700"
+                style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+              />
+            </div>
+
+            {/* Etapas */}
+            <div className="space-y-3">
+              {STEPS.map((label, i) => {
+                const stepNum = i + 1;
+                const isDone = currentStep > stepNum;
+                const isActive = currentStep === stepNum;
+                return (
+                  <div
+                    key={label}
+                    className={`flex items-center gap-3 text-sm transition-colors ${
+                      isDone
+                        ? "text-foreground"
+                        : isActive
+                          ? "text-foreground"
+                          : "text-muted-foreground/50"
+                    }`}
+                  >
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      {isDone ? (
+                        <Icon name="check_circle" size={18} className="text-green-500" />
+                      ) : isActive ? (
+                        <Icon name="sync" size={18} className="animate-spin text-primary" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/25" />
+                      )}
+                    </div>
+                    <span className={isActive ? "font-medium" : ""}>{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-center text-xs text-muted-foreground">
+              Isso pode levar até 60 segundos — não feche esta janela.
             </p>
           </div>
         ) : fetchingData ? (
-          <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
             <Icon name="sync" size={20} className="animate-spin" />
             <span className="text-sm">Carregando dados...</span>
           </div>
@@ -171,7 +261,7 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
             </div>
 
             {/* Info box */}
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
               <div className="flex gap-2">
                 <Icon name="info" size={16} className="mt-0.5 shrink-0 text-primary" />
                 <p className="text-xs text-muted-foreground">
@@ -184,37 +274,23 @@ export function GeneratePlanModal({ onClose }: GeneratePlanModalProps) {
 
             {/* Error */}
             {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 dark:bg-red-950/40 dark:border-red-800/50">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800/50 dark:bg-red-950/40">
                 <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-1">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={onClose}
-                disabled={loading}
-              >
+              <Button variant="outline" className="flex-1" onClick={onClose}>
                 Cancelar
               </Button>
               <Button
                 className="flex-1 gap-2"
                 onClick={handleGenerate}
-                disabled={loading || !selectedSurvey || !selectedDepartment}
+                disabled={!selectedSurvey || !selectedDepartment}
               >
-                {loading ? (
-                  <>
-                    <Icon name="sync" size={16} className="animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="auto_awesome" size={16} />
-                    Gerar Plano
-                  </>
-                )}
+                <Icon name="auto_awesome" size={16} />
+                Gerar Plano
               </Button>
             </div>
           </div>
