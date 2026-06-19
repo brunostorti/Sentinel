@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { TutorialModal } from "@/components/tutorial-modal";
+import { TutorialTrigger } from "@/components/tutorial-trigger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SuggestionsBadge } from "@/components/painel/suggestions-badge";
 import { ROUTES } from "@/lib/constants";
@@ -23,7 +22,6 @@ interface HeaderProps {
 
 export function Header({ userName, userEmail }: HeaderProps) {
   const router = useRouter();
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   const initials = userName
     .split(" ")
@@ -37,36 +35,8 @@ export function Header({ userName, userEmail }: HeaderProps) {
     window.location.href = "/entrar";
   }
 
-  const tutorialSlides = [
-    {
-      title: "Bem-vindo ao Painel",
-      description: "Aqui você tem uma visão geral do bem-estar da sua empresa. Use os cartões de semáforo para identificar riscos.",
-      icon: "dashboard",
-    },
-    {
-      title: "Pesquisas e Coleta",
-      description: "Em 'Pesquisas', você pode criar novos ciclos de avaliação e disparar convites para os colaboradores.",
-      icon: "assignment",
-    },
-    {
-      title: "Kanban e Planos",
-      description: "O sistema gera planos de ação automáticos com IA. Gerencie as tarefas no Kanban para melhorar o clima organizacional.",
-      icon: "view_kanban",
-    },
-    {
-      title: "Canal de Denúncias",
-      description: "Acesse os relatos confidenciais enviados pelos funcionários para investigar casos de assédio ou discriminação.",
-      icon: "gavel",
-    },
-  ];
-
   return (
     <header className="glass sticky top-0 z-30 flex h-16 items-center justify-end border-b border-border/50 px-8">
-      <TutorialModal
-        isOpen={isTutorialOpen}
-        onClose={() => setIsTutorialOpen(false)}
-        slides={tutorialSlides}
-      />
 
       {/* Right side */}
       <div className="flex items-center gap-4">
@@ -77,13 +47,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
         <ThemeToggle />
 
         {/* Help button */}
-        <button
-          onClick={() => setIsTutorialOpen(true)}
-          className="relative rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
-          title="Tutorial de Uso"
-        >
-          <Icon name="help" size={20} />
-        </button>
+        <TutorialTrigger variant="header" />
 
         {/* User menu */}
         <DropdownMenu>

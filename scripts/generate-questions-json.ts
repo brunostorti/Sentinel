@@ -4,7 +4,7 @@ import path from "path";
 // A simple script to extract QUESTIONS array from seed files using regex
 function extractQuestions(filePath: string) {
   const content = fs.readFileSync(filePath, "utf-8");
-  const match = content.match(/const QUESTIONS:.*?\[([\s\S]*?)\];/);
+  const match = content.match(/const (?:QUESTIONS|ITEMS)[^=]*=\s*\[([\s\S]*?)\];/);
   if (!match) return [];
   
   const arrayStr = "[" + match[1] + "]";
