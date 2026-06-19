@@ -6,34 +6,34 @@ import { Icon } from "./icon";
 
 export const tutorialSlides: TutorialSlide[] = [
   {
-    title: "1. Metodologia",
+    title: "1. Colaboradores",
+    description: "Cadastre e organize a sua equipe para direcionar as pesquisas corretamente por setor.",
+    icon: "group",
+  },
+  {
+    title: "2. Metodologia",
     description: "Acesse a aba Metodologia para escolher o instrumento de pesquisa ideal para a sua empresa.",
     icon: "menu_book",
   },
   {
-    title: "2. Pesquisas",
+    title: "3. Pesquisas",
     description: "Vá para a aba Pesquisas para criar novos ciclos de avaliação e disparar convites para os colaboradores.",
     icon: "assignment",
   },
   {
-    title: "3. Painel Analítico",
+    title: "4. Painel Analítico",
     description: "No Painel, você tem uma visão geral dos resultados e identifica os principais riscos mapeados.",
     icon: "monitoring",
   },
   {
-    title: "4. Planos de Ação",
+    title: "5. Planos de Ação",
     description: "Acesse os Planos de Ação para visualizar e editar as sugestões automáticas geradas pela IA.",
     icon: "lightbulb",
   },
   {
-    title: "5. Kanban",
+    title: "6. Kanban",
     description: "Gerencie a execução dos planos no Kanban, acompanhando o progresso das ações contínuas.",
     icon: "view_kanban",
-  },
-  {
-    title: "6. Colaboradores",
-    description: "Cadastre e organize a sua equipe para direcionar as pesquisas corretamente por setor.",
-    icon: "group",
   },
   {
     title: "7. Configurações",
