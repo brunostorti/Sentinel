@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchDashboardKPIs } from "@/lib/copsoq/dashboard";
 import { Icon } from "@/components/icon";
+import { TutorialTrigger } from "@/components/tutorial-trigger";
 import { ROUTES } from "@/lib/constants";
 
 export default async function InicioPage() {
@@ -145,10 +146,7 @@ export default async function InicioPage() {
           </span>
 
           <h1 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight text-foreground lg:text-5xl">
-            Olá, {firstName}.
-            <br />
-            Bem-vindo ao
-            <br />
+            Olá, {firstName}, bem-vindo ao{" "}
             <span className="text-primary">Sentinel</span>.
           </h1>
 
@@ -159,13 +157,7 @@ export default async function InicioPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href={ROUTES.DASHBOARD.SURVEYS}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-            >
-              <Icon name="add_circle" size={20} filled />
-              Criar nova pesquisa
-            </Link>
+            <TutorialTrigger variant="hero" />
             <Link
               href={ROUTES.DASHBOARD.OVERVIEW}
               className="inline-flex items-center gap-2 rounded-xl border-2 border-primary px-6 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/5"
@@ -181,6 +173,33 @@ export default async function InicioPage() {
               <Icon name="arrow_forward" size={18} />
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ── Como Funciona ── */}
+      <section>
+        <div className="mb-12 text-center">
+          <h2 className="text-2xl font-black tracking-tight">Como Funciona</h2>
+          <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-primary" />
+        </div>
+
+        <div className="relative grid gap-8 md:grid-cols-6">
+          {/* linha conectora (desktop) */}
+          <div className="absolute left-0 top-7 hidden h-px w-full bg-border md:block" />
+          {steps.map((step, idx) => (
+            <div
+              key={step.title}
+              className="relative flex flex-col items-center text-center"
+            >
+              <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-4 border-primary bg-card text-lg font-black text-primary shadow-sm">
+                {idx + 1}
+              </div>
+              <h4 className="mt-4 text-sm font-bold tracking-tight">{step.title}</h4>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -248,33 +267,6 @@ export default async function InicioPage() {
               <Icon name={item.icon} size={18} />
               {item.label}
             </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Como Funciona ── */}
-      <section>
-        <div className="mb-12 text-center">
-          <h2 className="text-2xl font-black tracking-tight">Como Funciona</h2>
-          <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-primary" />
-        </div>
-
-        <div className="relative grid gap-8 md:grid-cols-6">
-          {/* linha conectora (desktop) */}
-          <div className="absolute left-0 top-7 hidden h-px w-full bg-border md:block" />
-          {steps.map((step, idx) => (
-            <div
-              key={step.title}
-              className="relative flex flex-col items-center text-center"
-            >
-              <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-4 border-primary bg-card text-lg font-black text-primary shadow-sm">
-                {idx + 1}
-              </div>
-              <h4 className="mt-4 text-sm font-bold tracking-tight">{step.title}</h4>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                {step.description}
-              </p>
-            </div>
           ))}
         </div>
       </section>

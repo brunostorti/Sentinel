@@ -151,25 +151,28 @@ export function PlanDetailView({
           <div className="flex-1" />
 
           {/* Ações */}
-          {canManage && status === "PENDING_REVIEW" && (
-            <div className="flex gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRejectModal(true)}
-                disabled={isPending}
-              >
-                Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleApprove}
-                disabled={isPending}
-              >
-                {isPending ? "..." : "Aprovar"}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <PlanChatDrawer planId={planId} />
+            {canManage && status === "PENDING_REVIEW" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={isPending}
+                >
+                  Rejeitar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleApprove}
+                  disabled={isPending}
+                >
+                  {isPending ? "..." : "Aprovar"}
+                </Button>
+              </>
+            )}
+          </div>
           {status === "APPROVED" && (
             <Badge className="shrink-0 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
               <Icon name="play_circle" size={12} className="mr-1" />
@@ -277,8 +280,6 @@ export function PlanDetailView({
         </div>
       </div>
 
-      {/* ─── Chat flutuante (FAB + drawer) ─── */}
-      <PlanChatDrawer planId={planId} />
 
       {/* ─── Modal de rejeição ─── */}
       {showRejectModal && (

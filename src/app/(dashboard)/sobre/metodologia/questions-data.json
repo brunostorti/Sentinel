@@ -1153,7 +1153,498 @@
       "text": "Com que frequência se sentiu nervoso/a?"
     }
   ],
-  "copsoq-iii": [],
+  "copsoq-iii": [
+    {
+      "scaleName": "Demandas Quantitativas",
+      "orderIndex": 1,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "A sua carga de trabalho se acumula por nao poder ser realizada no dia a dia?"
+    },
+    {
+      "scaleName": "Demandas Quantitativas",
+      "orderIndex": 2,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce nao tem tempo para completar todas as tarefas do seu trabalho?"
+    },
+    {
+      "scaleName": "Demandas Quantitativas",
+      "orderIndex": 3,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce fica atrasado(a) com o seu trabalho?"
+    },
+    {
+      "scaleName": "Ritmo de Trabalho",
+      "orderIndex": 4,
+      "isInverted": false,
+      "responseFormatCode": "likert_frequency_5",
+      "text": "Voce precisa trabalhar muito rapido?"
+    },
+    {
+      "scaleName": "Demandas Cognitivas",
+      "orderIndex": 5,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho exige que voce se lembre de muitas coisas?"
+    },
+    {
+      "scaleName": "Demandas Cognitivas",
+      "orderIndex": 6,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho exige que voce tome decisoes dificeis?"
+    },
+    {
+      "scaleName": "Demandas Cognitivas",
+      "orderIndex": 7,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho exige que voce proponha novas ideias?"
+    },
+    {
+      "scaleName": "Demandas Emocionais",
+      "orderIndex": 8,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho e emocionalmente desgastante?"
+    },
+    {
+      "scaleName": "Demandas Emocionais",
+      "orderIndex": 9,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho exige que voce se envolva emocionalmente?"
+    },
+    {
+      "scaleName": "Demandas para Esconder Emocoes",
+      "orderIndex": 10,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho exige que voce esconda seus sentimentos?"
+    },
+    {
+      "scaleName": "Influencia no Trabalho",
+      "orderIndex": 11,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce tem influencia sobre a quantidade de trabalho que lhe e atribuida?"
+    },
+    {
+      "scaleName": "Influencia no Trabalho",
+      "orderIndex": 12,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce pode influenciar as decisoes sobre o seu trabalho?"
+    },
+    {
+      "scaleName": "Influencia no Trabalho",
+      "orderIndex": 13,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce tem voz ativa sobre o que e como faz no seu trabalho?"
+    },
+    {
+      "scaleName": "Possibilidades de Desenvolvimento",
+      "orderIndex": 14,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho lhe da oportunidades de desenvolver suas competencias?"
+    },
+    {
+      "scaleName": "Possibilidades de Desenvolvimento",
+      "orderIndex": 15,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce pode usar suas habilidades ou conhecimentos no seu trabalho?"
+    },
+    {
+      "scaleName": "Possibilidades de Desenvolvimento",
+      "orderIndex": 16,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho oferece boas oportunidades para tomar iniciativa?"
+    },
+    {
+      "scaleName": "Significado do Trabalho",
+      "orderIndex": 17,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho tem significado para voce?"
+    },
+    {
+      "scaleName": "Significado do Trabalho",
+      "orderIndex": 18,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce sente que o trabalho que faz e importante?"
+    },
+    {
+      "scaleName": "Significado do Trabalho",
+      "orderIndex": 19,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce se sente motivado(a) e envolvido(a) com o seu trabalho?"
+    },
+    {
+      "scaleName": "Compromisso com o Local de Trabalho",
+      "orderIndex": 20,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_engagement",
+      "text": "Voce gosta de contar as pessoas sobre o seu local de trabalho?"
+    },
+    {
+      "scaleName": "Compromisso com o Local de Trabalho",
+      "orderIndex": 21,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_engagement",
+      "text": "Voce sente que os problemas do seu local de trabalho sao tambem seus?"
+    },
+    {
+      "scaleName": "Compromisso com o Local de Trabalho",
+      "orderIndex": 22,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_engagement",
+      "text": "Voce sente que o seu local de trabalho tem grande significado pessoal para voce?"
+    },
+    {
+      "scaleName": "Previsibilidade",
+      "orderIndex": 23,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "No seu local de trabalho, voce e informado(a) com antecedencia sobre decisoes importantes?"
+    },
+    {
+      "scaleName": "Previsibilidade",
+      "orderIndex": 24,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce recebe toda a informacao necessaria para fazer bem o seu trabalho?"
+    },
+    {
+      "scaleName": "Clareza de Papel",
+      "orderIndex": 25,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho tem objetivos claros e definidos?"
+    },
+    {
+      "scaleName": "Clareza de Papel",
+      "orderIndex": 26,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce sabe exatamente o que se espera de voce no trabalho?"
+    },
+    {
+      "scaleName": "Clareza de Papel",
+      "orderIndex": 27,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce sabe exatamente quais sao suas responsabilidades?"
+    },
+    {
+      "scaleName": "Conflito de Papeis",
+      "orderIndex": 28,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce precisa fazer coisas que acha desnecessarias no trabalho?"
+    },
+    {
+      "scaleName": "Conflito de Papeis",
+      "orderIndex": 29,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Recebe exigencias contraditorias no trabalho?"
+    },
+    {
+      "scaleName": "Conflito de Papeis",
+      "orderIndex": 30,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce precisa fazer coisas que vao contra os seus valores?"
+    },
+    {
+      "scaleName": "Qualidade da Lideranca",
+      "orderIndex": 31,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Ate que ponto seu superior imediato se certifica de que cada membro da equipe tem boas oportunidades de desenvolvimento?"
+    },
+    {
+      "scaleName": "Qualidade da Lideranca",
+      "orderIndex": 32,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Ate que ponto seu superior imediato da prioridade a satisfacao no trabalho?"
+    },
+    {
+      "scaleName": "Qualidade da Lideranca",
+      "orderIndex": 33,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Ate que ponto seu superior imediato e bom em planejar o trabalho?"
+    },
+    {
+      "scaleName": "Qualidade da Lideranca",
+      "orderIndex": 34,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Ate que ponto seu superior imediato e bom em resolver conflitos?"
+    },
+    {
+      "scaleName": "Apoio Social de Superiores",
+      "orderIndex": 35,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia seu superior imediato esta disposto a ouvi-lo(a) sobre seus problemas no trabalho?"
+    },
+    {
+      "scaleName": "Apoio Social de Superiores",
+      "orderIndex": 36,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce recebe ajuda e apoio do seu superior imediato?"
+    },
+    {
+      "scaleName": "Apoio Social de Colegas",
+      "orderIndex": 37,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia seus colegas estao dispostos a ouvi-lo(a) sobre seus problemas no trabalho?"
+    },
+    {
+      "scaleName": "Apoio Social de Colegas",
+      "orderIndex": 38,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce recebe ajuda e apoio dos seus colegas?"
+    },
+    {
+      "scaleName": "Comunidade Social no Trabalho",
+      "orderIndex": 39,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Existe um bom espirito de equipe entre voce e seus colegas?"
+    },
+    {
+      "scaleName": "Comunidade Social no Trabalho",
+      "orderIndex": 40,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Existe boa colaboracao entre os colegas no trabalho?"
+    },
+    {
+      "scaleName": "Comunidade Social no Trabalho",
+      "orderIndex": 41,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce se sente parte de uma comunidade no seu local de trabalho?"
+    },
+    {
+      "scaleName": "Reconhecimento",
+      "orderIndex": 42,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho e reconhecido e apreciado pela chefia?"
+    },
+    {
+      "scaleName": "Reconhecimento",
+      "orderIndex": 43,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce e tratado(a) de forma justa no seu local de trabalho?"
+    },
+    {
+      "scaleName": "Reconhecimento",
+      "orderIndex": 44,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "A chefia o(a) trata com respeito?"
+    },
+    {
+      "scaleName": "Justica e Respeito",
+      "orderIndex": 45,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Os conflitos sao resolvidos de forma justa?"
+    },
+    {
+      "scaleName": "Justica e Respeito",
+      "orderIndex": 46,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "As sugestoes dos funcionarios sao tratadas com seriedade pela chefia?"
+    },
+    {
+      "scaleName": "Confianca em Relacao a Chefia",
+      "orderIndex": 47,
+      "isInverted": true,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "A chefia esconde informacoes dos funcionarios?"
+    },
+    {
+      "scaleName": "Confianca em Relacao a Chefia",
+      "orderIndex": 48,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Os funcionarios podem expressar suas opinioes e sentimentos?"
+    },
+    {
+      "scaleName": "Inseguranca no Trabalho",
+      "orderIndex": 49,
+      "isInverted": false,
+      "responseFormatCode": "likert_extent_5",
+      "text": "Voce se preocupa em ficar desempregado(a)?"
+    },
+    {
+      "scaleName": "Inseguranca no Trabalho",
+      "orderIndex": 50,
+      "isInverted": false,
+      "responseFormatCode": "likert_extent_5",
+      "text": "Voce se preocupa com ser transferido(a) para outro trabalho contra sua vontade?"
+    },
+    {
+      "scaleName": "Inseguranca no Trabalho",
+      "orderIndex": 51,
+      "isInverted": false,
+      "responseFormatCode": "likert_extent_5",
+      "text": "Voce se preocupa com novas tecnologias tornarem voce dispensavel?"
+    },
+    {
+      "scaleName": "Satisfacao no Trabalho",
+      "orderIndex": 52,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_satisfaction",
+      "text": "Em relacao as suas condicoes de trabalho, quao satisfeito(a) esta?"
+    },
+    {
+      "scaleName": "Satisfacao no Trabalho",
+      "orderIndex": 53,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_satisfaction",
+      "text": "Em relacao as suas perspectivas de trabalho, quao satisfeito(a) esta?"
+    },
+    {
+      "scaleName": "Satisfacao no Trabalho",
+      "orderIndex": 54,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_satisfaction",
+      "text": "Em relacao a forma como suas habilidades sao utilizadas, quao satisfeito(a) esta?"
+    },
+    {
+      "scaleName": "Satisfacao no Trabalho",
+      "orderIndex": 55,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_satisfaction",
+      "text": "Em relacao ao seu trabalho de modo geral, quao satisfeito(a) esta?"
+    },
+    {
+      "scaleName": "Conflito Trabalho-Familia",
+      "orderIndex": 56,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "O seu trabalho ocupa tanta energia que isso tem um efeito negativo na sua vida privada?"
+    },
+    {
+      "scaleName": "Conflito Trabalho-Familia",
+      "orderIndex": 57,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Voce sente que o trabalho ocupa tanto do seu tempo que isso tem um efeito negativo na sua vida privada?"
+    },
+    {
+      "scaleName": "Burnout",
+      "orderIndex": 58,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente esgotado(a)?"
+    },
+    {
+      "scaleName": "Burnout",
+      "orderIndex": 59,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente fisicamente exausto(a)?"
+    },
+    {
+      "scaleName": "Burnout",
+      "orderIndex": 60,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente emocionalmente exausto(a)?"
+    },
+    {
+      "scaleName": "Burnout",
+      "orderIndex": 61,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente cansado(a)?"
+    },
+    {
+      "scaleName": "Estresse",
+      "orderIndex": 62,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce tem dificuldade em relaxar?"
+    },
+    {
+      "scaleName": "Estresse",
+      "orderIndex": 63,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce fica irritado(a)?"
+    },
+    {
+      "scaleName": "Estresse",
+      "orderIndex": 64,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente tenso(a)?"
+    },
+    {
+      "scaleName": "Estresse",
+      "orderIndex": 65,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_time_frequency",
+      "text": "Com que frequencia voce se sente estressado(a)?"
+    },
+    {
+      "scaleName": "Saude Geral",
+      "orderIndex": 66,
+      "isInverted": false,
+      "responseFormatCode": "copsoq3_health",
+      "text": "Em geral, como voce avalia a sua saude?"
+    },
+    {
+      "scaleName": "Comportamentos Ofensivos",
+      "orderIndex": 67,
+      "isInverted": false,
+      "responseFormatCode": "likert_frequency_5",
+      "text": "Voce foi exposto(a) a bullying no local de trabalho nos ultimos 12 meses?"
+    },
+    {
+      "scaleName": "Comportamentos Ofensivos",
+      "orderIndex": 68,
+      "isInverted": false,
+      "responseFormatCode": "likert_frequency_5",
+      "text": "Voce foi exposto(a) a assedio sexual no trabalho nos ultimos 12 meses?"
+    },
+    {
+      "scaleName": "Comportamentos Ofensivos",
+      "orderIndex": 69,
+      "isInverted": false,
+      "responseFormatCode": "likert_frequency_5",
+      "text": "Voce foi exposto(a) a ameacas de violencia no trabalho nos ultimos 12 meses?"
+    },
+    {
+      "scaleName": "Comportamentos Ofensivos",
+      "orderIndex": 70,
+      "isInverted": false,
+      "responseFormatCode": "likert_frequency_5",
+      "text": "Voce foi exposto(a) a violencia fisica no trabalho nos ultimos 12 meses?"
+    }
+  ],
   "jss": [
     {
       "scaleName": "Pagamento",
@@ -1372,5 +1863,102 @@
       "text": "As tarefas do meu trabalho não são totalmente explicadas."
     }
   ],
-  "olbi": []
+  "olbi": [
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 1,
+      "isInverted": true,
+      "text": "Sempre encontro coisas novas e interessantes no meu trabalho."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 2,
+      "isInverted": false,
+      "text": "Ha dias em que me sinto cansado(a) antes mesmo de chegar ao trabalho."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 3,
+      "isInverted": false,
+      "text": "Cada vez mais, tendo a falar do meu trabalho de forma negativa."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 4,
+      "isInverted": false,
+      "text": "Depois do trabalho, preciso de mais tempo para relaxar e me sentir melhor."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 5,
+      "isInverted": true,
+      "text": "Consigo lidar bem com as demandas do meu trabalho."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 6,
+      "isInverted": false,
+      "text": "Ultimamente, tendo a pensar menos durante o trabalho e faze-lo quase mecanicamente."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 7,
+      "isInverted": true,
+      "text": "Considero meu trabalho um desafio positivo."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 8,
+      "isInverted": false,
+      "text": "Durante o trabalho, frequentemente me sinto emocionalmente esgotado(a)."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 9,
+      "isInverted": false,
+      "text": "Com o tempo, perdi o interesse pelo meu trabalho."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 10,
+      "isInverted": true,
+      "text": "Depois do trabalho, geralmente me sinto bem e com energia."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 11,
+      "isInverted": false,
+      "text": "As vezes me sinto enjoado(a) com as tarefas do meu trabalho."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 12,
+      "isInverted": false,
+      "text": "Depois do trabalho, costumo me sentir cansado(a) e sem energia."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 13,
+      "isInverted": true,
+      "text": "Geralmente, consigo administrar bem a quantidade de trabalho."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 14,
+      "isInverted": true,
+      "text": "Este e o unico tipo de trabalho que me imagino fazendo."
+    },
+    {
+      "scaleName": "Desengajamento",
+      "orderIndex": 15,
+      "isInverted": true,
+      "text": "Sinto que o meu trabalho e cada vez mais uma experiencia positiva."
+    },
+    {
+      "scaleName": "Exaustao",
+      "orderIndex": 16,
+      "isInverted": false,
+      "text": "Durante o trabalho, frequentemente me sinto fisicamente exausto(a)."
+    }
+  ]
 }
