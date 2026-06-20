@@ -20,7 +20,7 @@ async function enrollParticipants(supabase: any, surveyId: string, targetDeptIds
     return { success: true, enrolled: 0 };
   }
 
-  const participantRows = employees.map((emp) => ({
+  const participantRows = employees.map((emp: { email: string; department_id: string }) => ({
     survey_id: surveyId,
     email: emp.email,
     department_id: emp.department_id,
