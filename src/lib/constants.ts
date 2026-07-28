@@ -93,6 +93,7 @@ export const ROUTES = {
     CERTIFICATES: "/certificados",
     ASSISTANT: "/assistente",
     METHODOLOGY: "/sobre/metodologia",
+    ACCOUNT: "/conta/dados",
   },
   DENUNCIA: {
     HOME: "/denuncia",

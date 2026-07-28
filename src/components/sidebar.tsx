@@ -56,6 +56,7 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
       title: "Pessoas & Configurações",
       items: [
         { label: "Colaboradores", href: ROUTES.DASHBOARD.EMPLOYEES, icon: "group" },
+        { label: "Meu perfil", href: ROUTES.DASHBOARD.ACCOUNT, icon: "person" },
         { label: "Configurações", href: ROUTES.DASHBOARD.SETTINGS, icon: "settings" },
         { label: "Assistente", href: ROUTES.DASHBOARD.ASSISTANT, icon: "chat" },
       ],
