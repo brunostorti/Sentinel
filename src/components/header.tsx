@@ -64,7 +64,7 @@ export function Header({ userName, userEmail }: HeaderProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
-              onClick={() => router.push(ROUTES.DASHBOARD.SETTINGS)}
+              onClick={() => router.push(ROUTES.DASHBOARD.ACCOUNT)}
               className="gap-2.5"
             >
               <Icon name="person" size={16} />

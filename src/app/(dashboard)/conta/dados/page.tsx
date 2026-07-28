@@ -27,8 +27,8 @@ export default async function MeusDadosPage() {
         </p>
         <h1 className="text-3xl font-black tracking-tight">Meus dados</h1>
         <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Você pode exportar todos os seus dados ou solicitar a exclusão da
-          sua conta a qualquer momento (Art. 18 LGPD).
+          Gerencie seus dados de acesso, altere sua senha e exerça seus
+          direitos de exportação ou exclusão de conta (Art. 18 LGPD).
         </p>
       </div>
 
@@ -79,8 +79,11 @@ export default async function MeusDadosPage() {
         </dl>
       </Card>
 
-      {/* Ações */}
-      <AccountDataActions />
+      {/* Perfil e ações */}
+      <AccountDataActions
+        initialName={userData.name}
+        email={userData.email}
+      />
 
       {/* Disclaimer */}
       <Card className="border-amber-200 bg-amber-50/40 p-5 dark:border-amber-900 dark:bg-amber-950/30">
