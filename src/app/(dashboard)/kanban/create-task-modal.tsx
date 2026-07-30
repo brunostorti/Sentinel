@@ -15,6 +15,7 @@ interface CreateTaskModalProps {
   companyUsers: { id: string; name: string }[];
   onClose: () => void;
   editingTask?: Task | null;
+  sourceSurveyId?: string | null;
 }
 
 export function CreateTaskModal({
@@ -22,6 +23,7 @@ export function CreateTaskModal({
   companyUsers,
   onClose,
   editingTask,
+  sourceSurveyId,
 }: CreateTaskModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -55,6 +57,7 @@ export function CreateTaskModal({
           columnId,
           assignedTo: assignedTo || null,
           dueDate: dueDate || null,
+          sourceSurveyId: sourceSurveyId ?? null,
         });
 
     if (result.error) {

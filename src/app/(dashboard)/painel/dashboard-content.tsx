@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/icon";
 import type { DimensionScore } from "@/lib/copsoq/types";
 import { KPICards } from "./kpi-cards";
@@ -57,6 +57,8 @@ interface DashboardContentProps {
       scores: { surveyId: string; displayScore: number }[];
     }[];
   };
+  initialSurveyId?: string | null;
+  contextualMode?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -70,8 +72,18 @@ export function DashboardContent({
   surveyDataMap,
   generalData,
   trendData,
+  initialSurveyId,
+  contextualMode = false,
 }: DashboardContentProps) {
-  const [selectedSurveyId, setSelectedSurveyId] = useState<string>("general");
+  const initialSelection =
+    initialSurveyId && surveys.some((survey) => survey.id === initialSurveyId)
+      ? initialSurveyId
+      : "general";
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string>(initialSelection);
+
+  useEffect(() => {
+    setSelectedSurveyId(initialSelection);
+  }, [initialSelection]);
 
   const currentData =
     selectedSurveyId === "general"
@@ -80,6 +92,7 @@ export function DashboardContent({
 
   const hasScores = currentData && currentData.scores.length > 0;
   const hasSurveys = surveys.length > 0;
+  const isContextual = contextualMode && selectedSurveyId !== "general";
 
   const selectedSurvey = surveys.find((s) => s.id === selectedSurveyId);
   const displayTitle =
@@ -92,14 +105,18 @@ export function DashboardContent({
       {/* Header */}
       <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Painel</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            {isContextual ? "Dashboard da pesquisa" : "Painel"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Visão geral da saúde psicossocial da empresa.
+            {isContextual
+              ? "Indicadores e riscos calculados para esta pesquisa dentro do fluxo."
+              : "Visão geral da saúde psicossocial da empresa."}
           </p>
         </div>
 
         {/* Survey selector */}
-        {hasSurveys && (
+        {hasSurveys && !isContextual && (
           <div className="relative w-full sm:w-auto sm:max-w-xs">
             <select
               value={selectedSurveyId}
@@ -210,8 +227,9 @@ export function DashboardContent({
             Aguardando respostas
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pesquisa ativa, mas ainda sem respostas suficientes para exibir os
-            resultados.
+            {isContextual
+              ? "Esta pesquisa ainda não possui respostas suficientes para exibir os resultados."
+              : "Pesquisa ativa, mas ainda sem respostas suficientes para exibir os resultados."}
           </p>
         </div>
       )}

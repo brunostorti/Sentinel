@@ -10,6 +10,7 @@ import { PlanV2 } from "@/components/plan/plan-v2";
 import { PlanChatDrawer } from "@/components/plan/plan-chat-drawer";
 import { PlanOverview } from "./plan-overview";
 import { toast } from "sonner";
+import { SurveyContextNav } from "@/components/survey-context-nav";
 import type { AIRecommendation } from "@/lib/ai/pipeline/types";
 import type { KbReferenceWithRelevance } from "@/lib/ai/knowledge-base/references";
 
@@ -29,6 +30,8 @@ interface Props {
   planId: string;
   riskLevel: "RED" | "YELLOW";
   status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED";
+  surveyId: string | null;
+  surveyStatus: string | null;
   dimensionName: string;
   surveyTitle: string;
   timeframe: string | null;
@@ -44,6 +47,8 @@ export function PlanDetailView({
   planId,
   riskLevel,
   status,
+  surveyId,
+  surveyStatus,
   dimensionName,
   surveyTitle,
   timeframe,
@@ -91,7 +96,7 @@ export function PlanDetailView({
         return;
       }
       toast.success("Plano aprovado. Task criada no Kanban.");
-      router.push("/planos-acao");
+      router.push(surveyId ? `/planos-acao/pesquisa/${surveyId}` : "/planos-acao");
       router.refresh();
     });
   }
@@ -110,20 +115,30 @@ export function PlanDetailView({
         return;
       }
       toast.success("Plano rejeitado.");
-      router.push("/planos-acao");
+      router.push(surveyId ? `/planos-acao/pesquisa/${surveyId}` : "/planos-acao");
       router.refresh();
     });
   }
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/20">
+      {surveyId && (
+        <div className="shrink-0 bg-background px-4 pt-4 sm:px-6">
+          <SurveyContextNav
+            surveyId={surveyId}
+            surveyTitle={surveyTitle}
+            status={surveyStatus}
+            current="planos"
+          />
+        </div>
+      )}
 
       {/* ─── Top bar limpa ─── */}
       <div className="shrink-0 border-b border-border bg-card">
         <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
           {/* Voltar */}
           <Link
-            href="/planos-acao"
+            href={surveyId ? `/planos-acao/pesquisa/${surveyId}` : "/planos-acao"}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
           >
             <Icon name="arrow_back" size={14} />

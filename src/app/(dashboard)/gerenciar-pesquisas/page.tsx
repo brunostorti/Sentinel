@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -198,8 +199,16 @@ export default async function SurveyManagementPage() {
                     </div>
                   )}
 
-                  {canCreate && (
-                    <div className="flex gap-2 w-full pt-1">
+                  <div className="flex gap-2 w-full pt-1">
+                    <Link
+                      href={`/gerenciar-pesquisas/${survey.id}`}
+                      className="group/button inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-border bg-background bg-clip-padding px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-foreground outline-none transition-all select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px dark:border-input dark:bg-input/30 dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
+                    >
+                      <Icon name="account_tree" size={16} />
+                      Abrir fluxo
+                    </Link>
+                    {canCreate && (
+                      <>
                       {status.label === "Rascunho" && counts.responded === 0 && (
                         <EditSurveyButton
                           companyId={userData.company_id}
@@ -221,8 +230,9 @@ export default async function SurveyManagementPage() {
                           status={survey.status}
                         />
                       </div>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

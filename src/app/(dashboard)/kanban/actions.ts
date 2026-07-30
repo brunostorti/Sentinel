@@ -1,6 +1,19 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+
+async function getSurveyIdFromCurrentRequest() {
+  const headersList = await headers();
+  const referer = headersList.get("referer");
+  if (!referer) return null;
+
+  try {
+    return new URL(referer).searchParams.get("surveyId");
+  } catch {
+    return null;
+  }
+}
 
 export async function moveTask(taskId: string, newColumnId: string) {
   const supabase = await createClient();
@@ -20,6 +33,7 @@ interface CreateTaskPayload {
   columnId: string;
   assignedTo: string | null;
   dueDate: string | null;
+  sourceSurveyId?: string | null;
 }
 
 export async function createTask(payload: CreateTaskPayload) {
@@ -41,6 +55,20 @@ export async function createTask(payload: CreateTaskPayload) {
     return { error: "Apenas RH e Admin podem criar tarefas." };
   }
 
+  const sourceSurveyId =
+    payload.sourceSurveyId ?? (await getSurveyIdFromCurrentRequest());
+
+  if (sourceSurveyId) {
+    const { data: survey } = await supabase
+      .from("surveys")
+      .select("id")
+      .eq("id", sourceSurveyId)
+      .eq("company_id", userData.company_id)
+      .maybeSingle();
+
+    if (!survey) return { error: "Pesquisa não encontrada para vincular tarefa." };
+  }
+
   const { error } = await supabase.from("kanban_tasks").insert({
     company_id: userData.company_id,
     column_id: payload.columnId,
@@ -48,6 +76,7 @@ export async function createTask(payload: CreateTaskPayload) {
     description: payload.description,
     assigned_to: payload.assignedTo,
     due_date: payload.dueDate,
+    source_survey_id: sourceSurveyId,
   });
 
   if (error) return { error: "Erro ao criar tarefa." };
