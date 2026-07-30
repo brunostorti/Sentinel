@@ -11,6 +11,8 @@ export interface Task {
   columnId: string;
   dueDate: string | null;
   dimensionName: string | null;
+  surveyTitle: string | null;
+  sourceSurveyId: string | null;
   assigneeName: string | null;
   assignedTo: string | null;
 }
@@ -64,10 +66,19 @@ export function KanbanCard({
       `}
     >
       {/* Dimension badge */}
-      {task.dimensionName && (
-        <span className="mb-2 inline-flex items-center rounded-lg bg-primary/8 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-          {task.dimensionName}
-        </span>
+      {(task.dimensionName || task.surveyTitle) && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {task.dimensionName && (
+            <span className="inline-flex items-center rounded-lg bg-primary/8 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+              {task.dimensionName}
+            </span>
+          )}
+          {task.surveyTitle && (
+            <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {task.surveyTitle}
+            </span>
+          )}
+        </div>
       )}
 
       {/* Title */}

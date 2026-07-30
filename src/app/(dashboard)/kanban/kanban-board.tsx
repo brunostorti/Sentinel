@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -37,6 +37,7 @@ interface KanbanBoardProps {
   tasks: Task[];
   companyUsers: { id: string; name: string }[];
   canManage: boolean;
+  sourceSurveyId?: string | null;
 }
 
 const COLUMN_COLORS: Record<number, string> = {
@@ -51,6 +52,7 @@ export function KanbanBoard({
   tasks: initialTasks,
   companyUsers,
   canManage,
+  sourceSurveyId,
 }: KanbanBoardProps) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
@@ -63,6 +65,10 @@ export function KanbanBoard({
   const doneColumnId = columns.length > 0
     ? [...columns].sort((a, b) => b.order_index - a.order_index)[0].id
     : null;
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -256,6 +262,7 @@ export function KanbanBoard({
         <CreateTaskModal
           columns={columns}
           companyUsers={companyUsers}
+          sourceSurveyId={sourceSurveyId}
           onClose={() => setShowCreate(false)}
         />
       )}

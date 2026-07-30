@@ -13,8 +13,14 @@ import { DashboardContent } from "./dashboard-content";
 import { SetupCompletenessBanner } from "@/components/painel/setup-banner";
 import { AttributionBanner } from "@/components/painel/attribution-banner";
 import { NewPlansBanner } from "@/components/painel/new-plans-banner";
+import { SurveyContextNav } from "@/components/survey-context-nav";
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: {
+  searchParams?: Promise<{ surveyId?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const initialSurveyId = searchParams?.surveyId ?? null;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,6 +45,43 @@ export default async function DashboardPage() {
 
   // Only process surveys that have responses
   const surveysWithData = allSurveys.filter((s) => s.responseCount > 0);
+
+  let selectedSurvey = initialSurveyId
+    ? allSurveys.find((s) => s.id === initialSurveyId) ?? null
+    : null;
+
+  if (initialSurveyId && !selectedSurvey) {
+    const [{ data: survey }, { count: responseCount }] = await Promise.all([
+      supabase
+        .from("surveys")
+        .select("id, title, version, status, created_at, expires_at, closed_at, questionnaire_instruments(code, name)")
+        .eq("id", initialSurveyId)
+        .eq("company_id", companyId)
+        .maybeSingle(),
+      supabase
+        .from("survey_responses")
+        .select("*", { count: "exact", head: true })
+        .eq("survey_id", initialSurveyId),
+    ]);
+
+    if (survey) {
+      const instrument = Array.isArray(survey.questionnaire_instruments)
+        ? survey.questionnaire_instruments[0]
+        : (survey.questionnaire_instruments as { name?: string } | null);
+
+      selectedSurvey = {
+        id: survey.id,
+        title: survey.title,
+        version: survey.version,
+        status: survey.status,
+        created_at: survey.created_at,
+        expires_at: survey.expires_at,
+        closed_at: survey.closed_at,
+        instrumentName: instrument?.name ?? null,
+        responseCount: responseCount ?? 0,
+      };
+    }
+  }
 
   // Build data for each survey
   const surveyDataMap: Record<
@@ -142,7 +185,12 @@ export default async function DashboardPage() {
       }
     : null;
 
-  const surveyOptions = surveysWithData.map((s) => ({
+  const surveysForSelector =
+    selectedSurvey && !allSurveys.some((s) => s.id === selectedSurvey?.id)
+      ? [selectedSurvey, ...allSurveys]
+      : allSurveys;
+
+  const surveyOptions = surveysForSelector.map((s) => ({
     id: s.id,
     title: s.title,
     status: s.status,
@@ -153,6 +201,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      {selectedSurvey && (
+        <SurveyContextNav
+          surveyId={selectedSurvey.id}
+          surveyTitle={selectedSurvey.title}
+          status={selectedSurvey.status}
+          current="painel"
+        />
+      )}
       <SetupCompletenessBanner />
       <NewPlansBanner />
       <AttributionBanner />
@@ -162,6 +218,8 @@ export default async function DashboardPage() {
         surveyDataMap={surveyDataMap}
         generalData={generalData}
         trendData={trendData}
+        initialSurveyId={initialSurveyId}
+        contextualMode={Boolean(selectedSurvey)}
       />
     </div>
   );

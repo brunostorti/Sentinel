@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { SurveyContextNav } from "@/components/survey-context-nav";
 import {
   fetchSurveyDimensionScores,
   fetchDepartments,
@@ -8,7 +9,12 @@ import {
 import type { DimensionScore } from "@/lib/copsoq/types";
 import { ReportExporter } from "./report-exporter";
 
-export default async function ReportsPage() {
+export default async function ReportsPage(props: {
+  searchParams?: Promise<{ surveyId?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const selectedSurveyId = searchParams?.surveyId ?? null;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,17 +31,30 @@ export default async function ReportsPage() {
 
   const companyId = userData.company_id;
 
-  // Fetch closed surveys for this company
-  const { data: closedSurveys } = await supabase
+  const { data: selectedSurveyContext } = selectedSurveyId
+    ? await supabase
+        .from("surveys")
+        .select("id, title, status")
+        .eq("id", selectedSurveyId)
+        .eq("company_id", companyId)
+        .maybeSingle()
+    : { data: null };
+
+  let surveyQuery = supabase
     .from("surveys")
     .select("id, title, version, status, closed_at, created_at")
     .eq("company_id", companyId)
     .in("status", ["CLOSED", "ACTIVE"])
     .order("created_at", { ascending: false });
 
-  const surveys = closedSurveys ?? [];
+  if (selectedSurveyId) {
+    surveyQuery = surveyQuery.eq("id", selectedSurveyId);
+  }
 
-  // Fetch company name
+  const { data: closedSurveys } = await surveyQuery;
+  const surveys = closedSurveys ?? [];
+  const currentSurvey = selectedSurveyContext ?? null;
+
   const { data: company } = await supabase
     .from("companies")
     .select("name")
@@ -43,11 +62,8 @@ export default async function ReportsPage() {
     .single();
 
   const companyName = company?.name ?? "Empresa";
-
-  // Fetch departments
   const departments = await fetchDepartments(supabase, companyId);
 
-  // For each survey, fetch dimension scores
   const surveyReports: Array<{
     surveyId: string;
     surveyTitle: string;
@@ -97,10 +113,23 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-6">
+      {currentSurvey && (
+        <SurveyContextNav
+          surveyId={currentSurvey.id}
+          surveyTitle={currentSurvey.title}
+          status={currentSurvey.status}
+          current="relatorios"
+        />
+      )}
+
       <div>
-        <h1 className="text-3xl font-black tracking-tight">Relatórios</h1>
+        <h1 className="text-3xl font-black tracking-tight">
+          {selectedSurveyId ? "Relatório da pesquisa" : "Relatórios"}
+        </h1>
         <p className="mt-1 text-muted-foreground">
-          Exporte os resultados das pesquisas em PDF ou CSV.
+          {selectedSurveyId
+            ? "Exporte os resultados deste ciclo específico em PDF ou CSV."
+            : "Exporte os resultados das pesquisas em PDF ou CSV."}
         </p>
       </div>
 

@@ -31,7 +31,7 @@ export async function POST(
 
   const { data: plan, error: planErr } = await supabase
     .from("action_plans")
-    .select("id, company_id, status, ai_recommendation")
+    .select("id, company_id, status, survey_id, dimension_id, ai_recommendation")
     .eq("id", id)
     .eq("company_id", userData.company_id!)
     .single();
@@ -72,6 +72,8 @@ export async function POST(
       company_id: userData.company_id!,
       column_id: firstColumn.id,
       action_plan_id: plan.id,
+      source_survey_id: plan.survey_id,
+      dimension_id: plan.dimension_id,
       title: rec.title ?? "Plano de ação",
       description: rec.quick_action ?? rec.description ?? "",
     });

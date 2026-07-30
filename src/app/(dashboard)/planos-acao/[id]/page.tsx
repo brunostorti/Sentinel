@@ -52,7 +52,7 @@ export default async function PlanoDetalhePage({
     .select(
       `id, risk_level, ai_recommendation, status, priority, effort, timeframe,
        target_department, created_at,
-       surveys (id, title),
+       surveys (id, title, status),
        questionnaire_scales (name),
        company_actions_taken (outcome, outcome_notes)`
     )
@@ -89,7 +89,7 @@ export default async function PlanoDetalhePage({
     compliance_extra: raw.compliance_extra ?? [],
   };
 
-  const survey = plan.surveys as unknown as { id: string; title: string } | null;
+  const survey = plan.surveys as unknown as { id: string; title: string; status: string } | null;
   const dim = plan.questionnaire_scales as unknown as { name: string } | null;
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
 
@@ -101,6 +101,8 @@ export default async function PlanoDetalhePage({
       planId={plan.id}
       riskLevel={plan.risk_level as "RED" | "YELLOW"}
       status={plan.status as "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED"}
+      surveyId={survey?.id ?? null}
+      surveyStatus={survey?.status ?? null}
       dimensionName={dim?.name ?? ""}
       surveyTitle={survey?.title ?? ""}
       timeframe={plan.timeframe as string | null}

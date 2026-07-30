@@ -1,8 +1,14 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { SurveyContextNav } from "@/components/survey-context-nav";
 import { KanbanBoard } from "./kanban-board";
 
-export default async function KanbanPage() {
+export default async function KanbanPage(props: {
+  searchParams?: Promise<{ surveyId?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const surveyId = searchParams?.surveyId ?? null;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,14 +26,24 @@ export default async function KanbanPage() {
   const companyId = userData.company_id;
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
 
-  // Fetch columns
+  let currentSurvey: { id: string; title: string; status: string } | null = null;
+  if (surveyId) {
+    const { data: survey } = await supabase
+      .from("surveys")
+      .select("id, title, status")
+      .eq("id", surveyId)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (!survey) notFound();
+    currentSurvey = survey;
+  }
+
   const { data: columns } = await supabase
     .from("kanban_columns")
     .select("id, name, order_index")
     .eq("company_id", companyId)
     .order("order_index");
 
-  // If no columns exist, create defaults
   let kanbanColumns = columns ?? [];
   if (kanbanColumns.length === 0 && canManage) {
     const defaults = [
@@ -44,8 +60,7 @@ export default async function KanbanPage() {
     kanbanColumns = created ?? [];
   }
 
-  // Fetch tasks with relations
-  const { data: tasks } = await supabase
+  let taskQuery = supabase
     .from("kanban_tasks")
     .select(
       `
@@ -56,13 +71,20 @@ export default async function KanbanPage() {
       due_date,
       assigned_to,
       dimension_id,
+      source_survey_id,
       questionnaire_scales (name),
+      surveys (id, title),
       users!kanban_tasks_assigned_to_fkey (name)
     `
     )
     .eq("company_id", companyId);
 
-  // Fetch company users for assignment dropdown
+  if (currentSurvey) {
+    taskQuery = taskQuery.eq("source_survey_id", currentSurvey.id);
+  }
+
+  const { data: tasks } = await taskQuery;
+
   const { data: companyUsers } = await supabase
     .from("users")
     .select("id, name")
@@ -71,10 +93,23 @@ export default async function KanbanPage() {
 
   return (
     <div className="space-y-6">
+      {currentSurvey && (
+        <SurveyContextNav
+          surveyId={currentSurvey.id}
+          surveyTitle={currentSurvey.title}
+          status={currentSurvey.status}
+          current="kanban"
+        />
+      )}
+
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-black tracking-tight">Kanban de Planos</h1>
+        <h1 className="text-3xl font-black tracking-tight">
+          {currentSurvey ? "Kanban da pesquisa" : "Kanban de Planos"}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Acompanhe e gerencie as tarefas de intervenção em saúde psicossocial.
+          {currentSurvey
+            ? "Acompanhe apenas as tarefas derivadas desta pesquisa."
+            : "Acompanhe e gerencie as tarefas de intervenção em saúde psicossocial."}
         </p>
       </div>
 
@@ -88,12 +123,16 @@ export default async function KanbanPage() {
           dueDate: t.due_date,
           dimensionName:
             (t.questionnaire_scales as unknown as { name: string })?.name ?? null,
+          surveyTitle:
+            (t.surveys as unknown as { title: string } | null)?.title ?? null,
+          sourceSurveyId: t.source_survey_id,
           assigneeName:
             (t.users as unknown as { name: string })?.name ?? null,
           assignedTo: t.assigned_to,
         }))}
         companyUsers={companyUsers ?? []}
         canManage={canManage}
+        sourceSurveyId={currentSurvey?.id ?? null}
       />
     </div>
   );
