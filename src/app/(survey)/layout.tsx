@@ -1,4 +1,4 @@
-import { Icon } from "@/components/icon";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function SurveyLayout({
   children,
@@ -10,7 +10,7 @@ export default function SurveyLayout({
       {/* Minimal header */}
       <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 sm:px-6">
         <div className="flex items-center gap-2">
-          <Icon name="shield" size={24} filled className="text-primary" />
+          <BrandLogo size="sm" priority />
           <span className="text-base font-black tracking-tight">Sentinel</span>
         </div>
       </header>
