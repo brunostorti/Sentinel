@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Icon } from "@/components/icon";
+import { BrandWordmark } from "@/components/brand-logo";
 
 /**
  * Footer global do dashboard. Aparece no fim do scroll de cada página
@@ -11,9 +11,7 @@ export function DashboardFooter() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Logo + identidade */}
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-            <Icon name="shield" size={14} filled className="text-primary" />
-          </div>
+          <BrandWordmark size="sm" />
           <div>
             <p className="text-sm font-black tracking-tight">Sentinel</p>
             <p className="text-[10px] text-muted-foreground">

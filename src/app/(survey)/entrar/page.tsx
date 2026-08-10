@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@/components/icon";
+import { BrandLogo } from "@/components/brand-logo";
 import { sendMagicLink } from "./actions";
 import { AdminLogin } from "./admin-login";
 import { TutorialModal } from "@/components/tutorial-modal";
@@ -134,16 +135,31 @@ export default function LoginPage() {
 
         <section className="relative order-1 flex items-center bg-card p-6 sm:p-10 lg:order-2 lg:p-12">
           <div className="w-full">
-            <div className="mb-8">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
-                Sentinel
-              </p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
-                Bem-vindo
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Escolha seu perfil para acessar o ambiente adequado.
-              </p>
+            <div className="mb-8 rounded-3xl border border-border/70 bg-gradient-to-br from-background via-card to-primary/5 p-5 shadow-sm">
+              <div className="flex items-center gap-4">
+                <BrandLogo
+                  size="xl"
+                  priority
+                  className="h-20 w-20 rounded-2xl shadow-none"
+                />
+                <div className="min-w-0">
+                  <p className="text-3xl font-black leading-none tracking-[0.1em] text-foreground sm:text-4xl">
+                    SENTINEL
+                  </p>
+                  <p className="mt-2 text-[0.62rem] font-black uppercase tracking-[0.24em] text-primary/75 sm:text-[0.68rem]">
+                    Gestão de riscos psicossociais
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-border/60 bg-card/80 px-4 py-4">
+                <h2 className="text-2xl font-black tracking-tight">
+                  Bem-vindo
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  Escolha seu perfil para acessar o ambiente adequado.
+                </p>
+              </div>
             </div>
 
             <div className="flex rounded-xl border border-border bg-muted/70 p-1">

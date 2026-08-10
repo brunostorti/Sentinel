@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/icon";
+import { BrandLogo } from "@/components/brand-logo";
 import { ROUTES, type Role } from "@/lib/constants";
 
 interface NavItem {
@@ -78,9 +79,7 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
     >
       {/* Logo */}
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-4 shrink-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-          <Icon name="shield" size={22} filled className="text-primary" />
-        </div>
+        <BrandLogo size="md" priority />
         {!collapsed && (
           <span className="animate-fade-in text-lg font-black tracking-tight">
             Sentinel
