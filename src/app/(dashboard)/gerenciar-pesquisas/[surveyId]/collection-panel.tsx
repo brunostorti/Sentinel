@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
+import { toast } from "sonner";
 import {
   activateSurvey,
   closeSurvey,
@@ -59,6 +60,17 @@ export function CollectionPanel({
     if (result.message) {
       setSuccess(result.message);
       return;
+    }
+    if (kind === "close") {
+      // Encerrar dispara a geração de planos em segundo plano no servidor —
+      // a tela já mostra "encerrada" na hora, mas a IA ainda está rodando.
+      // Sem este aviso, a demora (a IA passa por toda a pesquisa e o perfil
+      // da empresa antes de sugerir ações) parece falha silenciosa.
+      toast("Gerando planos de ação com IA...", {
+        description:
+          "Pode levar alguns minutos. Você pode continuar usando o sistema normalmente — os planos aparecem em Planos de Ação quando ficarem prontos.",
+        duration: 12000,
+      });
     }
     router.refresh();
   }
