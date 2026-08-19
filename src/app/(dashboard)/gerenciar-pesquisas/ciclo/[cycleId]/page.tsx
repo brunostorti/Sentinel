@@ -57,45 +57,71 @@ interface ConformityStage {
 
 function SurveyCard({ survey }: { survey: CycleSurvey }) {
   const status = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.DRAFT;
+  const isActive = survey.status === "ACTIVE";
   return (
     <Link
       href={`/gerenciar-pesquisas/${survey.id}`}
-      className="block rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+      className={`group flex flex-col overflow-hidden rounded-xl border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md ${
+        isActive
+          ? "border-primary/30 shadow-sm"
+          : "border-border hover:border-primary/30"
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-            {survey.stageLabel}
-          </p>
-          <h3 className="mt-0.5 line-clamp-2 text-sm font-bold">{survey.title}</h3>
-        </div>
-        <Badge variant={status.variant} className="shrink-0 gap-1">
-          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
-          {status.label}
-        </Badge>
-      </div>
+      <div className={`h-1 ${status.dot}`} />
 
-      <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
-        <div>
-          <p className="font-black">
-            {survey.responded}/{survey.invited}
-          </p>
-          <p className="text-[10px] text-muted-foreground">Respostas</p>
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
+              {survey.stageLabel}
+            </p>
+            <h3 className="mt-0.5 line-clamp-2 text-sm font-bold">
+              {survey.title}
+            </h3>
+          </div>
+          <Badge variant={status.variant} className="shrink-0 gap-1">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${status.dot} ${
+                isActive ? "animate-pulse-soft" : ""
+              }`}
+            />
+            {status.label}
+          </Badge>
         </div>
-        <div>
-          <p className="font-black">{survey.responseRate}%</p>
-          <p className="text-[10px] text-muted-foreground">Adesão</p>
-        </div>
-        <div>
-          <p className="font-black">{survey.planCount}</p>
-          <p className="text-[10px] text-muted-foreground">Planos</p>
-        </div>
-      </div>
 
-      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary">
-        Entrar nesta pesquisa
-        <Icon name="arrow_forward" size={13} />
-      </span>
+        <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
+          <div>
+            <p className="font-black tabular-nums">
+              {survey.responded}/{survey.invited}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Respostas</p>
+          </div>
+          <div>
+            <p className="font-black tabular-nums">{survey.responseRate}%</p>
+            <p className="text-[10px] text-muted-foreground">Adesão</p>
+          </div>
+          <div>
+            <p className="font-black tabular-nums">{survey.planCount}</p>
+            <p className="text-[10px] text-muted-foreground">Planos</p>
+          </div>
+        </div>
+
+        {survey.invited > 0 && (
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full ${
+                survey.status === "CLOSED" ? "bg-muted-foreground/40" : "bg-primary"
+              }`}
+              style={{ width: `${Math.min(survey.responseRate, 100)}%` }}
+            />
+          </div>
+        )}
+
+        <span className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-primary/5 text-sm font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          Entrar nesta pesquisa
+          <Icon name="arrow_forward" size={15} />
+        </span>
+      </div>
     </Link>
   );
 }
@@ -112,13 +138,19 @@ function OverviewStat({
   detail?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/25 p-3">
-      <Icon name={icon} size={16} className="text-muted-foreground" />
-      <p className="mt-1 text-2xl font-black leading-none">{value}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+    <div className="rounded-xl border border-border/70 bg-muted/25 p-4 transition-colors hover:border-primary/25">
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon name={icon} size={18} />
+      </span>
+      <p className="mt-2.5 text-3xl font-black leading-none tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
-      {detail && <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>}
+      {detail && (
+        <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>
+      )}
     </div>
   );
 }
@@ -291,6 +323,8 @@ export default async function CycleHubPage({
   const healthDelta =
     first && last ? last.healthIndex! - first.healthIndex! : null;
   const riskDelta = first && last ? last.riskCount! - first.riskCount! : null;
+
+  const latestMeasured = measured.length > 0 ? measured[measured.length - 1] : null;
 
   const totalResponses = cycle.surveys.reduce((sum, s) => sum + s.responded, 0);
   const totalInvited = cycle.surveys.reduce((sum, s) => sum + s.invited, 0);
@@ -677,22 +711,50 @@ export default async function CycleHubPage({
           Ciclos
         </Link>
 
-        <div className="mt-2 rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="gap-1">
-              <Icon name="account_tree" size={12} />
-              {cycle.surveys.length} pesquisa(s)
-            </Badge>
-            <Badge variant={latestStatus.variant} className="gap-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full ${latestStatus.dot}`} />
-              Última: {latestStatus.label}
-            </Badge>
+        <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+          <div className="flex flex-wrap items-start justify-between gap-6 p-6">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="gap-1">
+                  <Icon name="account_tree" size={12} />
+                  {cycle.surveys.length} pesquisa(s)
+                </Badge>
+                <Badge variant={latestStatus.variant} className="gap-1.5">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${latestStatus.dot}`}
+                  />
+                  Última: {latestStatus.label}
+                </Badge>
+              </div>
+              <h1 className="text-3xl font-black tracking-tight">
+                {cycle.title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Acompanha o mesmo grupo ao longo do tempo: diagnóstico, ações e
+                reavaliação para comprovar se os riscos diminuíram.
+              </p>
+            </div>
+
+            {/* O indice da medicao mais recente e a resposta curta de "como
+                estamos"; fica ao lado do titulo em vez de exigir uma aba. */}
+            {latestMeasured && (
+              <div className="shrink-0 rounded-xl border border-border/70 bg-muted/25 px-5 py-4 text-center">
+                <p
+                  className="text-4xl font-black leading-none"
+                  style={{ color: getHealthColor(latestMeasured.healthIndex!).color }}
+                >
+                  {latestMeasured.healthIndex}
+                </p>
+                <p className="mt-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Índice de saúde
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {latestMeasured.survey.stageLabel}
+                </p>
+              </div>
+            )}
           </div>
-          <h1 className="text-3xl font-black tracking-tight">{cycle.title}</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Acompanha o mesmo grupo ao longo do tempo: diagnóstico, ações e
-            reavaliação para comprovar se os riscos diminuíram.
-          </p>
         </div>
       </div>
 
@@ -732,18 +794,24 @@ export default async function CycleHubPage({
           {
             id: "visao-geral",
             label: "Visão geral",
+            hint: "Números e evolução",
             icon: "dashboard",
             content: visaoGeral,
           },
           {
             id: "comparacao",
             label: "Comparação",
+            hint:
+              measured.length > 1
+                ? "Antes e depois das ações"
+                : "Disponível com 2 coletas",
             icon: "compare_arrows",
             content: comparacao,
           },
           {
             id: "conformidade",
             label: "Conformidade",
+            hint: `${conformityPct}% das evidências`,
             icon: "verified_user",
             content: conformidade,
           },

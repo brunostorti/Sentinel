@@ -29,31 +29,52 @@ function formatDate(date: string | null) {
 }
 
 /**
- * Linha do tempo compacta das pesquisas do ciclo.
+ * Linha do tempo das pesquisas do ciclo.
  *
- * O estágio vem do rótulo (bandeira para a base, R1/R2 para reavaliações) e o
- * status vem da cor do ponto — assim os dois eixos nunca disputam a mesma cor.
+ * Um ciclo raramente passa de tres pesquisas, entao cada etapa ganha espaco
+ * para mostrar rotulo, status e adesao em vez de virar so um ponto colorido.
+ * O estagio vem do rotulo (bandeira para a base, R1/R2 para reavaliacoes) e o
+ * status vem da cor do no, entao os dois eixos nunca disputam a mesma cor.
  */
 function CycleTimeline({ surveys }: { surveys: CycleSurvey[] }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto py-1">
+    <div className="flex items-start">
       {surveys.map((survey, index) => {
         const status = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.DRAFT;
+        const isActive = survey.status === "ACTIVE";
         return (
-          <div key={survey.id} className="flex items-center gap-2">
+          <div
+            key={survey.id}
+            className="relative flex flex-1 flex-col items-center text-center"
+          >
             {index > 0 && (
-              <span className="h-px w-6 shrink-0 bg-border" aria-hidden />
+              <span
+                className="absolute right-1/2 top-[19px] h-0.5 w-full bg-border"
+                aria-hidden
+              />
             )}
+
             <span
-              title={`${survey.stageLabel} — ${status.label}`}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white ${status.dot}`}
+              className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full text-xs font-black text-white ring-4 ring-card ${status.dot} ${
+                isActive ? "shadow-md shadow-emerald-500/25" : ""
+              }`}
             >
               {index === 0 ? (
-                <Icon name="flag" size={14} className="text-white" />
+                <Icon name="flag" size={17} className="text-white" />
               ) : (
                 getStageShortLabel(index)
               )}
             </span>
+
+            <p className="mt-2 text-xs font-bold leading-tight">
+              {survey.stageLabel}
+            </p>
+            <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
+              {status.label}
+            </p>
+            <p className="mt-1 text-sm font-black tabular-nums leading-none">
+              {survey.invited > 0 ? `${survey.responseRate}%` : "—"}
+            </p>
           </div>
         );
       })}
@@ -171,6 +192,10 @@ export default async function SurveyCyclesPage() {
               (sum, s) => sum + s.planCount,
               0
             );
+            const totalInvited = cycle.surveys.reduce(
+              (sum, s) => sum + s.invited,
+              0
+            );
             const version = latest.version
               ? VERSION_LABELS[latest.version] ?? latest.version
               : null;
@@ -215,18 +240,19 @@ export default async function SurveyCyclesPage() {
                       Linha do tempo
                     </p>
                     <CycleTimeline surveys={cycle.surveys} />
-                    <div className="mt-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3">
-                      <Metric
-                        label="Última adesão"
-                        value={`${latest.responseRate}%`}
-                        detail={`${latest.responded}/${latest.invited}`}
-                      />
+                    {/* A adesao por etapa ja aparece na linha do tempo acima,
+                        entao aqui ficam so os totais do ciclo. */}
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
                       <Metric
                         label="Respostas"
                         value={String(totalResponses)}
+                        detail={`de ${totalInvited} convidados`}
+                      />
+                      <Metric
+                        label="Planos de ação"
+                        value={String(totalPlans)}
                         detail="no ciclo"
                       />
-                      <Metric label="Planos" value={String(totalPlans)} />
                     </div>
                   </div>
 
