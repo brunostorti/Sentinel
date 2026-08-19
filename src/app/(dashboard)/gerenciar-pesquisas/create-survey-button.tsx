@@ -115,7 +115,7 @@ export function CreateSurveyButton({
     <>
       <Button onClick={() => setOpen(true)} className="gap-1.5 rounded-lg">
         <Icon name="add" size={18} />
-        Nova Pesquisa
+        Novo Ciclo
       </Button>
 
       {open && createPortal(
@@ -133,7 +133,7 @@ export function CreateSurveyButton({
               <Icon name="assignment" size={18} className="text-primary" />
             </div>
             <h2 className="text-lg font-black tracking-tight">
-              {step === 1 ? "Escolha o Instrumento" : "Nova Pesquisa"}
+              {step === 1 ? "Escolha o Instrumento" : "Novo Ciclo"}
             </h2>
           </div>
           <button

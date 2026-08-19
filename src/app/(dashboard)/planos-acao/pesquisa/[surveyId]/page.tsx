@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SurveyContextNav } from "@/components/survey-context-nav";
+import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 import { ActionPlansList } from "../../action-plans-list";
 import type { PlanView } from "../../types";
 import {
@@ -40,6 +41,12 @@ export default async function SurveyPlansPage({
     .maybeSingle();
   if (!survey) notFound();
 
+  const cycleContext = await fetchCycleContextForSurvey(
+    supabase,
+    surveyId,
+    companyId
+  );
+
   const { data: planRows } = await supabase
     .from("action_plans")
     .select(PLAN_VIEW_SELECT)
@@ -63,6 +70,9 @@ export default async function SurveyPlansPage({
         surveyTitle={survey.title}
         status={survey.status}
         current="planos"
+        cycleId={cycleContext?.cycleId}
+        cycleTitle={cycleContext?.cycleTitle}
+        stageLabel={cycleContext?.stageLabel}
       />
 
       <div className="animate-fade-in-up">

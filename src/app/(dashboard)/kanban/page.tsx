@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SurveyContextNav } from "@/components/survey-context-nav";
+import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 import { KanbanBoard } from "./kanban-board";
 
 export default async function KanbanPage(props: {
@@ -37,6 +38,10 @@ export default async function KanbanPage(props: {
     if (!survey) notFound();
     currentSurvey = survey;
   }
+
+  const cycleContext = surveyId
+    ? await fetchCycleContextForSurvey(supabase, surveyId, companyId)
+    : null;
 
   const { data: columns } = await supabase
     .from("kanban_columns")
@@ -99,6 +104,9 @@ export default async function KanbanPage(props: {
           surveyTitle={currentSurvey.title}
           status={currentSurvey.status}
           current="kanban"
+          cycleId={cycleContext?.cycleId}
+          cycleTitle={cycleContext?.cycleTitle}
+          stageLabel={cycleContext?.stageLabel}
         />
       )}
 

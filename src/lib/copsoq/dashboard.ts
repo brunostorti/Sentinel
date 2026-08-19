@@ -385,7 +385,12 @@ export async function fetchDepartmentDimensionScores(
 /** Fetch historical trend data across multiple surveys */
 export async function fetchHistoricalTrends(
   supabase: SupabaseClient,
-  companyId: string
+  companyId: string,
+  /**
+   * Restringe a evolução às pesquisas de um ciclo. Omitido, mantém o
+   * comportamento original (empresa inteira), usado pelo painel.
+   */
+  cycleId?: string
 ): Promise<{
   surveys: { id: string; title: string; closedAt: string }[];
   dimensions: {
@@ -396,13 +401,19 @@ export async function fetchHistoricalTrends(
   }[];
 }> {
   // Get closed surveys ordered by closed_at
-  const { data: closedSurveys } = await supabase
+  let closedSurveysQuery = supabase
     .from("surveys")
     .select("id, title, closed_at")
     .eq("company_id", companyId)
     .eq("status", "CLOSED")
     .order("closed_at", { ascending: true })
     .limit(10);
+
+  if (cycleId) {
+    closedSurveysQuery = closedSurveysQuery.eq("cycle_id", cycleId);
+  }
+
+  const { data: closedSurveys } = await closedSurveysQuery;
 
   if (!closedSurveys || closedSurveys.length < 2) {
     return { surveys: [], dimensions: [] };

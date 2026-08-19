@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { SurveyContextNav } from "@/components/survey-context-nav";
+import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
+import { CollectionPanel } from "./collection-panel";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "success" | "warning" }> = {
   DRAFT: { label: "Rascunho", variant: "secondary" },
@@ -151,12 +153,19 @@ export default async function SurveyFlowPage({
         .eq("company_id", userData.company_id),
     ]);
 
+  const cycleContext = await fetchCycleContextForSurvey(
+    supabase,
+    surveyId,
+    userData.company_id
+  );
+
   const scoresResult = await fetchSurveyDimensionScores(supabase, surveyId);
   const scores = scoresResult.scores;
   const redCount = scores.filter((s) => s.trafficLight === "RED").length;
   const yellowCount = scores.filter((s) => s.trafficLight === "YELLOW").length;
   const riskCount = redCount + yellowCount;
 
+  const canManage = userData.role === "HR" || userData.role === "ADMIN";
   const totalParticipants = participantCount ?? 0;
   const totalResponses = responseCount ?? 0;
   const responseRate = pct(totalResponses, totalParticipants);
@@ -194,6 +203,9 @@ export default async function SurveyFlowPage({
         surveyTitle={survey.title}
         status={survey.status}
         current="fluxo"
+        cycleId={cycleContext?.cycleId}
+        cycleTitle={cycleContext?.cycleTitle}
+        stageLabel={cycleContext?.stageLabel}
       />
 
       <div className="animate-fade-in-up">
@@ -239,6 +251,17 @@ export default async function SurveyFlowPage({
           </div>
         </div>
       </div>
+
+      <CollectionPanel
+        surveyId={survey.id}
+        status={survey.status}
+        responded={totalResponses}
+        invited={totalParticipants}
+        responseRate={responseRate}
+        expiresAt={survey.expires_at}
+        closedAt={survey.closed_at}
+        canManage={canManage}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <FlowCard
