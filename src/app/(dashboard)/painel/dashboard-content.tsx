@@ -143,6 +143,7 @@ export function DashboardContent({
 
       {/* KPIs */}
       <KPICards
+        hideActiveSurveys={isContextual}
         activeSurveys={kpis.activeSurveys}
         totalResponses={
           selectedSurveyId === "general"
@@ -191,8 +192,11 @@ export function DashboardContent({
         </>
       )}
 
-      {/* Historical trends */}
-      {trendData.surveys.length >= 2 && (
+      {/* Tendencias historicas: comparam pesquisas entre si, entao pertencem ao
+          nivel do ciclo. Dentro de UMA pesquisa elas trariam dados de outras
+          coletas para uma tela que deve mostrar so aquela. O grafico vive em
+          /gerenciar-pesquisas/ciclo/[cycleId]. */}
+      {!isContextual && trendData.surveys.length >= 2 && (
         <TrendsChart
           surveys={trendData.surveys}
           dimensions={trendData.dimensions}

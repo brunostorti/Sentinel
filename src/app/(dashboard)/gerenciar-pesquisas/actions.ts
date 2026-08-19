@@ -72,10 +72,27 @@ export async function createSurvey(payload: CreateSurveyPayload) {
     return { error: "Apenas RH e Admin podem criar pesquisas." };
   }
 
+  // Toda pesquisa nasce dentro de um ciclo. Criar uma pesquisa "solta" é
+  // criar um ciclo novo cuja pesquisa base é ela — as reavaliações vêm depois
+  // via createFollowUpSurvey.
+  const { data: newCycle, error: cycleError } = await supabase
+    .from("survey_cycles")
+    .insert({
+      company_id: payload.companyId,
+      title: payload.title.trim(),
+    })
+    .select("id")
+    .single();
+
+  if (cycleError || !newCycle) {
+    return { error: "Erro ao criar ciclo. Tente novamente." };
+  }
+
   const { data: newSurvey, error } = await supabase
     .from("surveys")
     .insert({
       company_id: payload.companyId,
+      cycle_id: newCycle.id,
       title: payload.title.trim(),
       instrument_id: payload.instrumentId,
       version: payload.version,
@@ -88,6 +105,9 @@ export async function createSurvey(payload: CreateSurveyPayload) {
     .single();
 
   if (error || !newSurvey) {
+    // Sem transação entre statements no supabase-js: desfaz o ciclo à mão
+    // para não deixar um ciclo vazio, que não tem o que exibir na listagem.
+    await supabase.from("survey_cycles").delete().eq("id", newCycle.id);
     return { error: "Erro ao criar pesquisa. Tente novamente." };
   }
 
@@ -133,7 +153,7 @@ export async function editSurvey(surveyId: string, payload: CreateSurveyPayload)
   // Verify survey belongs to company and is DRAFT
   const { data: survey } = await supabase
     .from("surveys")
-    .select("id, company_id, status")
+    .select("id, company_id, status, cycle_id")
     .eq("id", surveyId)
     .single();
 
@@ -161,6 +181,21 @@ export async function editSurvey(surveyId: string, payload: CreateSurveyPayload)
     return { error: "Erro ao editar pesquisa. Tente novamente." };
   }
 
+  // Renomear a única pesquisa de um ciclo é, na prática, renomear o ciclo —
+  // ainda está sendo configurado. Com reavaliações já criadas o nome do ciclo
+  // é o guarda-chuva delas e não acompanha a edição de uma pesquisa só.
+  const { count: siblingCount } = await supabase
+    .from("surveys")
+    .select("*", { count: "exact", head: true })
+    .eq("cycle_id", survey.cycle_id);
+
+  if (siblingCount === 1) {
+    await supabase
+      .from("survey_cycles")
+      .update({ title: payload.title.trim() })
+      .eq("id", survey.cycle_id);
+  }
+
   // Clear previous target departments and participants
   await supabase.from("survey_target_departments").delete().eq("survey_id", surveyId);
   await supabase.from("survey_participants").delete().eq("survey_id", surveyId);
@@ -178,6 +213,109 @@ export async function editSurvey(surveyId: string, payload: CreateSurveyPayload)
   await enrollParticipants(supabase, surveyId, payload.targetDepartmentIds, payload.companyId);
 
   return { success: true };
+}
+
+/**
+ * Cria a próxima reavaliação de um ciclo, reaproveitando instrumento, versão e
+ * setores da pesquisa base — só assim as medições são comparáveis entre si.
+ *
+ * Nasce em DRAFT: o RH revisa e ativa quando quiser abrir a coleta.
+ */
+export async function createFollowUpSurvey(cycleId: string) {
+  const supabase = await createClient();
+
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { error: "Não autenticado." };
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("company_id, role")
+    .eq("auth_id", authData.user.id)
+    .single();
+
+  if (!userData || (userData.role !== "HR" && userData.role !== "ADMIN")) {
+    return { error: "Apenas RH e Admin podem criar reavaliações." };
+  }
+
+  const { data: cycle } = await supabase
+    .from("survey_cycles")
+    .select("id, title, company_id")
+    .eq("id", cycleId)
+    .eq("company_id", userData.company_id)
+    .maybeSingle();
+
+  if (!cycle) return { error: "Ciclo não encontrado." };
+
+  const { data: cycleSurveys } = await supabase
+    .from("surveys")
+    .select("id, status, instrument_id, version, created_at")
+    .eq("cycle_id", cycleId)
+    .order("created_at", { ascending: true });
+
+  const surveys = cycleSurveys ?? [];
+  if (surveys.length === 0) {
+    return { error: "Este ciclo não possui uma pesquisa base." };
+  }
+
+  // Reavaliar antes de encerrar a coleta atual não faz sentido: não há
+  // resultado com que comparar, e duas coletas abertas ao mesmo tempo
+  // confundem quem responde. Validado aqui, não só na UI.
+  const latest = surveys[surveys.length - 1];
+  if (latest.status !== "CLOSED") {
+    return {
+      error:
+        "A pesquisa mais recente deste ciclo ainda não foi encerrada. Encerre-a antes de criar uma reavaliação.",
+    };
+  }
+
+  const base = surveys[0];
+
+  // A 2ª pesquisa do ciclo é a "Reavaliação 1" — numera pela ordem de
+  // reavaliação, não pela posição absoluta.
+  const followUpNumber = surveys.length;
+
+  const { data: targetDepts } = await supabase
+    .from("survey_target_departments")
+    .select("department_id")
+    .eq("survey_id", base.id);
+
+  const targetDeptIds = (targetDepts ?? []).map((t) => t.department_id);
+
+  const { data: newSurvey, error } = await supabase
+    .from("surveys")
+    .insert({
+      company_id: userData.company_id,
+      cycle_id: cycleId,
+      title: `${cycle.title} - Reavaliação ${followUpNumber}`,
+      instrument_id: base.instrument_id,
+      version: base.version,
+      status: "DRAFT",
+      expires_at: null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !newSurvey) {
+    return { error: "Erro ao criar reavaliação. Tente novamente." };
+  }
+
+  if (targetDeptIds.length > 0) {
+    await supabase.from("survey_target_departments").insert(
+      targetDeptIds.map((deptId) => ({
+        survey_id: newSurvey.id,
+        department_id: deptId,
+      }))
+    );
+  }
+
+  await enrollParticipants(
+    supabase,
+    newSurvey.id,
+    targetDeptIds.length > 0 ? targetDeptIds : null,
+    userData.company_id
+  );
+
+  return { success: true, surveyId: newSurvey.id };
 }
 
 export async function activateSurvey(surveyId: string) {

@@ -4,14 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
+import { fetchCyclesWithSurveys, getStageShortLabel } from "@/lib/surveys/cycle";
+import type { CycleSurvey } from "@/lib/surveys/cycle";
 import { CreateSurveyButton } from "./create-survey-button";
-import { EditSurveyButton } from "./edit-survey-button";
-import { SurveyActions } from "./survey-actions";
 
-const STATUS_CONFIG = {
-  DRAFT: { label: "Rascunho", variant: "secondary" as const, dot: "bg-gray-400" },
-  ACTIVE: { label: "Ativa", variant: "default" as const, dot: "bg-emerald-500" },
-  CLOSED: { label: "Encerrada", variant: "outline" as const, dot: "bg-muted-foreground" },
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "outline"; dot: string }
+> = {
+  DRAFT: { label: "Rascunho", variant: "secondary", dot: "bg-gray-400" },
+  ACTIVE: { label: "Em coleta", variant: "default", dot: "bg-emerald-500" },
+  CLOSED: { label: "Encerrada", variant: "outline", dot: "bg-muted-foreground" },
 };
 
 const VERSION_LABELS: Record<string, string> = {
@@ -20,7 +23,65 @@ const VERSION_LABELS: Record<string, string> = {
   LONG: "Longa (119 perguntas)",
 };
 
-export default async function SurveyManagementPage() {
+function formatDate(date: string | null) {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("pt-BR");
+}
+
+/**
+ * Linha do tempo compacta das pesquisas do ciclo.
+ *
+ * O estágio vem do rótulo (bandeira para a base, R1/R2 para reavaliações) e o
+ * status vem da cor do ponto — assim os dois eixos nunca disputam a mesma cor.
+ */
+function CycleTimeline({ surveys }: { surveys: CycleSurvey[] }) {
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto py-1">
+      {surveys.map((survey, index) => {
+        const status = STATUS_CONFIG[survey.status] ?? STATUS_CONFIG.DRAFT;
+        return (
+          <div key={survey.id} className="flex items-center gap-2">
+            {index > 0 && (
+              <span className="h-px w-6 shrink-0 bg-border" aria-hidden />
+            )}
+            <span
+              title={`${survey.stageLabel} — ${status.label}`}
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white ${status.dot}`}
+            >
+              {index === 0 ? (
+                <Icon name="flag" size={14} className="text-white" />
+              ) : (
+                getStageShortLabel(index)
+              )}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-0.5 text-lg font-black leading-none">{value}</p>
+      {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
+    </div>
+  );
+}
+
+export default async function SurveyCyclesPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,34 +96,7 @@ export default async function SurveyManagementPage() {
 
   if (!userData) redirect("/entrar");
 
-  const { data: surveys } = await supabase
-    .from("surveys")
-    .select("*, questionnaire_instruments(code, name)")
-    .eq("company_id", userData.company_id)
-    .order("created_at", { ascending: false });
-
-  const surveyIds = (surveys ?? []).map((s) => s.id);
-  const participantCounts: Record<
-    string,
-    { total: number; responded: number }
-  > = {};
-
-  if (surveyIds.length > 0) {
-    const { data: participants } = await supabase
-      .from("survey_participants")
-      .select("survey_id, has_accessed")
-      .in("survey_id", surveyIds);
-
-    for (const p of participants ?? []) {
-      const stats = participantCounts[p.survey_id] ?? {
-        total: 0,
-        responded: 0,
-      };
-      stats.total++;
-      if (p.has_accessed) stats.responded++;
-      participantCounts[p.survey_id] = stats;
-    }
-  }
+  const cycles = await fetchCyclesWithSurveys(supabase, userData.company_id);
 
   const { data: departments } = await supabase
     .from("departments")
@@ -70,23 +104,6 @@ export default async function SurveyManagementPage() {
     .eq("company_id", userData.company_id)
     .order("name");
 
-  const surveyTargets: Record<string, string[]> = {};
-  const surveyTargetIds: Record<string, string[]> = {};
-  if (surveyIds.length > 0) {
-    const { data: targets } = await supabase
-      .from("survey_target_departments")
-      .select("survey_id, department_id, departments(name)")
-      .in("survey_id", surveyIds);
-
-    for (const t of (targets ?? []) as unknown as { survey_id: string; department_id: string; departments: { name: string } | null }[]) {
-      if (!surveyTargets[t.survey_id]) surveyTargets[t.survey_id] = [];
-      if (!surveyTargetIds[t.survey_id]) surveyTargetIds[t.survey_id] = [];
-      if (t.departments?.name) surveyTargets[t.survey_id].push(t.departments.name);
-      if (t.department_id) surveyTargetIds[t.survey_id].push(t.department_id);
-    }
-  }
-
-  // Fetch active instruments for survey creation
   const { data: instruments } = await supabase
     .from("questionnaire_instruments")
     .select("id, code, name, description, total_questions, estimated_minutes")
@@ -95,13 +112,27 @@ export default async function SurveyManagementPage() {
 
   const canCreate = userData.role === "HR" || userData.role === "ADMIN";
 
+  // Ciclos com coleta aberta primeiro — é onde há ação pendente.
+  const sorted = [...cycles].sort((a, b) => {
+    const priority = (status: string) =>
+      status === "ACTIVE" ? 0 : status === "DRAFT" ? 1 : 2;
+    const diff =
+      priority(a.latestSurvey.status) - priority(b.latestSurvey.status);
+    if (diff !== 0) return diff;
+    return (
+      new Date(b.latestSurvey.created_at).getTime() -
+      new Date(a.latestSurvey.created_at).getTime()
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Pesquisas</h1>
+          <h1 className="text-3xl font-black tracking-tight">Ciclos</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gerencie as pesquisas de saúde psicossocial.
+            Cada ciclo começa com uma pesquisa base e acompanha o mesmo grupo ao
+            longo do tempo, para comprovar se os riscos diminuíram.
           </p>
         </div>
         {canCreate && (
@@ -113,126 +144,99 @@ export default async function SurveyManagementPage() {
         )}
       </div>
 
-      {(surveys ?? []).length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="animate-scale-in flex flex-col items-center rounded-2xl border border-dashed border-border/60 bg-muted/20 p-16 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
-            <Icon name="assignment" size={32} className="text-primary/40" />
+            <Icon name="account_tree" size={32} className="text-primary/40" />
           </div>
           <p className="mt-4 text-base font-semibold text-foreground/70">
-            Nenhuma pesquisa criada ainda
+            Nenhum ciclo criado ainda
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Crie sua primeira pesquisa para avaliar a saúde psicossocial.
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            Crie o primeiro ciclo para aplicar a pesquisa base e acompanhar as
+            reavaliações ao longo do tempo.
           </p>
         </div>
       ) : (
-        <div className="stagger-children space-y-3">
-          {(surveys ?? []).map((survey) => {
-            const status = STATUS_CONFIG[survey.status as keyof typeof STATUS_CONFIG];
-            const counts = participantCounts[survey.id] ?? {
-              total: 0,
-              responded: 0,
-            };
-            const rate =
-              counts.total > 0
-                ? Math.round((counts.responded / counts.total) * 100)
-                : 0;
-            const isActive = survey.status === "ACTIVE";
+        <div className="stagger-children grid gap-4 xl:grid-cols-2">
+          {sorted.map((cycle) => {
+            const latest = cycle.latestSurvey;
+            const status = STATUS_CONFIG[latest.status] ?? STATUS_CONFIG.DRAFT;
+            const isActive = latest.status === "ACTIVE";
+            const totalResponses = cycle.surveys.reduce(
+              (sum, s) => sum + s.responded,
+              0
+            );
+            const totalPlans = cycle.surveys.reduce(
+              (sum, s) => sum + s.planCount,
+              0
+            );
+            const version = latest.version
+              ? VERSION_LABELS[latest.version] ?? latest.version
+              : null;
 
             return (
-              <Card key={survey.id} className={`card-hover overflow-hidden ${isActive ? "ring-1 ring-primary/10" : ""}`}>
-                {/* Subtle top accent for active surveys */}
+              <Card
+                key={cycle.id}
+                className={`card-hover overflow-hidden ${isActive ? "ring-1 ring-primary/10" : ""}`}
+              >
                 {isActive && (
                   <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
                 )}
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-bold">
-                      {survey.title}
-                    </CardTitle>
-                    <Badge variant={status.variant} className="gap-1.5">
-                      <span className={`h-1.5 w-1.5 rounded-full ${status.dot} ${isActive ? "animate-pulse-soft" : ""}`} />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg font-bold">
+                        {cycle.title}
+                      </CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {cycle.surveys.length} pesquisa(s) · última em{" "}
+                        {formatDate(latest.created_at)}
+                      </p>
+                    </div>
+                    <Badge variant={status.variant} className="shrink-0 gap-1.5">
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${status.dot} ${isActive ? "animate-pulse-soft" : ""}`}
+                      />
                       {status.label}
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="assignment" size={15} />
-                      {(survey.questionnaire_instruments as unknown as { name: string } | null)?.name ?? "COPSOQ II"}
-                      {survey.version ? ` — ${VERSION_LABELS[survey.version] ?? survey.version}` : ""}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="group" size={15} />
-                      {counts.responded}/{counts.total} respostas ({rate}%)
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="apartment" size={15} />
-                      {surveyTargets[survey.id]?.length === (departments?.length || 0)
-                        ? "Todos os setores"
-                        : surveyTargets[survey.id]?.length
-                        ? `${surveyTargets[survey.id].length} setor(es)`
-                        : "Todos os setores"}
-                    </span>
-                    {survey.expires_at && (
-                      <span className="flex items-center gap-1.5">
-                        <Icon name="schedule" size={15} />
-                        Expira em{" "}
-                        {new Date(survey.expires_at).toLocaleDateString("pt-BR")}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5">
-                      <Icon name="calendar_today" size={15} />
-                      Criada em{" "}
-                      {new Date(survey.created_at).toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
 
-                  {/* Progress bar */}
-                  {counts.total > 0 && (
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
-                        style={{ width: `${rate}%` }}
+                <CardContent className="space-y-4">
+                  <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Icon name="assignment" size={15} />
+                    {latest.instrumentName ?? "COPSOQ II"}
+                    {version ? ` — ${version}` : ""}
+                  </p>
+
+                  <div className="rounded-xl border border-border/70 bg-muted/25 p-3">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Linha do tempo
+                    </p>
+                    <CycleTimeline surveys={cycle.surveys} />
+                    <div className="mt-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3">
+                      <Metric
+                        label="Última adesão"
+                        value={`${latest.responseRate}%`}
+                        detail={`${latest.responded}/${latest.invited}`}
                       />
+                      <Metric
+                        label="Respostas"
+                        value={String(totalResponses)}
+                        detail="no ciclo"
+                      />
+                      <Metric label="Planos" value={String(totalPlans)} />
                     </div>
-                  )}
-
-                  <div className="flex gap-2 w-full pt-1">
-                    <Link
-                      href={`/gerenciar-pesquisas/${survey.id}`}
-                      className="group/button inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-[min(var(--radius-md),12px)] border border-border bg-background bg-clip-padding px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-foreground outline-none transition-all select-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px dark:border-input dark:bg-input/30 dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
-                    >
-                      <Icon name="account_tree" size={16} />
-                      Abrir fluxo
-                    </Link>
-                    {canCreate && (
-                      <>
-                      {status.label === "Rascunho" && counts.responded === 0 && (
-                        <EditSurveyButton
-                          companyId={userData.company_id}
-                          departments={departments ?? []}
-                          instruments={instruments ?? []}
-                          survey={{
-                            id: survey.id,
-                            title: survey.title,
-                            instrument_id: survey.instrument_id,
-                            version: survey.version,
-                            expires_at: survey.expires_at,
-                            targetDepartments: surveyTargetIds[survey.id] || [],
-                          }}
-                        />
-                      )}
-                      <div className="flex-1">
-                        <SurveyActions
-                          surveyId={survey.id}
-                          status={survey.status}
-                        />
-                      </div>
-                      </>
-                    )}
                   </div>
+
+                  <Link
+                    href={`/gerenciar-pesquisas/ciclo/${cycle.id}`}
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  >
+                    <Icon name="account_tree" size={16} />
+                    Abrir ciclo
+                  </Link>
                 </CardContent>
               </Card>
             );

@@ -41,7 +41,7 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
       items: [
         { label: "Início", href: ROUTES.DASHBOARD.HOME, icon: "home" },
         { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
-        { label: "Pesquisas", href: ROUTES.DASHBOARD.SURVEYS, icon: "assignment" },
+        { label: "Ciclos", href: ROUTES.DASHBOARD.SURVEYS, icon: "account_tree" },
         { label: "Relatórios", href: ROUTES.DASHBOARD.REPORTS, icon: "description" },
         { label: "Certificados", href: ROUTES.DASHBOARD.CERTIFICATES, icon: "verified" },
       ],

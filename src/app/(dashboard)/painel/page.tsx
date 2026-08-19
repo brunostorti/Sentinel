@@ -14,6 +14,7 @@ import { SetupCompletenessBanner } from "@/components/painel/setup-banner";
 import { AttributionBanner } from "@/components/painel/attribution-banner";
 import { NewPlansBanner } from "@/components/painel/new-plans-banner";
 import { SurveyContextNav } from "@/components/survey-context-nav";
+import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 
 export default async function DashboardPage(props: {
   searchParams?: Promise<{ surveyId?: string }>;
@@ -185,6 +186,10 @@ export default async function DashboardPage(props: {
       }
     : null;
 
+  const cycleContext = selectedSurvey
+    ? await fetchCycleContextForSurvey(supabase, selectedSurvey.id, companyId)
+    : null;
+
   const surveysForSelector =
     selectedSurvey && !allSurveys.some((s) => s.id === selectedSurvey?.id)
       ? [selectedSurvey, ...allSurveys]
@@ -207,11 +212,23 @@ export default async function DashboardPage(props: {
           surveyTitle={selectedSurvey.title}
           status={selectedSurvey.status}
           current="painel"
+          cycleId={cycleContext?.cycleId}
+          cycleTitle={cycleContext?.cycleTitle}
+          stageLabel={cycleContext?.stageLabel}
         />
       )}
-      <SetupCompletenessBanner />
-      <NewPlansBanner />
-      <AttributionBanner />
+      {/* Avisos de completude de cadastro, planos pendentes e atribuicao de
+          causa sao do nivel da empresa, nao desta pesquisa: contam planos e
+          setup de TODAS as pesquisas. Dentro de uma pesquisa especifica isso
+          e ruido (ou pior, parece pertencer a pesquisa errada), entao so
+          aparecem na Visao Geral. */}
+      {!selectedSurvey && (
+        <>
+          <SetupCompletenessBanner />
+          <NewPlansBanner />
+          <AttributionBanner />
+        </>
+      )}
       <DashboardContent
         kpis={kpis}
         surveys={surveyOptions}

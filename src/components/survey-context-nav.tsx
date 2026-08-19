@@ -67,12 +67,25 @@ export function SurveyContextNav({
   surveyTitle,
   status,
   current,
+  cycleId,
+  cycleTitle,
+  stageLabel,
 }: {
   surveyId: string;
   surveyTitle: string;
   status?: string | null;
   current: SurveyContextTab;
+  /**
+   * Contexto do ciclo. Opcional de propósito: sem ele o cabeçalho se comporta
+   * exatamente como antes, o que permite atualizar os pontos de uso um a um
+   * sem quebrar nenhum deles no caminho.
+   */
+  cycleId?: string | null;
+  cycleTitle?: string | null;
+  stageLabel?: string | null;
 }) {
+  const hasCycle = Boolean(cycleId && cycleTitle);
+
   return (
     <div className="rounded-2xl border border-primary/15 bg-card/95 p-3 shadow-sm">
       <div className="flex flex-col gap-3 border-b border-border/70 pb-3 lg:flex-row lg:items-center lg:justify-between">
@@ -81,9 +94,25 @@ export function SurveyContextNav({
             <Icon name="assignment" size={21} />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-              Você está dentro desta pesquisa
-            </p>
+            {hasCycle ? (
+              // Trilha ciclo › etapa: deixa explícito onde a pesquisa está
+              // dentro da iniciativa, em vez de só afirmar que se está "dentro
+              // de uma pesquisa" sem dizer de qual conjunto.
+              <p className="flex flex-wrap items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+                <Icon name="account_tree" size={12} />
+                <span className="truncate">{cycleTitle}</span>
+                {stageLabel && (
+                  <>
+                    <Icon name="chevron_right" size={12} className="opacity-60" />
+                    <span>{stageLabel}</span>
+                  </>
+                )}
+              </p>
+            ) : (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                Você está dentro desta pesquisa
+              </p>
+            )}
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h2 className="truncate text-lg font-black tracking-tight">
                 {surveyTitle}
@@ -98,11 +127,11 @@ export function SurveyContextNav({
         </div>
 
         <Link
-          href="/gerenciar-pesquisas"
+          href={hasCycle ? `/gerenciar-pesquisas/ciclo/${cycleId}` : "/gerenciar-pesquisas"}
           className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Icon name="arrow_back" size={14} />
-          Todas as pesquisas
+          {hasCycle ? "Voltar ao ciclo" : "Todas as pesquisas"}
         </Link>
       </div>
 

@@ -8,6 +8,13 @@ interface KPICardsProps {
   totalResponses: number;
   responseRate: number;
   totalParticipants: number;
+  /**
+   * Dentro de uma pesquisa específica, "Pesquisas Ativas" é uma contagem da
+   * empresa inteira — não diz nada sobre a pesquisa aberta, e o status dela já
+   * aparece no cabeçalho. Omitir é mais honesto do que exibir um número que não
+   * pertence àquele escopo.
+   */
+  hideActiveSurveys?: boolean;
 }
 
 const kpis: {
@@ -55,9 +62,17 @@ const kpis: {
 ];
 
 export function KPICards(props: KPICardsProps) {
+  const visible = props.hideActiveSurveys
+    ? kpis.filter((kpi) => kpi.key !== "activeSurveys")
+    : kpis;
+
   return (
-    <div className="stagger-children grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {kpis.map((kpi) => (
+    <div
+      className={`stagger-children grid gap-4 sm:grid-cols-2 ${
+        visible.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+      }`}
+    >
+      {visible.map((kpi) => (
         <Card
           key={kpi.key}
           className="card-hover group relative overflow-hidden"
