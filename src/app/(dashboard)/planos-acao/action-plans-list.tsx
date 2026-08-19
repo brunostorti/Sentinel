@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Icon } from "@/components/icon";
+import { toast } from "sonner";
 import { bulkApproveActionPlans, generatePlansForSurvey } from "./actions";
 import type { PlanView } from "./types";
 import { Counter } from "./_components/counter";
@@ -111,12 +112,28 @@ export function ActionPlansList({
 
   async function handleGenerate(surveyId: string) {
     setGeneratingForSurvey(surveyId);
+    // A geração passa por três chamadas de IA em sequência (analista, curador,
+    // consultor) e costuma levar de 1 a 3 minutos. Sem esse aviso, a demora
+    // parece erro — o toast fica visível e some sozinho quando terminar, sem
+    // travar a tela nem exigir que o usuário espere olhando pra ela.
+    const toastId = toast.loading("Gerando planos de ação com IA...", {
+      description:
+        "Pode levar alguns minutos: a IA analisa todas as respostas da pesquisa e o perfil da empresa antes de sugerir as ações. Você pode continuar navegando.",
+      duration: Infinity,
+    });
     const result = await generatePlansForSurvey(surveyId);
     setGeneratingForSurvey(null);
     if (result.error) {
-      // mostra erro mais explícito no banner
-      alert(result.error);
+      toast.error("Falha ao gerar planos", {
+        id: toastId,
+        description: result.error,
+        duration: 10000,
+      });
     } else {
+      toast.success("Planos gerados com sucesso.", {
+        id: toastId,
+        duration: 4000,
+      });
       router.refresh();
     }
   }
@@ -198,7 +215,11 @@ export function ActionPlansList({
                       onClick={() => handleGenerate(s.id)}
                       disabled={generatingForSurvey !== null}
                     >
-                      <Icon name="auto_awesome" size={12} />
+                      <Icon
+                        name={generatingForSurvey === s.id ? "progress_activity" : "auto_awesome"}
+                        size={12}
+                        className={generatingForSurvey === s.id ? "animate-spin" : ""}
+                      />
                       {generatingForSurvey === s.id ? "Gerando..." : "Gerar planos"}
                     </Button>
                   </div>
