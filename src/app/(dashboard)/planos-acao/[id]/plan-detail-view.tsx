@@ -122,20 +122,23 @@ export function PlanDetailView({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/20">
-      {surveyId && (
-        <div className="shrink-0 bg-background px-4 pt-4 sm:px-6">
+      {/* SurveyContextNav e a barra de acoes do plano sao dois cartoes
+          empilhados; precisam do mesmo tratamento visual (cantos
+          arredondados, borda, sombra) para nao parecer dois elementos
+          desencontrados um embaixo do outro. */}
+      <div className="shrink-0 space-y-3 bg-background px-4 pt-4 sm:px-6">
+        {surveyId && (
           <SurveyContextNav
             surveyId={surveyId}
             surveyTitle={surveyTitle}
             status={surveyStatus}
             current="planos"
           />
-        </div>
-      )}
+        )}
 
-      {/* ─── Top bar limpa ─── */}
-      <div className="shrink-0 border-b border-border bg-card">
-        <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
+        {/* ─── Barra de acoes do plano ─── */}
+        <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-3">
           {/* Voltar */}
           <Link
             href={surveyId ? `/planos-acao/pesquisa/${surveyId}` : "/planos-acao"}
@@ -200,6 +203,7 @@ export function PlanDetailView({
               Plano Concluído
             </Badge>
           )}
+          </div>
         </div>
       </div>
 
