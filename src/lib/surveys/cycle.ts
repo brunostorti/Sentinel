@@ -37,6 +37,42 @@ export interface Cycle {
   baseSurvey: CycleSurvey;
 }
 
+export interface ConformityCheck {
+  title: string;
+  detail: string;
+  done: boolean;
+}
+
+export interface ConformityStage {
+  number: string;
+  label: string;
+  description: string;
+  icon: string;
+  checks: ConformityCheck[];
+}
+
+export interface CycleConformityInput {
+  cycle: Cycle;
+  /** Nº de pesquisas do ciclo com diagnóstico calculado (encerrada, não
+   *  anonimizada, com escores). */
+  measuredCount: number;
+  plansTotal: number;
+  plansApproved: number;
+  plansPending: number;
+  tasksTotal: number;
+  totalResponses: number;
+  totalInvited: number;
+  certificatesIssued: number;
+  latestCertificateIssuedAt: string | null;
+}
+
+export interface CycleConformityResult {
+  stages: ConformityStage[];
+  doneChecks: number;
+  totalChecks: number;
+  conformityPct: number;
+}
+
 /**
  * Rótulo da etapa dentro do ciclo.
  *
@@ -234,6 +270,152 @@ export async function fetchCycleContextForSurvey(
     stageLabel: getStageLabel(index < 0 ? 0 : index),
     totalSurveys: ids.length,
   };
+}
+
+/**
+ * As 9 evidências de conformidade do ciclo, em 3 etapas do PGR: identificar o
+ * risco, agir sobre ele, comprovar que a ação funcionou.
+ *
+ * Função pura — recebe os agregados já calculados pelo chamador (o hub do
+ * ciclo já precisa buscar pesquisas/planos/tarefas/certificados/escores para
+ * a própria tela, e o gerador de certificado precisa dos mesmos dados para
+ * decidir o nível). Centralizar aqui garante que as duas telas nunca
+ * discordem sobre o que já foi cumprido.
+ */
+export function computeCycleConformity(
+  input: CycleConformityInput
+): CycleConformityResult {
+  const {
+    cycle,
+    measuredCount,
+    plansTotal,
+    plansApproved,
+    plansPending,
+    tasksTotal,
+    totalResponses,
+    totalInvited,
+    certificatesIssued,
+    latestCertificateIssuedAt,
+  } = input;
+
+  const stages: ConformityStage[] = [
+    {
+      number: "1",
+      label: "Identificação e avaliação",
+      description:
+        "Levantar os riscos psicossociais com instrumento validado e participação dos trabalhadores.",
+      icon: "search",
+      checks: [
+        {
+          title: "Pesquisa base aplicada",
+          detail: "O ciclo tem uma primeira medição estruturada.",
+          done: cycle.surveys.length >= 1,
+        },
+        {
+          title: "Participação registrada",
+          detail: `${totalResponses} de ${totalInvited} convidados responderam.`,
+          done: totalResponses > 0,
+        },
+        {
+          title: "Diagnóstico consolidado",
+          detail: "Ao menos uma coleta encerrada com resultado calculado.",
+          done: measuredCount > 0,
+        },
+      ],
+    },
+    {
+      number: "2",
+      label: "Medidas de controle",
+      description:
+        "Converter os riscos encontrados em ações com responsável e prazo definidos.",
+      icon: "lightbulb",
+      checks: [
+        {
+          title: "Planos de ação gerados",
+          detail: `${plansTotal} plano(s) derivados dos riscos do ciclo.`,
+          done: plansTotal > 0,
+        },
+        {
+          title: "Planos revisados pela gestão",
+          detail:
+            plansPending > 0
+              ? `${plansPending} plano(s) ainda aguardam aprovação.`
+              : `${plansApproved} plano(s) aprovados.`,
+          done: plansApproved > 0,
+        },
+        {
+          title: "Execução acompanhada",
+          detail: `${tasksTotal} tarefa(s) no Kanban vinculadas a este ciclo.`,
+          done: tasksTotal > 0,
+        },
+      ],
+    },
+    {
+      number: "3",
+      label: "Monitoramento da eficácia",
+      description:
+        "Reavaliar depois das ações para comprovar que os riscos de fato diminuíram.",
+      icon: "repeat",
+      checks: [
+        {
+          title: "Reavaliação aplicada",
+          detail: "Uma segunda medição permite comparar antes e depois.",
+          done: cycle.surveys.length > 1,
+        },
+        {
+          title: "Comparação disponível",
+          detail:
+            measuredCount > 1
+              ? "Duas medições com dados suficientes para comparar."
+              : "Precisa de duas coletas encerradas com respostas suficientes.",
+          done: measuredCount > 1,
+        },
+        {
+          title: "Certificado emitido",
+          detail:
+            certificatesIssued > 0 && latestCertificateIssuedAt
+              ? `Última emissão em ${new Date(latestCertificateIssuedAt).toLocaleDateString("pt-BR")}.`
+              : "Documento final gerado após as validações.",
+          done: certificatesIssued > 0,
+        },
+      ],
+    },
+  ];
+
+  const allChecks = stages.flatMap((s) => s.checks);
+  const doneChecks = allChecks.filter((c) => c.done).length;
+  const totalChecks = allChecks.length;
+  const conformityPct = Math.round((doneChecks / totalChecks) * 100);
+
+  return { stages, doneChecks, totalChecks, conformityPct };
+}
+
+/**
+ * Nível de certificado que o ciclo sustenta agora, a partir das mesmas 9
+ * evidências do checklist de conformidade.
+ *
+ * A 3ª evidência da etapa 3 ("Certificado emitido") fica de fora do cálculo
+ * de propósito: exigi-la para emitir o primeiro certificado seria circular.
+ * Ela continua existindo normalmente no checklist do hub — ali faz sentido
+ * ("você já tirou o comprovante final?"); só não conta como pré-requisito
+ * para decidir QUAL nível emitir.
+ *
+ * Retorna `null` quando nem o nível 1 fecha — não há o que certificar ainda.
+ */
+export function resolveCertificateTier(
+  stages: ConformityStage[]
+): 1 | 2 | 3 | null {
+  const [stage1, stage2, stage3] = stages;
+  const stage1Done = Boolean(stage1?.checks.every((c) => c.done));
+  const stage2Done = Boolean(stage2?.checks.every((c) => c.done));
+  const stage3Partial = Boolean(
+    stage3?.checks.slice(0, 2).every((c) => c.done)
+  );
+
+  if (!stage1Done) return null;
+  if (!stage2Done) return 1;
+  if (!stage3Partial) return 2;
+  return 3;
 }
 
 /* ─── Internos ─── */

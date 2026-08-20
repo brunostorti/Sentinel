@@ -11,8 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { TrendsChart } from "../../../painel/trends-chart";
-import { fetchCycleDetail } from "@/lib/surveys/cycle";
-import type { CycleSurvey } from "@/lib/surveys/cycle";
+import {
+  fetchCycleDetail,
+  computeCycleConformity,
+  resolveCertificateTier,
+} from "@/lib/surveys/cycle";
+import type { CycleSurvey, ConformityStage } from "@/lib/surveys/cycle";
 import { CreateFollowUpButton } from "./create-follow-up-button";
 import { CycleTabs } from "./cycle-tabs";
 
@@ -38,21 +42,6 @@ interface SurveyComparison {
   healthIndex: number | null;
   riskCount: number | null;
   isAnonymized: boolean;
-  hasCertificate: boolean;
-}
-
-interface ConformityCheck {
-  title: string;
-  detail: string;
-  done: boolean;
-}
-
-interface ConformityStage {
-  number: string;
-  label: string;
-  description: string;
-  icon: string;
-  checks: ConformityCheck[];
 }
 
 function SurveyCard({ survey }: { survey: CycleSurvey }) {
@@ -272,16 +261,15 @@ export default async function CycleHubPage({
         .in("source_survey_id", surveyIds),
       supabase
         .from("certificates")
-        .select("id, survey_id, issued_at")
+        .select("id, issued_at, tier")
         .eq("company_id", userData.company_id)
-        .in("survey_id", surveyIds)
+        .eq("cycle_id", cycleId)
         .order("issued_at", { ascending: false }),
     ]);
 
   const plans = planRows ?? [];
   const tasks = taskRows ?? [];
   const certificates = certRows ?? [];
-  const certificateSurveyIds = new Set(certificates.map((c) => c.survey_id));
 
   const approvedPlans = plans.filter((p) =>
     ["APPROVED", "COMPLETED"].includes(p.status)
@@ -311,7 +299,6 @@ export default async function CycleHubPage({
           ).length
         : null,
       isAnonymized: result?.isAnonymized ?? false,
-      hasCertificate: certificateSurveyIds.has(survey.id),
     };
   });
 
@@ -336,94 +323,28 @@ export default async function CycleHubPage({
   );
 
   // Etapas do PGR: identificar o risco, agir sobre ele e comprovar que a ação
-  // funcionou. O ciclo acumula essas evidências ao longo do tempo.
-  const stages: ConformityStage[] = [
-    {
-      number: "1",
-      label: "Identificação e avaliação",
-      description:
-        "Levantar os riscos psicossociais com instrumento validado e participação dos trabalhadores.",
-      icon: "search",
-      checks: [
-        {
-          title: "Pesquisa base aplicada",
-          detail: "O ciclo tem uma primeira medição estruturada.",
-          done: cycle.surveys.length >= 1,
-        },
-        {
-          title: "Participação registrada",
-          detail: `${totalResponses} de ${totalInvited} convidados responderam.`,
-          done: totalResponses > 0,
-        },
-        {
-          title: "Diagnóstico consolidado",
-          detail: "Ao menos uma coleta encerrada com resultado calculado.",
-          done: measured.length > 0,
-        },
-      ],
-    },
-    {
-      number: "2",
-      label: "Medidas de controle",
-      description:
-        "Converter os riscos encontrados em ações com responsável e prazo definidos.",
-      icon: "lightbulb",
-      checks: [
-        {
-          title: "Planos de ação gerados",
-          detail: `${plans.length} plano(s) derivados dos riscos do ciclo.`,
-          done: plans.length > 0,
-        },
-        {
-          title: "Planos revisados pela gestão",
-          detail:
-            pendingPlans > 0
-              ? `${pendingPlans} plano(s) ainda aguardam aprovação.`
-              : `${approvedPlans} plano(s) aprovados.`,
-          done: approvedPlans > 0,
-        },
-        {
-          title: "Execução acompanhada",
-          detail: `${tasks.length} tarefa(s) no Kanban vinculadas a este ciclo.`,
-          done: tasks.length > 0,
-        },
-      ],
-    },
-    {
-      number: "3",
-      label: "Monitoramento da eficácia",
-      description:
-        "Reavaliar depois das ações para comprovar que os riscos de fato diminuíram.",
-      icon: "repeat",
-      checks: [
-        {
-          title: "Reavaliação aplicada",
-          detail: "Uma segunda medição permite comparar antes e depois.",
-          done: cycle.surveys.length > 1,
-        },
-        {
-          title: "Comparação disponível",
-          detail:
-            measured.length > 1
-              ? "Duas medições com dados suficientes para comparar."
-              : "Precisa de duas coletas encerradas com respostas suficientes.",
-          done: measured.length > 1,
-        },
-        {
-          title: "Certificado emitido",
-          detail:
-            certificates.length > 0
-              ? `Última emissão em ${formatDate(certificates[0].issued_at)}.`
-              : "Documento final gerado após as validações.",
-          done: certificates.length > 0,
-        },
-      ],
-    },
-  ];
+  // funcionou. Função compartilhada com o gerador de certificado — as duas
+  // telas nunca podem discordar sobre o que já foi cumprido.
+  const { stages, doneChecks, totalChecks, conformityPct } =
+    computeCycleConformity({
+      cycle,
+      measuredCount: measured.length,
+      plansTotal: plans.length,
+      plansApproved: approvedPlans,
+      plansPending: pendingPlans,
+      tasksTotal: tasks.length,
+      totalResponses,
+      totalInvited,
+      certificatesIssued: certificates.length,
+      latestCertificateIssuedAt: certificates[0]?.issued_at ?? null,
+    });
 
-  const allChecks = stages.flatMap((s) => s.checks);
-  const doneChecks = allChecks.filter((c) => c.done).length;
-  const conformityPct = Math.round((doneChecks / allChecks.length) * 100);
+  const certificateTier = resolveCertificateTier(stages);
+  const TIER_LABEL: Record<1 | 2 | 3, string> = {
+    1: "Nível 1 — Avaliação Realizada",
+    2: "Nível 2 — Plano de Ação Implementado",
+    3: "Nível 3 — Ciclo de Melhoria Comprovado",
+  };
 
   const visaoGeral = (
     <div className="space-y-4">
@@ -578,9 +499,6 @@ export default async function CycleHubPage({
                 <th className="pb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Planos
                 </th>
-                <th className="pb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Certificado
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -640,17 +558,6 @@ export default async function CycleHubPage({
                     <td className="py-2.5 pr-3 tabular-nums">
                       {c.survey.planCount}
                     </td>
-                    <td className="py-2.5">
-                      {c.hasCertificate ? (
-                        <Icon
-                          name="verified"
-                          size={18}
-                          className="text-emerald-600 dark:text-emerald-400"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
                   </tr>
                 );
               })}
@@ -680,7 +587,7 @@ export default async function CycleHubPage({
               {conformityPct}%
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {doneChecks} de {allChecks.length} evidências
+              {doneChecks} de {totalChecks} evidências
             </p>
           </div>
         </div>
@@ -693,8 +600,49 @@ export default async function CycleHubPage({
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-5">
         <ConformityTimeline stages={stages} />
+
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${
+            certificateTier
+              ? "border-primary/25 bg-primary/5"
+              : "border-dashed border-border bg-muted/20"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                certificateTier
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Icon name="verified" size={20} />
+            </span>
+            <div>
+              <p className="text-sm font-bold">
+                {certificateTier
+                  ? TIER_LABEL[certificateTier]
+                  : "Certificado ainda não disponível"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {certificateTier
+                  ? "O certificado declara as evidências deste nível com os dados reais do ciclo."
+                  : "Conclua a etapa 1 (identificação e avaliação) para emitir o primeiro nível."}
+              </p>
+            </div>
+          </div>
+          {certificateTier && (
+            <Link
+              href={`/certificados?cycleId=${cycle.id}`}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              <Icon name="verified" size={15} />
+              Emitir certificado
+            </Link>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

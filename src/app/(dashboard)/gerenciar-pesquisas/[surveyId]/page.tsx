@@ -118,6 +118,14 @@ export default async function SurveyFlowPage({
 
   if (!survey) notFound();
 
+  // Buscado antes das outras consultas porque a de certificados agora
+  // precisa do cycleId (certificado é por ciclo, não por pesquisa).
+  const cycleContext = await fetchCycleContextForSurvey(
+    supabase,
+    surveyId,
+    userData.company_id
+  );
+
   const [{ count: participantCount }, { count: responseCount }, { data: targets }] =
     await Promise.all([
       supabase
@@ -146,18 +154,14 @@ export default async function SurveyFlowPage({
         .select("id, column_id, action_plan_id")
         .eq("source_survey_id", surveyId)
         .eq("company_id", userData.company_id),
-      supabase
-        .from("certificates")
-        .select("id, issued_at")
-        .eq("survey_id", surveyId)
-        .eq("company_id", userData.company_id),
+      cycleContext
+        ? supabase
+            .from("certificates")
+            .select("id, issued_at")
+            .eq("cycle_id", cycleContext.cycleId)
+            .eq("company_id", userData.company_id)
+        : Promise.resolve({ data: [] as { id: string; issued_at: string }[] }),
     ]);
-
-  const cycleContext = await fetchCycleContextForSurvey(
-    supabase,
-    surveyId,
-    userData.company_id
-  );
 
   const scoresResult = await fetchSurveyDimensionScores(supabase, surveyId);
   const scores = scoresResult.scores;
@@ -340,17 +344,17 @@ export default async function SurveyFlowPage({
           step="6. Certificado"
           title="Certificado NR1"
           icon="verified"
-          href={`/certificados?surveyId=${survey.id}`}
+          href={cycleContext ? `/certificados?cycleId=${cycleContext.cycleId}` : "/certificados"}
           badge={{
             label: certificates.length > 0 ? "Emitido" : "Não emitido",
             variant: certificates.length > 0 ? "success" : survey.status === "CLOSED" ? "warning" : "outline",
           }}
-          description="Emita ou consulte o certificado relacionado exclusivamente a esta pesquisa."
+          description="Emita ou consulte o certificado do ciclo desta pesquisa, com o nível de conformidade já atingido."
           details={
             certificates.length > 0
-              ? `Última emissão em ${formatDate(certificates[0]?.issued_at ?? null)}.`
+              ? `Última emissão do ciclo em ${formatDate(certificates[0]?.issued_at ?? null)}.`
               : survey.status === "CLOSED"
-                ? "Disponível se passar nas regras de emissão do certificado."
+                ? "Disponível se o ciclo já cumpriu a etapa de identificação e avaliação."
                 : "Disponível após o encerramento da pesquisa."
           }
         />
