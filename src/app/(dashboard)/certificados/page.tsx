@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import {
   fetchCyclesWithSurveys,
@@ -18,6 +17,20 @@ const TIER_LABEL: Record<1 | 2 | 3, string> = {
   1: "Nível 1 — Avaliação Realizada",
   2: "Nível 2 — Plano de Ação Implementado",
   3: "Nível 3 — Ciclo de Melhoria Comprovado",
+};
+
+const TIER_SHORT_LABEL: Record<1 | 2 | 3, string> = {
+  1: "Nível 1",
+  2: "Nível 2",
+  3: "Nível 3",
+};
+
+// Mesma logica de "quanto mais avancado, mais forte" do resto do app: azul
+// para o basico, primaria para o intermediario, esmeralda para o completo.
+const TIER_STYLE: Record<1 | 2 | 3, { bar: string; text: string; bg: string }> = {
+  1: { bar: "bg-sky-500", text: "text-sky-700 dark:text-sky-400", bg: "bg-sky-500/10" },
+  2: { bar: "bg-primary", text: "text-primary", bg: "bg-primary/10" },
+  3: { bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/10" },
 };
 
 function formatDate(date: string) {
@@ -210,73 +223,94 @@ export default async function CertificadosPage({
         </div>
       ) : (
         <div className="stagger-children grid gap-4 xl:grid-cols-2">
-          {info.map(({ cycle, tier, conformityPct, issuedCertificates }) => (
-            <Card key={cycle.id}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="text-lg font-black">{cycle.title}</CardTitle>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {cycle.surveys.length} pesquisa(s) · {conformityPct}% de conformidade
-                    </p>
-                  </div>
-                  {canManage && (
-                    <GenerateCertificateButton
-                      cycleId={cycle.id}
-                      cycleTitle={cycle.title}
-                      disabled={!tier}
-                    />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Badge variant={tier ? "default" : "secondary"} className="gap-1">
-                  <Icon name="verified" size={12} />
-                  {tier ? TIER_LABEL[tier] : "Ainda não elegível"}
-                </Badge>
-
-                {!tier && (
-                  <p className="text-xs text-muted-foreground">
-                    Conclua a identificação e avaliação (etapa 1 do ciclo) para liberar o primeiro nível.
-                  </p>
-                )}
-
-                {issuedCertificates.length > 0 && (
-                  <div className="rounded-lg border border-border/70 bg-muted/25 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Certificados já emitidos
-                    </p>
-                    <div className="mt-1.5 space-y-1.5">
-                      {issuedCertificates.slice(0, 3).map((c) => (
-                        <div key={c.id} className="flex items-center justify-between gap-2 text-xs">
-                          <span className="truncate text-muted-foreground">
-                            {TIER_LABEL[c.tier as 1 | 2 | 3]} · {formatDate(c.issued_at)}
-                          </span>
-                          <Link
-                            href={`/validacao/${c.unique_hash}`}
-                            target="_blank"
-                            className="shrink-0 font-bold text-primary hover:underline"
-                          >
-                            Ver validação
-                          </Link>
-                        </div>
-                      ))}
+          {info.map(({ cycle, tier, conformityPct, issuedCertificates }) => {
+            const style = tier ? TIER_STYLE[tier] : null;
+            return (
+              <Card key={cycle.id} className="overflow-hidden">
+                <div className={`h-1 ${style?.bar ?? "bg-muted"}`} />
+                <CardContent className="space-y-4 pt-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg font-black leading-tight">
+                        {cycle.title}
+                      </CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {cycle.surveys.length} pesquisa(s)
+                      </p>
                     </div>
+                    {canManage && (
+                      <GenerateCertificateButton
+                        cycleId={cycle.id}
+                        cycleTitle={cycle.title}
+                        disabled={!tier}
+                      />
+                    )}
                   </div>
-                )}
 
-                {!cycleIdFilter && (
-                  <Link
-                    href={`/gerenciar-pesquisas/ciclo/${cycle.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-                  >
-                    Ver conformidade completa no ciclo
-                    <Icon name="arrow_forward" size={12} />
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
+                          style ? `${style.bg} ${style.text}` : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <Icon name="verified" size={13} />
+                        {tier ? TIER_LABEL[tier] : "Ainda não elegível"}
+                      </span>
+                      <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                        {conformityPct}%
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full ${style?.bar ?? "bg-muted-foreground/30"}`}
+                        style={{ width: `${conformityPct}%` }}
+                      />
+                    </div>
+                    {!tier && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Conclua a identificação e avaliação (etapa 1 do ciclo) para liberar o primeiro nível.
+                      </p>
+                    )}
+                  </div>
+
+                  {issuedCertificates.length > 0 && (
+                    <div className="rounded-lg border border-border/70 bg-muted/25 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Certificados já emitidos
+                      </p>
+                      <div className="mt-1.5 space-y-1.5">
+                        {issuedCertificates.slice(0, 3).map((c) => (
+                          <div key={c.id} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="truncate text-muted-foreground">
+                              {TIER_SHORT_LABEL[c.tier as 1 | 2 | 3]} · {formatDate(c.issued_at)}
+                            </span>
+                            <Link
+                              href={`/validacao/${c.unique_hash}`}
+                              target="_blank"
+                              className="shrink-0 font-bold text-primary hover:underline"
+                            >
+                              Ver validação
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!cycleIdFilter && (
+                    <Link
+                      href={`/gerenciar-pesquisas/ciclo/${cycle.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                    >
+                      Ver conformidade completa no ciclo
+                      <Icon name="arrow_forward" size={12} />
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

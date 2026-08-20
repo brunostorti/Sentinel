@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 
@@ -18,11 +19,12 @@ export function GenerateCertificateButton({
 }: GenerateCertificateButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleGenerate() {
-    setError(null);
     setLoading(true);
+    const toastId = toast.loading("Gerando certificado...", {
+      description: "Montando o PDF com as evidências deste ciclo.",
+    });
     try {
       const res = await fetch("/api/certificates/generate", {
         method: "POST",
@@ -44,25 +46,28 @@ export function GenerateCertificateButton({
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+
+      toast.success("Certificado emitido.", { id: toastId, duration: 4000 });
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao emitir certificado.");
+      toast.error("Falha ao gerar certificado", {
+        id: toastId,
+        description: err instanceof Error ? err.message : "Erro desconhecido.",
+        duration: 10000,
+      });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
-      <Button onClick={handleGenerate} disabled={disabled || loading} className="gap-1.5">
-        {loading ? (
-          <Icon name="progress_activity" size={16} className="animate-spin" />
-        ) : (
-          <Icon name="verified" size={16} />
-        )}
-        {loading ? "Gerando..." : "Emitir certificado"}
-      </Button>
-      {error && <p className="max-w-[260px] text-right text-xs text-destructive">{error}</p>}
-    </div>
+    <Button onClick={handleGenerate} disabled={disabled || loading} className="shrink-0 gap-1.5">
+      {loading ? (
+        <Icon name="progress_activity" size={16} className="animate-spin" />
+      ) : (
+        <Icon name="verified" size={16} />
+      )}
+      {loading ? "Gerando..." : "Emitir certificado"}
+    </Button>
   );
 }
