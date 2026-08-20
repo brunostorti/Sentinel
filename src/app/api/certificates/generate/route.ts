@@ -167,24 +167,15 @@ export async function POST(req: Request) {
     const validationUrl = `${baseUrl}/validacao/${uniqueHash}`;
     const issuedAt = new Date();
 
-    const { error: insertError } = await supabase.from("certificates").insert({
-      company_id: companyId,
-      cycle_id: cycleId,
-      survey_id: cycle.latestSurvey.id,
-      tier,
-      unique_hash: uniqueHash,
-      validation_url: validationUrl,
-    });
-    if (insertError) {
-      return NextResponse.json({ error: "Erro ao salvar o certificado." }, { status: 500 });
-    }
-
     const qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
       margin: 1,
       width: 150,
       color: { dark: "#000000", light: "#FFFFFF" },
     });
 
+    // O PDF é montado ANTES de gravar qualquer coisa no banco: se a geração
+    // falhar (fonte, imagem, o que for), o catch devolve erro e nenhuma linha
+    // fica pendurada em `certificates` sem PDF nenhum entregue.
     const pdfBytes = await buildCertificatePdf({
       companyName: company?.name ?? "Empresa",
       cycleTitle: cycle.title,
@@ -201,6 +192,18 @@ export async function POST(req: Request) {
       qrCodeDataUrl,
       uniqueHash,
     });
+
+    const { error: insertError } = await supabase.from("certificates").insert({
+      company_id: companyId,
+      cycle_id: cycleId,
+      survey_id: cycle.latestSurvey.id,
+      tier,
+      unique_hash: uniqueHash,
+      validation_url: validationUrl,
+    });
+    if (insertError) {
+      return NextResponse.json({ error: "Erro ao salvar o certificado." }, { status: 500 });
+    }
 
     return new Response(Buffer.from(pdfBytes), {
       status: 200,
@@ -293,7 +296,10 @@ async function buildCertificatePdf(data: CertificateData): Promise<Uint8Array> {
       // Na etapa 3, "Certificado emitido" não faz sentido listar dentro do
       // próprio certificado — é auto-referente.
       if (stage.number === "3" && check.title === "Certificado emitido") continue;
-      const mark = check.done ? "✓" : "○";
+      // Helvetica padrao (WinAnsi) nao codifica os simbolos Unicode de check
+      // e circulo vazio — usar so ASCII evita o crash "WinAnsi cannot encode"
+      // que travava toda emissao.
+      const mark = check.done ? "[x]" : "[ ]";
       page.drawText(`${mark} ${check.title} — ${check.detail}`, {
         x: 65, y, size: 9.5, font: helvetica, color: check.done ? textColor : mutedColor, maxWidth: width - 130, lineHeight: 12,
       });
@@ -324,11 +330,15 @@ async function buildCertificatePdf(data: CertificateData): Promise<Uint8Array> {
   page.drawText("Plataforma Sentinel", { x: 50, y: 80, size: 10, font: helveticaBold, color: textColor });
   page.drawText("Declaração automática baseada em dados", { x: 50, y: 68, size: 8, font: helveticaOblique, color: mutedColor });
 
+  // Hash e QR na mesma coluna de 80pt, hash quebrado em 2 linhas — um UUID
+  // inteiro numa linha só (36 caracteres) vazava por cima do QR.
+  const qrX = width - 130;
   const qrImageBytes = Buffer.from(data.qrCodeDataUrl.split(",")[1], "base64");
   const qrImage = await pdfDoc.embedPng(qrImageBytes);
-  page.drawImage(qrImage, { x: width - 130, y: 50, width: 80, height: 80 });
-  page.drawText("Validar em:", { x: width - 220, y: 90, size: 8, font: helveticaBold, color: textColor });
-  page.drawText(data.uniqueHash, { x: width - 220, y: 78, size: 7, font: helvetica, color: mutedColor });
+  page.drawText("Validar em:", { x: qrX, y: 148, size: 8, font: helveticaBold, color: textColor });
+  page.drawText(data.uniqueHash.slice(0, 18), { x: qrX, y: 137, size: 7, font: helvetica, color: mutedColor });
+  page.drawText(data.uniqueHash.slice(18), { x: qrX, y: 127, size: 7, font: helvetica, color: mutedColor });
+  page.drawImage(qrImage, { x: qrX, y: 40, width: 80, height: 80 });
 
   return pdfDoc.save();
 }
