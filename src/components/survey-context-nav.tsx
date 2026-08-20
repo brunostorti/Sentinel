@@ -22,7 +22,7 @@ const TABS: Array<{
   key: SurveyContextTab;
   label: string;
   icon: string;
-  href: (surveyId: string) => string;
+  href: (surveyId: string, cycleId: string | null) => string;
 }> = [
   {
     key: "fluxo",
@@ -58,7 +58,11 @@ const TABS: Array<{
     key: "certificados",
     label: "Certificado",
     icon: "verified",
-    href: (surveyId) => `/certificados?surveyId=${surveyId}`,
+    // Certificado é por ciclo, não por pesquisa — precisa do cycleId, não do
+    // surveyId. Toda pesquisa tem cycle_id desde a migration 016; o fallback
+    // pra lista geral só cobre o caso defensivo de algum chamador não passar
+    // o contexto do ciclo.
+    href: (_surveyId, cycleId) => (cycleId ? `/certificados?cycleId=${cycleId}` : "/certificados"),
   },
 ];
 
@@ -141,7 +145,7 @@ export function SurveyContextNav({
           return (
             <Link
               key={tab.key}
-              href={tab.href(surveyId)}
+              href={tab.href(surveyId, cycleId ?? null)}
               className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
                 active
                   ? "bg-primary text-primary-foreground shadow-sm"
