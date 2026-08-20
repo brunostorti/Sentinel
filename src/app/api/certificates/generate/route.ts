@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFPage, type PDFFont } from "pdf-lib";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { networkInterfaces } from "os";
@@ -35,9 +35,9 @@ function getBaseUrl(req: Request) {
 }
 
 const TIER_TITLE: Record<1 | 2 | 3, string> = {
-  1: "Certificado de Avaliação de Riscos Psicossociais",
-  2: "Certificado de Plano de Ação Implementado",
-  3: "Certificado de Ciclo de Melhoria Comprovado",
+  1: "Avaliação de Riscos Psicossociais",
+  2: "Plano de Ação Implementado",
+  3: "Ciclo de Melhoria Comprovado",
 };
 
 export async function POST(req: Request) {
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     const totalResponses = cycle.surveys.reduce((sum, s) => sum + s.responded, 0);
     const totalInvited = cycle.surveys.reduce((sum, s) => sum + s.invited, 0);
 
-    const { stages, doneChecks, totalChecks, conformityPct } = computeCycleConformity({
+    const { stages } = computeCycleConformity({
       cycle,
       measuredCount: measured.length,
       plansTotal: plans.length,
@@ -161,6 +161,26 @@ export async function POST(req: Request) {
     const last = measured.length > 1 ? measured[measured.length - 1] : null;
     const healthDelta = first && last ? last.healthIndex - first.healthIndex : null;
     const showsImprovement = tier === 3 && healthDelta !== null && healthDelta > 0;
+    const responseRate = totalInvited > 0 ? Math.round((totalResponses / totalInvited) * 100) : 0;
+
+    // O certificado é um diploma, não um relatório de auditoria: só entra o
+    // que foi conquistado, uma frase por etapa alcançada — nada de item
+    // pendente ou não cumprido aparece aqui (isso fica no hub do ciclo).
+    const highlights: string[] = [
+      `Avaliação de riscos psicossociais (COPSOQ II) concluída, com ${responseRate}% de adesão dos colaboradores (${totalResponses} de ${totalInvited} convidados).`,
+    ];
+    if (tier >= 2) {
+      highlights.push(
+        `${plans.length} plano${plans.length === 1 ? "" : "s"} de ação implementado${plans.length === 1 ? "" : "s"} para mitigação dos riscos identificados, com ${approvedPlans} aprovado${approvedPlans === 1 ? "" : "s"} pela gestão.`
+      );
+    }
+    if (tier === 3) {
+      highlights.push(
+        showsImprovement && healthDelta !== null
+          ? `Reavaliação realizada com melhora comprovada: o índice de saúde ocupacional evoluiu de ${first!.healthIndex} para ${last!.healthIndex} pontos (+${healthDelta}).`
+          : "Reavaliação realizada, permitindo comparar o diagnóstico inicial com o acompanhamento posterior."
+      );
+    }
 
     const uniqueHash = crypto.randomUUID();
     const baseUrl = getBaseUrl(req);
@@ -181,14 +201,7 @@ export async function POST(req: Request) {
       cycleTitle: cycle.title,
       tier,
       issuedAt,
-      stages,
-      doneChecks,
-      totalChecks,
-      conformityPct,
-      showsImprovement,
-      healthDelta,
-      firstStageLabel: first?.survey.stageLabel ?? null,
-      lastStageLabel: last?.survey.stageLabel ?? null,
+      highlights,
       qrCodeDataUrl,
       uniqueHash,
     });
@@ -224,121 +237,156 @@ interface CertificateData {
   cycleTitle: string;
   tier: 1 | 2 | 3;
   issuedAt: Date;
-  stages: ReturnType<typeof computeCycleConformity>["stages"];
-  doneChecks: number;
-  totalChecks: number;
-  conformityPct: number;
-  showsImprovement: boolean;
-  healthDelta: number | null;
-  firstStageLabel: string | null;
-  lastStageLabel: string | null;
+  /** Só o que foi conquistado — uma frase por etapa alcançada. Nada de
+   *  pendência ou item não cumprido entra no documento; isso é papel do
+   *  checklist do hub do ciclo, não do certificado. */
+  highlights: string[];
   qrCodeDataUrl: string;
   uniqueHash: string;
 }
 
+function centeredText(
+  page: PDFPage,
+  text: string,
+  y: number,
+  size: number,
+  font: PDFFont,
+  color: ReturnType<typeof rgb>,
+  pageWidth: number
+) {
+  const textWidth = font.widthOfTextAtSize(text, size);
+  page.drawText(text, { x: (pageWidth - textWidth) / 2, y, size, font, color });
+}
+
 /**
- * Desenha o PDF com pdf-lib (mesma lib já usada aqui, API de baixo nível —
- * sem dependência nova). Só lista as evidências das etapas cobertas pelo
- * nível emitido, com o texto real de cada check (não mais boilerplate fixo).
+ * Diploma em paisagem — mesma borda dupla e QR/hash de sempre, mas
+ * tipografia serifada e layout centralizado, no espírito de um diploma
+ * formal em vez de um relatório de auditoria. Lista só as conquistas
+ * (`highlights`), nunca o que ainda falta.
  */
 async function buildCertificatePdf(data: CertificateData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]); // A4 retrato — cabe mais texto que paisagem
+  const page = pdfDoc.addPage([841.89, 595.28]); // A4 paisagem
   const { width, height } = page.getSize();
+  const times = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
   const primaryColor = rgb(0.05, 0.35, 0.65);
   const textColor = rgb(0.2, 0.2, 0.2);
   const mutedColor = rgb(0.45, 0.45, 0.45);
-  const emerald = rgb(0.02, 0.5, 0.35);
+  const goldLine = rgb(0.62, 0.51, 0.24);
 
-  page.drawRectangle({ x: 20, y: 20, width: width - 40, height: height - 40, borderColor: primaryColor, borderWidth: 3 });
-  page.drawRectangle({ x: 24, y: 24, width: width - 48, height: height - 48, borderColor: primaryColor, borderWidth: 1 });
+  // Moldura dupla, como antes.
+  page.drawRectangle({ x: 24, y: 24, width: width - 48, height: height - 48, borderColor: primaryColor, borderWidth: 3 });
+  page.drawRectangle({ x: 32, y: 32, width: width - 64, height: height - 64, borderColor: primaryColor, borderWidth: 0.75 });
+  // Filete fino logo dentro da moldura — dá o acabamento de diploma sem
+  // depender de nenhum brasão/imagem.
+  page.drawRectangle({ x: 42, y: 42, width: width - 84, height: height - 84, borderColor: goldLine, borderWidth: 0.5 });
 
-  let y = height - 70;
+  let y = height - 90;
 
-  page.drawText(TIER_TITLE[data.tier].toUpperCase(), {
-    x: 50, y, size: 16, font: helveticaBold, color: primaryColor, maxWidth: width - 100, lineHeight: 20,
+  centeredText(page, "CERTIFICADO", y, 13, helveticaBold, primaryColor, width);
+  y -= 8;
+  const kickerWidth = helveticaBold.widthOfTextAtSize("CERTIFICADO", 13);
+  page.drawLine({
+    start: { x: width / 2 - kickerWidth / 2 - 20, y: y + 4 },
+    end: { x: width / 2 - kickerWidth / 2 - 6, y: y + 4 },
+    thickness: 0.75,
+    color: goldLine,
   });
-  y -= 40;
+  page.drawLine({
+    start: { x: width / 2 + kickerWidth / 2 + 6, y: y + 4 },
+    end: { x: width / 2 + kickerWidth / 2 + 20, y: y + 4 },
+    thickness: 0.75,
+    color: goldLine,
+  });
+  y -= 32;
 
-  page.drawText("Empresa:", { x: 50, y, size: 10, font: helvetica, color: mutedColor });
-  y -= 20;
-  page.drawText(data.companyName.toUpperCase(), { x: 50, y, size: 18, font: helveticaBold, color: rgb(0, 0, 0) });
-  y -= 28;
+  centeredText(page, TIER_TITLE[data.tier].toUpperCase(), y, 24, timesBold, textColor, width);
+  y -= 34;
 
-  page.drawText(`Ciclo: ${data.cycleTitle}`, { x: 50, y, size: 12, font: helvetica, color: textColor });
-  y -= 16;
-  page.drawText(`Emitido em ${data.issuedAt.toLocaleDateString("pt-BR")}`, { x: 50, y, size: 10, font: helvetica, color: mutedColor });
+  centeredText(page, "Certificamos que", y, 11, timesItalic, mutedColor, width);
   y -= 30;
 
-  const intro =
-    `Este documento declara, com base nas evidências registradas na plataforma Sentinel, que a empresa\n` +
-    `conduziu o processo de gerenciamento de riscos psicossociais nos termos da NR-1 (Gerenciamento de\n` +
-    `Riscos Ocupacionais) e da Lei 14.831/2024, correspondente ao nível "${TIER_TITLE[data.tier]}".`;
-  page.drawText(intro, { x: 50, y, size: 10, font: helvetica, color: textColor, lineHeight: 14 });
-  y -= 70;
+  centeredText(page, data.companyName.toUpperCase(), y, 26, timesBold, primaryColor, width);
+  y -= 26;
 
-  page.drawText(`EVIDÊNCIAS (${data.doneChecks} de ${data.totalChecks} — ${data.conformityPct}% do ciclo completo)`, {
-    x: 50, y, size: 11, font: helveticaBold, color: primaryColor,
+  centeredText(
+    page,
+    `conduziu, através da plataforma Sentinel, o ciclo "${data.cycleTitle}"`,
+    y,
+    12,
+    times,
+    textColor,
+    width
+  );
+  y -= 16;
+  centeredText(
+    page,
+    "de identificação e gerenciamento de riscos psicossociais, nos termos da NR-1 e da Lei 14.831/2024,",
+    y,
+    12,
+    times,
+    textColor,
+    width
+  );
+  y -= 16;
+  centeredText(page, "com as seguintes evidências registradas:", y, 12, times, textColor, width);
+  // Com menos conquistas (nível 1 ou 2) sobra espaço embaixo — respiro extra
+  // aqui antes da lista recentraliza o bloco em vez de deixar tudo colado no
+  // topo com um vazio grande na parte de baixo.
+  y -= 36 + (3 - data.highlights.length) * 20;
+
+  // Só as conquistas — cada uma centralizada, sem grade de checklist.
+  for (const highlight of data.highlights) {
+    const bulletLine = `•  ${highlight}`;
+    page.drawText(bulletLine, {
+      x: width / 2 - (width - 220) / 2,
+      y,
+      size: 11,
+      font: times,
+      color: textColor,
+      maxWidth: width - 220,
+      lineHeight: 15,
+    });
+    // Duas linhas de reserva cobre o texto mais longo (melhora comprovada);
+    // frases curtas deixam um respiro extra, que é aceitável num diploma.
+    y -= 40;
+  }
+
+  y -= 6;
+  page.drawText(`Emitido em ${data.issuedAt.toLocaleDateString("pt-BR")}.`, {
+    x: width / 2 - 60,
+    y,
+    size: 10,
+    font: timesItalic,
+    color: mutedColor,
   });
-  y -= 22;
-
-  const relevantStages =
-    data.tier === 1 ? data.stages.slice(0, 1) : data.tier === 2 ? data.stages.slice(0, 2) : data.stages.slice(0, 3);
-
-  for (const stage of relevantStages) {
-    page.drawText(`Etapa ${stage.number} — ${stage.label}`, { x: 50, y, size: 11, font: helveticaBold, color: textColor });
-    y -= 16;
-    for (const check of stage.checks) {
-      // Na etapa 3, "Certificado emitido" não faz sentido listar dentro do
-      // próprio certificado — é auto-referente.
-      if (stage.number === "3" && check.title === "Certificado emitido") continue;
-      // Helvetica padrao (WinAnsi) nao codifica os simbolos Unicode de check
-      // e circulo vazio — usar so ASCII evita o crash "WinAnsi cannot encode"
-      // que travava toda emissao.
-      const mark = check.done ? "[x]" : "[ ]";
-      page.drawText(`${mark} ${check.title} — ${check.detail}`, {
-        x: 65, y, size: 9.5, font: helvetica, color: check.done ? textColor : mutedColor, maxWidth: width - 130, lineHeight: 12,
-      });
-      y -= 15;
-    }
-    y -= 8;
-  }
-
-  if (data.showsImprovement && data.healthDelta !== null) {
-    y -= 6;
-    page.drawRectangle({ x: 50, y: y - 34, width: width - 100, height: 40, color: rgb(0.93, 0.98, 0.96) });
-    page.drawText(
-      `MELHORA COMPROVADA: índice de saúde variou +${data.healthDelta} pontos entre ${data.firstStageLabel} e ${data.lastStageLabel}.`,
-      { x: 62, y: y - 16, size: 10, font: helveticaBold, color: emerald, maxWidth: width - 124, lineHeight: 13 }
-    );
-    y -= 50;
-  }
 
   // Ressalva legal — declaração baseada em evidência, não substitui laudo
   // técnico nem dispensa as demais exigências do PGR.
   const disclaimer =
-    "Este certificado é uma declaração baseada nos dados registrados na plataforma Sentinel e não substitui\n" +
-    "laudo técnico de profissional habilitado, nem dispensa as demais exigências do Programa de\n" +
-    "Gerenciamento de Riscos (PGR) da empresa.";
-  page.drawText(disclaimer, { x: 50, y: 120, size: 8, font: helveticaOblique, color: mutedColor, lineHeight: 11 });
+    "Este certificado é uma declaração baseada nos dados registrados na plataforma Sentinel e não substitui laudo técnico de\n" +
+    "profissional habilitado, nem dispensa as demais exigências do Programa de Gerenciamento de Riscos (PGR) da empresa.";
+  centeredText(page, disclaimer.split("\n")[0], 92, 7.5, timesItalic, mutedColor, width);
+  centeredText(page, disclaimer.split("\n")[1], 82, 7.5, timesItalic, mutedColor, width);
 
-  page.drawLine({ start: { x: 50, y: 95 }, end: { x: 260, y: 95 }, thickness: 1, color: textColor });
-  page.drawText("Plataforma Sentinel", { x: 50, y: 80, size: 10, font: helveticaBold, color: textColor });
-  page.drawText("Declaração automática baseada em dados", { x: 50, y: 68, size: 8, font: helveticaOblique, color: mutedColor });
+  page.drawLine({ start: { x: 60, y: 70 }, end: { x: 260, y: 70 }, thickness: 0.75, color: textColor });
+  page.drawText("Plataforma Sentinel", { x: 60, y: 55, size: 10, font: helveticaBold, color: textColor });
+  page.drawText("Declaração automática baseada em dados", { x: 60, y: 43, size: 8, font: timesItalic, color: mutedColor });
 
   // Hash e QR na mesma coluna de 80pt, hash quebrado em 2 linhas — um UUID
   // inteiro numa linha só (36 caracteres) vazava por cima do QR.
   const qrX = width - 130;
   const qrImageBytes = Buffer.from(data.qrCodeDataUrl.split(",")[1], "base64");
   const qrImage = await pdfDoc.embedPng(qrImageBytes);
-  page.drawText("Validar em:", { x: qrX, y: 148, size: 8, font: helveticaBold, color: textColor });
-  page.drawText(data.uniqueHash.slice(0, 18), { x: qrX, y: 137, size: 7, font: helvetica, color: mutedColor });
-  page.drawText(data.uniqueHash.slice(18), { x: qrX, y: 127, size: 7, font: helvetica, color: mutedColor });
-  page.drawImage(qrImage, { x: qrX, y: 40, width: 80, height: 80 });
+  page.drawText("Validar em:", { x: qrX, y: 128, size: 8, font: helveticaBold, color: textColor });
+  page.drawText(data.uniqueHash.slice(0, 18), { x: qrX, y: 117, size: 7, font: helvetica, color: mutedColor });
+  page.drawText(data.uniqueHash.slice(18), { x: qrX, y: 107, size: 7, font: helvetica, color: mutedColor });
+  page.drawImage(qrImage, { x: qrX, y: 43, width: 60, height: 60 });
 
   return pdfDoc.save();
 }
