@@ -19,12 +19,6 @@ const TIER_LABEL: Record<1 | 2 | 3, string> = {
   3: "Nível 3 — Ciclo de Melhoria Comprovado",
 };
 
-const TIER_SHORT_LABEL: Record<1 | 2 | 3, string> = {
-  1: "Nível 1",
-  2: "Nível 2",
-  3: "Nível 3",
-};
-
 // Mesma logica de "quanto mais avancado, mais forte" do resto do app: azul
 // para o basico, primaria para o intermediario, esmeralda para o completo.
 const TIER_STYLE: Record<1 | 2 | 3, { bar: string; text: string; bg: string }> = {
@@ -275,26 +269,18 @@ export default async function CertificadosPage({
                   </div>
 
                   {issuedCertificates.length > 0 && (
-                    <div className="rounded-lg border border-border/70 bg-muted/25 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        Certificados já emitidos
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <Icon name="history" size={14} />
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-bold text-foreground">
+                          {issuedCertificates.length}
+                        </span>{" "}
+                        certificado{issuedCertificates.length === 1 ? "" : "s"} emitido
+                        {issuedCertificates.length === 1 ? "" : "s"} · último em{" "}
+                        {formatDate(issuedCertificates[0].issued_at)}
                       </p>
-                      <div className="mt-1.5 space-y-1.5">
-                        {issuedCertificates.slice(0, 3).map((c) => (
-                          <div key={c.id} className="flex items-center justify-between gap-2 text-xs">
-                            <span className="truncate text-muted-foreground">
-                              {TIER_SHORT_LABEL[c.tier as 1 | 2 | 3]} · {formatDate(c.issued_at)}
-                            </span>
-                            <Link
-                              href={`/validacao/${c.unique_hash}`}
-                              target="_blank"
-                              className="shrink-0 font-bold text-primary hover:underline"
-                            >
-                              Ver validação
-                            </Link>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   )}
 
