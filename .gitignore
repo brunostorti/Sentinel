@@ -52,3 +52,7 @@ supabase/.temp
 .codex/
 .sentinel-dev.*.log
 /Sentinel-*/
+
+# Python bytecode das skills
+__pycache__/
+*.pyc
