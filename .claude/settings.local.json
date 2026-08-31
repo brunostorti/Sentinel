@@ -29,7 +29,10 @@
       "Bash(echo \"---TSC EXIT: $?---\")",
       "Skill(run)",
       "Skill(run:*)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(npx --yes tsx scripts/tmp-verify-model.ts)"
     ]
   }
 }
