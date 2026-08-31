@@ -24,6 +24,134 @@ const SUPER_ADMIN_NAV: NavItem[] = [
   { label: "Usuários", href: ROUTES.SUPER_ADMIN.USERS, icon: "group" },
 ];
 
+/**
+ * Módulos que só existem dentro de um ciclo/pesquisa.
+ *
+ * Ficam aninhados sob "Ciclos" em vez de soltos no primeiro nível: abrir o
+ * Kanban ou os Planos direto pela sidebar é um atalho, não um lugar próprio —
+ * o contexto (qual pesquisa do ciclo) sempre vem do ciclo.
+ */
+const CYCLE_MODULES: NavItem[] = [
+  { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
+  {
+    label: "Planos de Ação",
+    href: ROUTES.DASHBOARD.ACTION_PLANS,
+    icon: "lightbulb",
+  },
+  { label: "Kanban", href: ROUTES.DASHBOARD.KANBAN, icon: "view_kanban" },
+];
+
+const GROUPS: { title: string; items: NavItem[] }[] = [
+  {
+    title: "Diagnóstico & Análise",
+    items: [
+      { label: "Início", href: ROUTES.DASHBOARD.HOME, icon: "home" },
+      // Os módulos internos são renderizados logo abaixo deste item.
+      { label: "Ciclos", href: ROUTES.DASHBOARD.SURVEYS, icon: "account_tree" },
+      {
+        label: "Relatórios",
+        href: ROUTES.DASHBOARD.REPORTS,
+        icon: "description",
+      },
+      {
+        label: "Certificados",
+        href: ROUTES.DASHBOARD.CERTIFICATES,
+        icon: "verified",
+      },
+    ],
+  },
+  {
+    title: "Pessoas & Configurações",
+    items: [
+      { label: "Colaboradores", href: ROUTES.DASHBOARD.EMPLOYEES, icon: "group" },
+      { label: "Meu perfil", href: ROUTES.DASHBOARD.ACCOUNT, icon: "person" },
+      { label: "Configurações", href: ROUTES.DASHBOARD.SETTINGS, icon: "settings" },
+      { label: "Assistente", href: ROUTES.DASHBOARD.ASSISTANT, icon: "chat" },
+    ],
+  },
+  {
+    title: "Canal Seguro",
+    items: [
+      { label: "Denúncias", href: ROUTES.DASHBOARD.INCIDENTS, icon: "gavel" },
+    ],
+  },
+];
+
+/** Item de primeiro nível — o mesmo visual usado em toda a sidebar. */
+function NavLink({
+  item,
+  isActive,
+  collapsed,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  collapsed: boolean;
+}) {
+  return (
+    <Link
+      href={item.href}
+      title={collapsed ? item.label : undefined}
+      className={cn(
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        collapsed && "justify-center px-0",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      )}
+    >
+      <Icon
+        name={item.icon}
+        size={20}
+        filled={isActive}
+        className={cn(
+          "shrink-0 transition-transform duration-200",
+          !isActive && "group-hover:scale-110"
+        )}
+      />
+      {!collapsed && <span className="animate-fade-in">{item.label}</span>}
+      {isActive && collapsed && (
+        <span className="absolute -right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
+      )}
+    </Link>
+  );
+}
+
+/**
+ * Subnível dos módulos de ciclo.
+ *
+ * Visual deliberadamente mais leve que o primeiro nível (texto menor, ícone
+ * menor, ativo em fundo suave em vez de sólido): o peso visual precisa dizer
+ * "isto está dentro daquilo acima", não competir com ele.
+ */
+function SubNavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-all duration-200",
+        isActive
+          ? "bg-primary/10 font-semibold text-primary"
+          : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+      )}
+    >
+      <span
+        className={cn(
+          "absolute -left-3 h-1.5 w-1.5 rounded-full transition-colors",
+          isActive ? "bg-primary" : "bg-transparent"
+        )}
+        aria-hidden
+      />
+      <Icon
+        name={item.icon}
+        size={17}
+        filled={isActive}
+        className="shrink-0 transition-transform duration-200 group-hover:scale-110"
+      />
+      <span className="animate-fade-in">{item.label}</span>
+    </Link>
+  );
+}
+
 interface SidebarProps {
   role: Role;
   companyName?: string;
@@ -33,42 +161,7 @@ interface SidebarProps {
 export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-
-  // Define the structured groups for dashboard navigation
-  const groups = [
-    {
-      title: "Diagnóstico & Análise",
-      items: [
-        { label: "Início", href: ROUTES.DASHBOARD.HOME, icon: "home" },
-        { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
-        { label: "Ciclos", href: ROUTES.DASHBOARD.SURVEYS, icon: "account_tree" },
-        { label: "Relatórios", href: ROUTES.DASHBOARD.REPORTS, icon: "description" },
-        { label: "Certificados", href: ROUTES.DASHBOARD.CERTIFICATES, icon: "verified" },
-      ],
-    },
-    {
-      title: "Planos & Execução",
-      items: [
-        { label: "Planos de Ação", href: ROUTES.DASHBOARD.ACTION_PLANS, icon: "lightbulb" },
-        { label: "Kanban", href: ROUTES.DASHBOARD.KANBAN, icon: "view_kanban" },
-      ],
-    },
-    {
-      title: "Pessoas & Configurações",
-      items: [
-        { label: "Colaboradores", href: ROUTES.DASHBOARD.EMPLOYEES, icon: "group" },
-        { label: "Meu perfil", href: ROUTES.DASHBOARD.ACCOUNT, icon: "person" },
-        { label: "Configurações", href: ROUTES.DASHBOARD.SETTINGS, icon: "settings" },
-        { label: "Assistente", href: ROUTES.DASHBOARD.ASSISTANT, icon: "chat" },
-      ],
-    },
-    {
-      title: "Canal Seguro",
-      items: [
-        { label: "Denúncias", href: ROUTES.DASHBOARD.INCIDENTS, icon: "gavel" },
-      ],
-    },
-  ];
+  const [cycleModulesOpen, setCycleModulesOpen] = useState(true);
 
   return (
     <aside
@@ -109,42 +202,17 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {role === "SUPER_ADMIN" ? (
           <nav className="space-y-1">
-            {SUPER_ADMIN_NAV.map((item) => {
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={cn(
-                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    collapsed && "justify-center px-0",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  <Icon
-                    name={item.icon}
-                    size={20}
-                    filled={isActive}
-                    className={cn(
-                      "shrink-0 transition-transform duration-200",
-                      !isActive && "group-hover:scale-110"
-                    )}
-                  />
-                  {!collapsed && (
-                    <span className="animate-fade-in">{item.label}</span>
-                  )}
-                  {isActive && collapsed && (
-                    <span className="absolute -right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
-                  )}
-                </Link>
-              );
-            })}
+            {SUPER_ADMIN_NAV.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                isActive={pathname.startsWith(item.href)}
+                collapsed={collapsed}
+              />
+            ))}
           </nav>
         ) : (
-          groups.map((group, groupIdx) => {
+          GROUPS.map((group, groupIdx) => {
             // Filter elements (like Incidents if employeeCount <= 20)
             const filteredItems = group.items.filter((item) => {
               if (item.href === ROUTES.DASHBOARD.INCIDENTS) {
@@ -165,39 +233,108 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
                 <nav className="space-y-1">
                   {filteredItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        title={collapsed ? item.label : undefined}
-                        className={cn(
-                          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                          collapsed && "justify-center px-0",
-                          isActive
-                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                        )}
-                      >
-                        <Icon
-                          name={item.icon}
-                          size={20}
-                          filled={isActive}
-                          className={cn(
-                            "shrink-0 transition-transform duration-200",
-                            !isActive && "group-hover:scale-110"
-                          )}
+                    const isCycles = item.href === ROUTES.DASHBOARD.SURVEYS;
+
+                    // Sidebar recolhida não comporta hierarquia: os módulos do
+                    // ciclo viram ícones soltos para não sumirem da navegação.
+                    if (isCycles && collapsed) {
+                      return (
+                        <div key={item.href} className="space-y-1">
+                          <NavLink item={item} isActive={isActive} collapsed />
+                          {CYCLE_MODULES.map((sub) => (
+                            <NavLink
+                              key={sub.href}
+                              item={sub}
+                              isActive={pathname.startsWith(sub.href)}
+                              collapsed
+                            />
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    if (!isCycles) {
+                      return (
+                        <NavLink
+                          key={item.href}
+                          item={item}
+                          isActive={isActive}
+                          collapsed={collapsed}
                         />
-                        {!collapsed && (
-                          <span className="animate-fade-in">{item.label}</span>
+                      );
+                    }
+
+                    return (
+                      <div key={item.href}>
+                        <div
+                          className={cn(
+                            "group relative flex items-center rounded-xl transition-all duration-200",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          )}
+                        >
+                          <Link
+                            href={item.href}
+                            className="flex flex-1 items-center gap-3 px-3 py-2.5 text-sm font-medium"
+                          >
+                            <Icon
+                              name={item.icon}
+                              size={20}
+                              filled={isActive}
+                              className={cn(
+                                "shrink-0 transition-transform duration-200",
+                                !isActive && "group-hover:scale-110"
+                              )}
+                            />
+                            <span className="animate-fade-in">{item.label}</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setCycleModulesOpen((v) => !v)}
+                            aria-expanded={cycleModulesOpen}
+                            aria-label={
+                              cycleModulesOpen
+                                ? "Recolher módulos do ciclo"
+                                : "Expandir módulos do ciclo"
+                            }
+                            className={cn(
+                              "mr-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+                              isActive
+                                ? "hover:bg-primary-foreground/15"
+                                : "hover:bg-foreground/10"
+                            )}
+                          >
+                            <Icon
+                              name="expand_more"
+                              size={18}
+                              className={cn(
+                                "transition-transform duration-200",
+                                cycleModulesOpen ? "rotate-0" : "-rotate-90"
+                              )}
+                            />
+                          </button>
+                        </div>
+
+                        {cycleModulesOpen && (
+                          <div className="animate-fade-in ml-[22px] mt-1 space-y-0.5 border-l border-border pl-3">
+                            <p className="px-2.5 pb-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                              Dentro de um ciclo
+                            </p>
+                            {CYCLE_MODULES.map((sub) => (
+                              <SubNavLink
+                                key={sub.href}
+                                item={sub}
+                                isActive={pathname.startsWith(sub.href)}
+                              />
+                            ))}
+                          </div>
                         )}
-                        {isActive && collapsed && (
-                          <span className="absolute -right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
-                        )}
-                      </Link>
+                      </div>
                     );
                   })}
                 </nav>
-                {groupIdx < groups.length - 1 && (
+                {groupIdx < GROUPS.length - 1 && (
                   <div className="pt-2 border-b border-border/40 mx-2" />
                 )}
               </div>
@@ -208,28 +345,15 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
 
       {/* Support / Configuration Group (Metodologia remains in lower/support group) */}
       <nav className="border-t border-border/60 px-3 py-4 space-y-1 shrink-0">
-        <Link
-          href={ROUTES.DASHBOARD.METHODOLOGY}
-          title={collapsed ? "Metodologia" : undefined}
-          className={cn(
-            "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-            collapsed && "justify-center px-0",
-            pathname.startsWith(ROUTES.DASHBOARD.METHODOLOGY)
-              ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-          )}
-        >
-          <Icon
-            name="menu_book"
-            size={20}
-            filled={pathname.startsWith(ROUTES.DASHBOARD.METHODOLOGY)}
-            className="shrink-0"
-          />
-          {!collapsed && <span className="animate-fade-in">Metodologia</span>}
-          {pathname.startsWith(ROUTES.DASHBOARD.METHODOLOGY) && collapsed && (
-            <span className="absolute -right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
-          )}
-        </Link>
+        <NavLink
+          item={{
+            label: "Metodologia",
+            href: ROUTES.DASHBOARD.METHODOLOGY,
+            icon: "menu_book",
+          }}
+          isActive={pathname.startsWith(ROUTES.DASHBOARD.METHODOLOGY)}
+          collapsed={collapsed}
+        />
       </nav>
 
       {/* Collapse toggle */}

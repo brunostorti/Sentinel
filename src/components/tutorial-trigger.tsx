@@ -4,56 +4,78 @@ import { useState } from "react";
 import { TutorialModal, TutorialSlide } from "./tutorial-modal";
 import { Icon } from "./icon";
 
+/**
+ * O tour segue o ciclo de vida real do produto, não a ordem da sidebar: o
+ * primeiro slide explica o que é um ciclo, porque sem isso os slides de
+ * Painel, Planos e Kanban parecem módulos soltos — e eles só existem dentro
+ * de um ciclo.
+ */
 export const tutorialSlides: TutorialSlide[] = [
   {
+    title: "Tudo acontece dentro de um ciclo",
+    description:
+      "Um ciclo reúne a pesquisa base, as ações que nasceram dela e as reavaliações que comprovam a melhoria. Painel, Planos de Ação e Kanban são etapas de dentro do ciclo, não módulos separados.",
+    icon: "account_tree",
+  },
+  {
     title: "1. Colaboradores",
-    description: "Cadastre e organize a sua equipe para direcionar as pesquisas corretamente por setor.",
+    description:
+      "Cadastre e organize a sua equipe por setor. É esse cadastro que define quem recebe o convite quando o ciclo começa.",
     icon: "group",
   },
   {
     title: "2. Metodologia",
-    description: "Acesse a aba Metodologia para escolher o instrumento de pesquisa ideal para a sua empresa.",
+    description:
+      "Entenda o COPSOQ II e decida entre as versões curta, média ou longa antes de abrir o ciclo — a escolha define quantas perguntas a equipe responde.",
     icon: "menu_book",
   },
   {
-    title: "3. Pesquisas",
-    description: "Vá para a aba Pesquisas para criar novos ciclos de avaliação e disparar convites para os colaboradores.",
-    icon: "assignment",
+    title: "3. Abrir o ciclo",
+    description:
+      "Em Ciclos, crie o ciclo com a sua pesquisa base: escolha o instrumento, os setores participantes e a data de encerramento.",
+    icon: "add_circle",
   },
   {
-    title: "4. Painel Analítico",
-    description: "No Painel, você tem uma visão geral dos resultados e identifica os principais riscos mapeados.",
+    title: "4. Coleta anônima",
+    description:
+      "Cada colaborador recebe um link individual por e-mail. Você acompanha a adesão em tempo real e pode disparar lembretes, mas nunca vê quem respondeu o quê.",
+    icon: "lock",
+  },
+  {
+    title: "5. Painel da pesquisa",
+    description:
+      "Com a coleta encerrada, o Painel mostra o semáforo de risco por dimensão e por setor. Setores com menos de 5 respostas ficam ocultos para preservar o anonimato.",
     icon: "monitoring",
   },
   {
-    title: "5. Planos de Ação",
-    description: "Acesse os Planos de Ação para visualizar e editar as sugestões automáticas geradas pela IA.",
+    title: "6. Planos de Ação",
+    description:
+      "A IA transforma cada risco encontrado em ações sugeridas, com justificativa e responsável. Você revisa e aprova o que de fato entra no plano.",
     icon: "lightbulb",
   },
   {
-    title: "6. Kanban",
-    description: "Gerencie a execução dos planos no Kanban, acompanhando o progresso das ações contínuas.",
+    title: "7. Kanban",
+    description:
+      "As ações aprovadas viram tarefas com responsável e prazo. O quadro acumula o histórico do ciclo inteiro, então nada se perde entre uma rodada e outra.",
     icon: "view_kanban",
   },
   {
-    title: "7. Configurações",
-    description: "Utilize as Configurações para ajustar os dados e as preferências da sua organização.",
-    icon: "settings",
+    title: "8. Reavaliação",
+    description:
+      "Depois de agir, crie uma reavaliação dentro do mesmo ciclo. O Sentinel compara antes e depois e mostra, dimensão por dimensão, se o risco realmente caiu.",
+    icon: "repeat",
   },
   {
-    title: "8. Assistente IA",
-    description: "Caso tenha alguma dúvida sobre as análises, converse com o Assistente IA para receber suporte.",
-    icon: "smart_toy",
-  },
-  {
-    title: "9. Canal de Denúncias",
-    description: "Acompanhe os relatos enviados de forma confidencial e gerencie as investigações necessárias.",
-    icon: "gavel",
-  },
-  {
-    title: "10. Certificados e Relatórios",
-    description: "Por fim, emita certificados e gere relatórios de conformidade com a Lei 14.831.",
+    title: "9. Conformidade e certificado",
+    description:
+      "O ciclo acompanha as evidências exigidas pela NR-1 em três etapas: identificar o risco, agir sobre ele e comprovar o resultado. Cumpridas, liberam o certificado e os relatórios da Lei 14.831.",
     icon: "verified",
+  },
+  {
+    title: "10. Apoio contínuo",
+    description:
+      "Tire dúvidas sobre as análises com o Assistente IA, ajuste dados da empresa em Configurações e acompanhe relatos confidenciais no Canal de Denúncias.",
+    icon: "smart_toy",
   },
 ];
 
