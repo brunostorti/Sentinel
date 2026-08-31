@@ -104,30 +104,32 @@ export default async function InicioPage() {
     { label: "Configurações", icon: "settings", href: ROUTES.DASHBOARD.SETTINGS },
   ];
 
+  // O fluxo é um ciclo: tudo depois da pesquisa base existe para provar que o
+  // risco caiu — por isso o último passo volta ao começo, e não encerra.
   const steps = [
     {
-      title: "Escolher pesquisas",
-      description: "De acordo com o que mais se encaixa para a sua empresa.",
+      title: "Colaboradores",
+      description: "Cadastre a equipe por setor — é quem será convidado no ciclo.",
     },
     {
-      title: "Criar pesquisa",
-      description: "Escolha o instrumento e os setores que vão participar.",
+      title: "Abrir o ciclo",
+      description: "O ciclo nasce com a pesquisa base: escolha o instrumento e os setores.",
     },
     {
-      title: "Respostas anônimas",
-      description: "Acompanhe a adesão com total garantia de privacidade.",
+      title: "Coleta anônima",
+      description: "Convite individual por e-mail. Você vê a adesão, nunca quem respondeu.",
     },
     {
-      title: "Análise de riscos",
-      description: "Identificação automática dos pontos críticos por setor.",
+      title: "Diagnóstico",
+      description: "Ao encerrar, os riscos viram semáforo por dimensão e por setor.",
     },
     {
-      title: "Sugestão de ação",
-      description: "Receba planos personalizados gerados por IA a partir dos dados.",
+      title: "Ação",
+      description: "A IA sugere os planos; você aprova e executa as tarefas no Kanban.",
     },
     {
-      title: "Gestão Kanban",
-      description: "Acompanhamento contínuo da execução e da eficácia das ações.",
+      title: "Reavaliação",
+      description: "Nova pesquisa no mesmo ciclo comprova a melhoria e libera o certificado.",
     },
   ];
 
