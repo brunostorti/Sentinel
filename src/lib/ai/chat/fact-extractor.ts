@@ -12,7 +12,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "./provider-factory";
+import { createModel } from "../provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractJsonObject } from "../pipeline/json-utils";
 import type { CompanyProfile } from "../profile/schema";
