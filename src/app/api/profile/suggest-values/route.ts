@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest) {
 
   const { data: company } = await supabase
     .from("companies")
-    .select("industry, employee_count, work_regime")
+    .select("industry, employee_count, work_regime, ai_model, ai_api_keys")
     .eq("id", userData.company_id!)
     .single();
 
@@ -48,6 +48,9 @@ export async function POST(_req: NextRequest) {
       work_regime: company?.work_regime ?? null,
       department_count: deptCount ?? 0,
       past_survey_count: surveyCount ?? 0,
+    }, {
+      model: company?.ai_model || "claude-3-5-sonnet-20240620",
+      keys: company?.ai_api_keys || {},
     });
 
     return NextResponse.json({ suggestion });

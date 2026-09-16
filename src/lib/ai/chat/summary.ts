@@ -6,22 +6,20 @@
  * Roda em background (fire-and-forget) após resposta do assistant.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "./provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const TRIGGER_MESSAGE_COUNT = 100;
 const SUMMARIZE_FIRST_N = 50;
 
 export async function maybeRollSummary(threadId: string): Promise<{ rolled: boolean }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { rolled: false };
-
   const admin = createAdminClient();
 
   // Verifica se thread tem mensagens suficientes e ainda não tem summary recente
   const { data: thread } = await admin
     .from("chat_threads")
-    .select("id, message_count, summary")
+    .select("id, message_count, summary, companies(ai_model, ai_api_keys)")
     .eq("id", threadId)
     .single();
 
@@ -57,14 +55,18 @@ ${transcript}
 ## Sumário (em português brasileiro)`;
 
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+    const company = thread.companies as any;
+    const model = createModel(
+      company?.ai_model || "claude-3-5-sonnet-20240620",
+      company?.ai_api_keys || {}
+    );
+    
+    const { text } = await generateText({
+      model: model,
+      prompt: prompt,
     });
-    const textBlock = message.content.find((b) => b.type === "text");
-    const summary = textBlock?.type === "text" ? textBlock.text.trim() : null;
+    
+    const summary = text.trim();
 
     if (!summary) return { rolled: false };
 

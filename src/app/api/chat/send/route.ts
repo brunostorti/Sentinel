@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { streamText, generateText } from "ai";
+import { createModel } from "@/lib/ai/provider-factory";
 import {
   getOrCreateThread,
   loadHistory,
@@ -40,18 +41,23 @@ export async function POST(req: NextRequest) {
     resource_id?: string | null;
     content: string;
     stream?: boolean;
+    attachments?: string[];
   };
 
   if (!body.content || !body.content.trim()) {
     return NextResponse.json({ error: "Mensagem vazia." }, { status: 400 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey)
-    return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY não configurada." },
-      { status: 500 }
-    );
+  const { data: company } = await supabase
+    .from("companies")
+    .select("ai_model, ai_api_keys")
+    .eq("id", userData.company_id)
+    .single();
+
+  const aiConfig = {
+    model: company?.ai_model || "claude-3-5-sonnet-20240620",
+    keys: company?.ai_api_keys || {},
+  };
 
   const thread = await getOrCreateThread(supabase, {
     companyId: userData.company_id,
@@ -60,10 +66,12 @@ export async function POST(req: NextRequest) {
     resourceId: body.kind === "plan" ? body.resource_id ?? null : null,
   });
 
+  const hasAttachments = body.attachments && body.attachments.length > 0;
+  
   await saveMessage(supabase, {
     threadId: thread.id,
     role: "user",
-    content: body.content,
+    content: hasAttachments ? `${body.content}\n\n[Arquivo Anexado]` : body.content,
   });
   await touchThread(
     supabase,
@@ -83,12 +91,25 @@ export async function POST(req: NextRequest) {
     systemPrompt += `\n\n## Sumário das mensagens anteriores desta thread\n${rollingSummary}`;
   }
 
-  const messagesForLLM = history.map((m) => ({
-    role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+  const messagesForLLM: any[] = history.map((m) => ({
+    role: m.role === "assistant" ? "assistant" : "user",
     content: m.content,
   }));
 
-  const client = new Anthropic({ apiKey });
+  if (hasAttachments && messagesForLLM.length > 0) {
+    const lastMsg = messagesForLLM[messagesForLLM.length - 1];
+    if (lastMsg.role === "user") {
+      lastMsg.content = [
+        { type: "text", text: body.content },
+        ...body.attachments!.map(base64 => ({
+          type: "image",
+          image: base64
+        }))
+      ];
+    }
+  }
+
+  const model = createModel(aiConfig.model, aiConfig.keys);
   const companyId = userData.company_id;
   const userContent = body.content;
 
@@ -103,83 +124,43 @@ export async function POST(req: NextRequest) {
     ]);
   }
 
-  // ── Streaming via SSE ────────────────────────────────────────────
+  // ── Streaming via Vercel AI SDK ────────────────────────────────────────────
   if (body.stream) {
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        let fullReply = "";
-        try {
-          const anthropicStream = await client.messages.stream({
-            model: "claude-sonnet-4-6",
-            max_tokens: 2048,
-            system: systemPrompt,
-            messages: messagesForLLM,
-          });
-
-          for await (const event of anthropicStream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              const piece = event.delta.text;
-              fullReply += piece;
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ delta: piece })}\n\n`
-                )
-              );
-            }
-          }
-
+    try {
+      const result = streamText({
+        model,
+        system: systemPrompt,
+        messages: messagesForLLM,
+        onFinish: async ({ text }) => {
           // Salva mensagem completa
           await saveMessage(supabase, {
             threadId: thread.id,
             role: "assistant",
-            content: fullReply,
+            content: text,
           });
           await touchThread(supabase, thread.id);
 
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`)
-          );
-          controller.close();
+          // Background: facts + summary
+          void backgroundJobs(text);
+        },
+      });
 
-          // Background: facts + summary (não bloqueia o stream — close já foi)
-          void backgroundJobs(fullReply);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "Erro stream";
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ error: message })}\n\n`)
-          );
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-    });
+      return result.toDataStreamResponse();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro stream";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
   }
 
   // ── Síncrono (fallback / clientes que não querem stream) ─────────
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
+    const { text } = await generateText({
+      model,
       system: systemPrompt,
       messages: messagesForLLM,
     });
 
-    const textBlock = message.content.find((b) => b.type === "text");
-    const reply =
-      textBlock && textBlock.type === "text"
-        ? textBlock.text
-        : "(sem resposta da IA)";
+    const reply = text || "(sem resposta da IA)";
 
     await saveMessage(supabase, {
       threadId: thread.id,

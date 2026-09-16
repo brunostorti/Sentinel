@@ -83,7 +83,7 @@ export async function runPipeline(
     const { data: surveyRow } = await admin
       .from("surveys")
       .select(
-        "title, version, companies(name, industry, employee_count, work_regime)"
+        "title, version, companies(name, industry, employee_count, work_regime, ai_model, ai_api_keys)"
       )
       .eq("id", surveyId)
       .single();
@@ -95,6 +95,8 @@ export async function runPipeline(
       industry: string | null;
       employee_count: number | null;
       work_regime: string | null;
+      ai_model: string | null;
+      ai_api_keys: any | null;
     } | null;
 
     if (!company) throw new Error("Company não encontrada");
@@ -213,6 +215,10 @@ export async function runPipeline(
       totalParticipants: totalParticipants ?? 0,
       departmentBreakdowns: deptBreakdowns,
       trends,
+      aiConfig: {
+        model: company.ai_model || "claude-3-5-sonnet-20240620",
+        keys: company.ai_api_keys || {},
+      },
     };
 
     // ─── 4. Stage 1 — Analyst ─────────────────────────────────────────
@@ -244,6 +250,7 @@ export async function runPipeline(
       history,
       outcomes,
       annotated,
+      aiConfig: context.aiConfig,
     });
     console.log(`[pipeline ${run_id}] Stage 2 OK — ${selection.candidates.length} candidatos, ${selection.unmet_dimensions.length} dimensões sem candidato`);
 
@@ -325,6 +332,7 @@ export async function runPipeline(
       company,
       history,
       grounding: groundingByKey,
+      aiConfig: context.aiConfig,
     });
     console.log(`[pipeline ${run_id}] Stage 3 OK — ${plans.length} planos gerados pelo LLM`);
 

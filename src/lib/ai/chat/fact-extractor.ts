@@ -11,7 +11,8 @@
  * - Dedup por field_path: fecha pendente anterior do mesmo campo
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "./provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractJsonObject } from "../pipeline/json-utils";
 import type { CompanyProfile } from "../profile/schema";
@@ -64,18 +65,17 @@ export async function extractAndPersistFacts(args: {
 }): Promise<{ created: number }> {
   if (isTrivial(args.userMessage)) return { created: 0 };
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { created: 0 };
-
   const admin = createAdminClient();
 
-  // Carrega perfil atual para passar como contexto + para diff
   const { data: profileRow } = await admin
     .from("company_profiles")
-    .select("*")
+    .select("*, companies(ai_model, ai_api_keys)")
     .eq("company_id", args.companyId)
     .single();
-  const profile = profileRow as CompanyProfile | null;
+
+  if (!profileRow) return { created: 0 };
+  const { companies, ...profileRaw } = profileRow;
+  const profile = profileRaw as CompanyProfile;
   if (!profile) return { created: 0 };
 
   const profileForPrompt = Object.fromEntries(
@@ -115,16 +115,18 @@ Se nenhum fato relevante: { "candidate_facts": [] }`;
 
   let result: { candidate_facts?: CandidateFact[] } | null = null;
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+    const companyInfo = companies as any;
+    const model = createModel(
+      companyInfo?.ai_model || "claude-3-5-sonnet-20240620",
+      companyInfo?.ai_api_keys || {}
+    );
+    
+    const { text } = await generateText({
+      model: model,
+      prompt: prompt,
     });
-    const textBlock = message.content.find((b) => b.type === "text");
-    if (textBlock?.type === "text") {
-      result = extractJsonObject<{ candidate_facts?: CandidateFact[] }>(textBlock.text);
-    }
+    
+    result = extractJsonObject<{ candidate_facts?: CandidateFact[] }>(text);
   } catch {
     return { created: 0 };
   }

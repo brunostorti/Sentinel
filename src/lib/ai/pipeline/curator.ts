@@ -6,7 +6,8 @@
  * Devolve 1-2 candidatos por dimensão com personalization_rationale.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "../provider-factory";
 import type { AnalystReport, CuratedSelection } from "./types";
 import type {
   CompanyProfile,
@@ -65,9 +66,8 @@ export async function runCurator(args: {
   history: CompanyActionTaken[];
   outcomes: ActionOutcome[];
   annotated: AnnotatedIntervention[];
+  aiConfig: { model: string; keys: Record<string, string> };
 }): Promise<CuratedSelection> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
 
   const perfilNarrativo = buildPerfilNarrativo(
     args.company,
@@ -145,19 +145,14 @@ ${catalogBlock}
 
 Devolva APENAS o JSON.`;
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 6144,
-    messages: [{ role: "user", content: prompt }],
+  const model = createModel(args.aiConfig.model, args.aiConfig.keys);
+  
+  const { text } = await generateText({
+    model: model,
+    prompt: prompt,
   });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Stage 2 (Curator): resposta não contém texto.");
-  }
-
-  const selection = extractJsonObject<CuratedSelection>(textBlock.text);
+  const selection = extractJsonObject<CuratedSelection>(text);
   if (!selection) {
     throw new Error("Stage 2 (Curator): JSON inválido.");
   }
