@@ -5,7 +5,8 @@
  * final completo no shape AIRecommendation v2 (roadmap, vendors, RACI, KPIs leading, etc.).
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "../provider-factory";
 import type {
   AIRecommendation,
   CuratedSelection,
@@ -145,9 +146,8 @@ export async function runConsultant(args: {
   company: CompanyInfo;
   history?: CompanyActionTaken[];
   grounding: Map<string, GroundedFacts>;
+  aiConfig: { model: string; keys: Record<string, string> };
 }): Promise<ConsultantPlanItem[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
 
   const historyMapped = args.history?.map((h) => ({
     title: h.title,
@@ -253,19 +253,14 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 
 Devolva APENAS o JSON array.`;
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 16384,
-    messages: [{ role: "user", content: prompt }],
+  const model = createModel(args.aiConfig.model, args.aiConfig.keys);
+  
+  const { text } = await generateText({
+    model: model,
+    prompt: prompt,
   });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Stage 3 (Consultant): resposta não contém texto.");
-  }
-
-  const plans = extractJsonArray<ConsultantPlanItem>(textBlock.text);
+  const plans = extractJsonArray<ConsultantPlanItem>(text);
   if (plans.length === 0) {
     throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
   }

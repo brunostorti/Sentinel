@@ -12,6 +12,7 @@ export interface ChatSendBody {
   kind: "plan" | "company";
   resource_id?: string | null;
   content: string;
+  attachments?: string[];
 }
 
 export interface ChatStreamCallbacks {

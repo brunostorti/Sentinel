@@ -20,6 +20,10 @@ export interface PipelineContext {
   totalParticipants: number;
   departmentBreakdowns: DepartmentBreakdown[];
   trends: DimensionTrendInfo[];
+  aiConfig: {
+    model: string;
+    keys: Record<string, string>;
+  };
 }
 
 export interface DepartmentBreakdown {

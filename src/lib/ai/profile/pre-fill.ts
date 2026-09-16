@@ -5,7 +5,8 @@
  * O resultado é mostrado ao HR com badge "sugerido"; ele aceita/edita/salva.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "../provider-factory";
 import { extractJsonObject } from "../pipeline/json-utils";
 
 export interface PreFillSeed {
@@ -37,10 +38,9 @@ export interface PreFillSuggestion {
 }
 
 export async function suggestProfileValues(
-  seed: PreFillSeed
+  seed: PreFillSeed,
+  aiConfig: { model: string; keys: Record<string, string> }
 ): Promise<PreFillSuggestion | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
 
   const prompt = `Você é um consultor que estima o perfil organizacional de uma empresa brasileira a partir de sinais limitados, para PRÉ-PREENCHER um formulário. O HR vai revisar antes de salvar — então é OK errar para o lado conservador.
 
@@ -80,14 +80,12 @@ Sempre inclua "rationale" (1-2 frases explicando suas inferências).
 
 Apenas o JSON. Nenhum texto antes ou depois.`;
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
+  const model = createModel(aiConfig.model, aiConfig.keys);
+  
+  const { text } = await generateText({
+    model: model,
+    prompt: prompt,
   });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") return null;
-  return extractJsonObject<PreFillSuggestion>(textBlock.text);
+  return extractJsonObject<PreFillSuggestion>(text);
 }

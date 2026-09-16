@@ -29,7 +29,7 @@ export default async function AssistentePage() {
         </p>
       </div>
 
-      <AssistantView userName={userData.name} />
+      <AssistantView userName={userData.name} companyId={userData.company_id!} />
     </div>
   );
 }

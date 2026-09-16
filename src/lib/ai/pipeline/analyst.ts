@@ -6,7 +6,8 @@
  * limitações de dado. NÃO sugere intervenções.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText } from "ai";
+import { createModel } from "../provider-factory";
 import type { AnalystReport, PipelineContext } from "./types";
 import type { CompanyProfile } from "../profile/schema";
 import { buildPerfilCompacto } from "../profile/narrative";
@@ -78,8 +79,6 @@ export async function runAnalyst(
   company: CompanyInfo,
   profile: CompanyProfile
 ): Promise<AnalystReport> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada.");
 
   const perfilCompacto = buildPerfilCompacto(company, profile);
   const dimensionsBlock = buildDimensionsBlock(context);
@@ -151,19 +150,14 @@ Hipóteses do que está CAUSANDO (não sintoma). Ex: "estrutura organizacional s
 
 Devolva APENAS o JSON.`;
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    messages: [{ role: "user", content: prompt }],
+  const model = createModel(context.aiConfig.model, context.aiConfig.keys);
+  
+  const { text } = await generateText({
+    model: model,
+    prompt: prompt,
   });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Stage 1 (Analyst): resposta não contém texto.");
-  }
-
-  const report = extractJsonObject<AnalystReport>(textBlock.text);
+  const report = extractJsonObject<AnalystReport>(text);
   if (!report) {
     throw new Error("Stage 1 (Analyst): JSON inválido.");
   }
