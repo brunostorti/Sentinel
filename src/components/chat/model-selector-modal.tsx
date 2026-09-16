@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,7 @@ const AI_MODELS = [
   },
 ];
 
-export function ModelSelectorModal({ companyId, trigger }: { companyId?: string, trigger?: React.ReactNode }) {
+export function ModelSelectorModal({ companyId }: { companyId?: string }) {
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("claude-3-5-sonnet-latest");
   const [customModelName, setCustomModelName] = useState("");
@@ -122,17 +122,11 @@ export function ModelSelectorModal({ companyId, trigger }: { companyId?: string,
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ? (
-          trigger
-        ) : (
-          <Button variant="outline" size="sm" className="gap-2 text-xs border-dashed">
-            <Settings className="w-3.5 h-3.5" />
-            <span className="font-semibold text-primary">Modelo da IA:</span> 
-            {selectedModel === "custom" ? customModelName || "Personalizado" : selectedModelObj?.name || "Carregando..."}
-          </Button>
-        )}
-      </DialogTrigger>
+      <Button variant="outline" size="sm" className="gap-2 text-xs border-dashed" onClick={() => setOpen(true)}>
+        <Settings className="w-3.5 h-3.5" />
+        <span className="font-semibold text-primary">Modelo da IA:</span> 
+        {selectedModel === "custom" ? customModelName || "Personalizado" : selectedModelObj?.name || "Carregando..."}
+      </Button>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Configurações de IA (Modelos e Chaves)</DialogTitle>
@@ -160,7 +154,7 @@ export function ModelSelectorModal({ companyId, trigger }: { companyId?: string,
                   
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger asChild>
+                      <TooltipTrigger>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 cursor-help">
                           <Info className="w-3 h-3" />
                           Uso de tokens: <span className="font-medium">{model.tokenUsage}</span>

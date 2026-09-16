@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toTextStreamResponse();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro stream";
       return NextResponse.json({ error: message }, { status: 500 });

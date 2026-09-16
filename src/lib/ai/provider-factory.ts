@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { LanguageModelV1 } from "ai";
+import { LanguageModel } from "ai";
 
 export type ProviderType = "openai" | "anthropic" | "google";
 
@@ -32,7 +32,7 @@ export function getProviderInfo(modelName: string): { provider: ProviderType; mo
 export function createModel(
   modelName: string,
   keys: CompanyAiKeys
-): LanguageModelV1 {
+): LanguageModel {
   const { provider, modelId } = getProviderInfo(modelName);
 
   switch (provider) {

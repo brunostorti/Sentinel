@@ -7,7 +7,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "./provider-factory";
+import { createModel } from "../provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const TRIGGER_MESSAGE_COUNT = 100;
