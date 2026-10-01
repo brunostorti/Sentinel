@@ -3,7 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel } from "ai";
 
-export type ProviderType = "openai" | "anthropic" | "google";
+export type ProviderType = "openai" | "anthropic" | "google" | "maua";
 
 export interface CompanyAiKeys {
   openai?: string;
@@ -12,6 +12,10 @@ export interface CompanyAiKeys {
 }
 
 export function getProviderInfo(modelName: string): { provider: ProviderType; modelId: string } {
+  if (modelName === "maua") {
+    return { provider: "maua", modelId: process.env.MAUA_AI_MODEL || "google/gemma-3-27b" };
+  }
+
   // Simple heuristic for generic models or known ones
   if (modelName.toLowerCase().startsWith("gpt-") || modelName.toLowerCase().startsWith("o1-") || modelName.toLowerCase().startsWith("o3-")) {
     return { provider: "openai", modelId: modelName };
@@ -36,6 +40,21 @@ export function createModel(
   const { provider, modelId } = getProviderInfo(modelName);
 
   switch (provider) {
+    case "maua": {
+      const baseURL = process.env.MAUA_AI_BASE_URL || "http://3.231.42.47/v1";
+      const apiKey = process.env.MAUA_AI_API_KEY || "maua";
+      const openai = createOpenAI({
+        baseURL,
+        apiKey,
+        fetch: async (url, options) => {
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(120 * 1000)
+          });
+        }
+      });
+      return openai(modelId);
+    }
     case "openai": {
       const apiKey = keys.openai || process.env.OPENAI_API_KEY;
       if (!apiKey) throw new Error("Chave de API da OpenAI não configurada.");
