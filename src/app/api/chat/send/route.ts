@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       const result = streamText({
         model,
         temperature: aiConfig.model === "maua" ? 0.2 : undefined,
-        maxTokens: aiConfig.model === "maua" ? 1500 : undefined,
+        maxOutputTokens: aiConfig.model === "maua" ? 1500 : undefined,
         system: systemPrompt,
         messages: messagesForLLM,
         onFinish: async ({ text }) => {
@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
     const { text } = await generateText({
       model,
       temperature: aiConfig.model === "maua" ? 0.2 : undefined,
-      maxTokens: aiConfig.model === "maua" ? 1500 : undefined,
+      maxOutputTokens: aiConfig.model === "maua" ? 1500 : undefined,
       system: systemPrompt,
       messages: messagesForLLM,
     });
