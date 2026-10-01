@@ -45,6 +45,14 @@ const AI_MODELS = [
     tokenUsage: "Variável",
     recommended: false,
   },
+  {
+    id: "maua",
+    name: "Mauá Local AI",
+    provider: "maua",
+    description: "Servidor local e privado (On-Premise). Sem envio externo de dados.",
+    tokenUsage: "Baixo",
+    recommended: false,
+  },
 ];
 
 export function ModelSelectorModal({ companyId }: { companyId?: string }) {
