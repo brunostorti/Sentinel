@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel } from "ai";
+import { createMauaModel } from "./maua-provider";
 
 export type ProviderType = "openai" | "anthropic" | "google" | "maua";
 
@@ -41,19 +42,7 @@ export function createModel(
 
   switch (provider) {
     case "maua": {
-      const baseURL = process.env.MAUA_AI_BASE_URL || "http://3.231.42.47/v1";
-      const apiKey = process.env.MAUA_AI_API_KEY || "maua";
-      const openai = createOpenAI({
-        baseURL,
-        apiKey,
-        fetch: async (url, options) => {
-          return fetch(url, {
-            ...options,
-            signal: AbortSignal.timeout(120 * 1000)
-          });
-        }
-      });
-      return openai(modelId);
+      return createMauaModel(modelId);
     }
     case "openai": {
       const apiKey = keys.openai || process.env.OPENAI_API_KEY;
