@@ -5,13 +5,13 @@
  *
  * Mapeamento dos campos do AIRecommendation:
  *   What     → title + description
- *   Why      → rationale + risk_if_not_acted + impact_metrics
+ *   Why      → rationale + risk_if_not_acted + alegações das referências verificadas
  *   Where    → target_department + communication_plan.channels
  *   When     → roadmap + timeframe + time_to_first_value
  *   Who      → stakeholders (RACI) + internal_capacity_required
  *   How      → vendors + internal_alternative + prerequisites + leading_indicators
  *              + monitoring_cadence + implementation_risks + communication_plan
- *   How much → investment + expected_return
+ *   How much → investment (estimativa — sem projeção de retorno/payback)
  */
 
 import { useState } from "react";
@@ -49,17 +49,6 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
   const [activeTab, setActiveTab] = useState<CellKey>("what");
 
   const hasInvestment = r.investment?.total_annual && r.investment.total_annual !== "N/D";
-  const hasReturn = r.expected_return?.payback_period && r.expected_return.payback_period !== "N/D";
-
-  const refByKey = new Map<string, KbReferenceWithRelevance>();
-  for (const ref of references) {
-    refByKey.set(ref.citation_key, ref);
-    refByKey.set(ref.citation_key.toLowerCase(), ref);
-  }
-  function resolveRef(key: string | undefined | null) {
-    if (!key) return null;
-    return refByKey.get(key) ?? refByKey.get(key.toLowerCase()) ?? null;
-  }
 
   const cell = CELLS[activeTab];
 
@@ -86,13 +75,9 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
           </div>
 
           {/* KPIs em linha enxuta */}
-          {(hasInvestment || hasReturn || r.internal_capacity_required || r.expected_return?.conservative) && (
-            <div className="grid grid-cols-2 items-stretch divide-x divide-y divide-border border-t border-border bg-muted/20 md:grid-cols-4 md:divide-y-0">
-              {hasInvestment && <KpiCell icon="payments" label="Investimento" value={r.investment?.total_annual ?? ""} />}
-              {r.expected_return?.conservative && r.expected_return.conservative !== "N/D" && (
-                <KpiCell icon="trending_up" label="Retorno" value={r.expected_return.conservative} />
-              )}
-              {hasReturn && <KpiCell icon="schedule" label="Payback" value={r.expected_return?.payback_period ?? ""} />}
+          {(hasInvestment || r.internal_capacity_required) && (
+            <div className="grid grid-cols-1 items-stretch divide-y divide-border border-t border-border bg-muted/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+              {hasInvestment && <KpiCell icon="payments" label="Investimento (estimativa)" value={r.investment?.total_annual ?? ""} />}
               {r.internal_capacity_required && (
                 <KpiCell icon="group" label="Capacidade" value={r.internal_capacity_required} />
               )}
@@ -182,7 +167,7 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
         {/* Conteúdo da aba ativa */}
         <div className="p-6 sm:p-8">
           {activeTab === "what" && <TabWhat r={r} />}
-          {activeTab === "why" && <TabWhy r={r} resolveRef={resolveRef} />}
+          {activeTab === "why" && <TabWhy r={r} references={references} />}
           {activeTab === "where" && <TabWhere r={r} targetDepartment={targetDepartment ?? null} />}
           {activeTab === "when" && <TabWhen r={r} timeframe={timeframe ?? null} />}
           {activeTab === "who" && <TabWho r={r} />}
@@ -249,8 +234,14 @@ function TabWhat({ r }: { r: AIRecommendation }) {
   );
 }
 
-function TabWhy({ r, resolveRef }: { r: AIRecommendation; resolveRef: (k: string | undefined | null) => KbReferenceWithRelevance | null }) {
+const RELEVANCE_ORDER: Record<string, number> = { primary: 0, secondary: 1, context: 2 };
+
+function TabWhy({ r, references }: { r: AIRecommendation; references: KbReferenceWithRelevance[] }) {
   const evidence = r.facts?.surveyEvidence ?? [];
+  const claims = references
+    .filter((ref) => ref.specific_claim)
+    .sort((a, b) => (RELEVANCE_ORDER[a.relevance] ?? 3) - (RELEVANCE_ORDER[b.relevance] ?? 3))
+    .slice(0, 4);
   return (
     <div className="space-y-6">
       {evidence.length > 0 && (
@@ -294,37 +285,28 @@ function TabWhy({ r, resolveRef }: { r: AIRecommendation; resolveRef: (k: string
         </div>
       )}
 
-      {r.impact_metrics && r.impact_metrics.length > 0 && (
+      {claims.length > 0 && (
         <div>
-          <SectionLabel>Impacto esperado (evidência)</SectionLabel>
+          <SectionLabel>O que a evidência diz</SectionLabel>
           <div className="grid gap-3 sm:grid-cols-2">
-            {r.impact_metrics.slice(0, 4).map((m, i) => {
-              const resolved = resolveRef(m.evidence?.study_or_case);
-              const fallbackUrl = m.evidence?.url_or_doi;
-              const url = resolved?.url ?? fallbackUrl ?? null;
-              const label = resolved
-                ? `${resolved.authors.split(";")[0].trim()} (${resolved.year})`
-                : `${m.evidence?.study_or_case ?? ""}${m.evidence?.year ? " (" + m.evidence.year + ")" : ""}`;
-              return (
-                <div key={i} className="rounded-lg border border-border bg-card p-4">
-                  <p className="text-sm font-semibold">{m.metric}</p>
-                  <p className="mt-1 text-sm font-bold text-primary">{m.change}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {label}
-                    {url && (
-                      <a href={url} target="_blank" rel="noopener" className="ml-1 text-primary underline">
-                        fonte ↗
-                      </a>
-                    )}
-                  </p>
-                  {(resolved?.notes || m.evidence?.br_context) && (
-                    <p className="mt-1.5 text-[11px] italic text-muted-foreground">
-                      {resolved?.notes ?? m.evidence?.br_context}
-                    </p>
+            {claims.map((ref) => (
+              <div key={ref.citation_key} className="rounded-lg border border-border bg-card p-4">
+                <p className="text-sm leading-relaxed">{ref.specific_claim}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>
+                    {ref.authors.split(";")[0].trim()} ({ref.year})
+                  </span>
+                  {ref.certainty_level && (
+                    <Badge variant="outline" className="text-[9px]">
+                      Certeza {CERTAINTY_LABEL[ref.certainty_level] ?? ref.certainty_level}
+                    </Badge>
                   )}
+                  <a href={ref.url} target="_blank" rel="noopener" className="text-primary underline">
+                    fonte ↗
+                  </a>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -558,63 +540,23 @@ function TabHow({ r }: { r: AIRecommendation }) {
 function TabHowMuch({ r }: { r: AIRecommendation }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
-        <div className="bg-card p-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Investimento anual</p>
-          <p className="text-3xl font-bold tracking-tight text-foreground">{r.investment?.total_annual ?? "—"}</p>
-          {r.investment?.per_employee_month && (
-            <p className="mt-1 text-xs text-muted-foreground">{r.investment.per_employee_month}</p>
-          )}
-        </div>
-        <div className="bg-card p-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Período de payback</p>
-          <p className="text-3xl font-bold tracking-tight text-primary">{r.expected_return?.payback_period ?? "—"}</p>
-        </div>
+      <div className="rounded-lg border border-border bg-card p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
+          Investimento anual estimado
+        </p>
+        <p className="text-3xl font-bold tracking-tight text-foreground">{r.investment?.total_annual ?? "—"}</p>
+        {r.investment?.per_employee_month && (
+          <p className="mt-1 text-xs text-muted-foreground">{r.investment.per_employee_month} por colaborador/mês</p>
+        )}
       </div>
 
-      {r.investment?.breakdown && (
-        <div>
-          <SectionLabel>Detalhamento do investimento</SectionLabel>
-          <p className="text-sm leading-relaxed text-foreground/90">{r.investment.breakdown}</p>
-        </div>
-      )}
-
-      {(r.expected_return?.conservative || r.expected_return?.optimistic) && (
-        <div>
-          <SectionLabel>Cenários de retorno</SectionLabel>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {r.expected_return?.conservative && r.expected_return.conservative !== "N/D" && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Conservador</p>
-                <p className="text-sm leading-relaxed">{r.expected_return.conservative}</p>
-              </div>
-            )}
-            {r.expected_return?.optimistic && r.expected_return.optimistic !== "N/D" && (
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Otimista</p>
-                <p className="text-sm leading-relaxed">{r.expected_return.optimistic}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Fundamentação determinística: cada número com fórmula + fonte */}
+      {/* Fundamentação determinística: o número com fórmula + origem */}
       {r.facts?.financials && (
         <div>
-          <SectionLabel>Fundamentação dos números</SectionLabel>
-          <div className="space-y-2">
-            <FactRow f={r.facts.financials.inactionCost} />
-            <FactRow f={r.facts.financials.investment} />
-            {r.facts.financials.expectedReturnConservative && (
-              <FactRow f={r.facts.financials.expectedReturnConservative} />
-            )}
-            {r.facts.financials.expectedReturnOptimistic && (
-              <FactRow f={r.facts.financials.expectedReturnOptimistic} />
-            )}
-          </div>
+          <SectionLabel>Como a estimativa foi calculada</SectionLabel>
+          <FactRow f={r.facts.financials.investment} />
           <p className="mt-3 rounded-lg border border-border bg-muted/30 p-3 text-[11px] italic leading-relaxed text-muted-foreground">
-            {r.facts.financials.effectivenessNote}
+            {r.facts.financials.estimateNote}
           </p>
         </div>
       )}
@@ -667,6 +609,13 @@ const RELEVANCE_LABEL: Record<string, { label: string; cls: string }> = {
   context:   { label: "Contexto",   cls: "bg-muted/50 text-muted-foreground/80" },
 };
 
+const CERTAINTY_LABEL: Record<string, string> = {
+  very_low: "muito baixa",
+  low:      "baixa",
+  moderate: "moderada",
+  high:     "alta",
+};
+
 const EVIDENCE_TYPE_LABEL: Record<string, string> = {
   guideline:         "Diretriz",
   systematic_review: "Revisão sistemática",
@@ -689,7 +638,9 @@ function ReferenceItem({ reference }: { reference: KbReferenceWithRelevance }) {
           {EVIDENCE_TYPE_LABEL[reference.evidence_type] ?? reference.evidence_type}
         </Badge>
         {reference.certainty_level && (
-          <Badge variant="outline" className="text-[9px]">Certeza {reference.certainty_level}</Badge>
+          <Badge variant="outline" className="text-[9px]">
+            Certeza {CERTAINTY_LABEL[reference.certainty_level] ?? reference.certainty_level}
+          </Badge>
         )}
         {reference.region === "brazil" && (
           <Badge variant="outline" className="text-[9px]">BR</Badge>

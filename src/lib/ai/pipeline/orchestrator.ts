@@ -452,24 +452,6 @@ export async function runPipeline(
             per_employee_month: facts.financials.investmentPerEmployeeMonth.value,
             breakdown: facts.financials.investment.formula ?? "",
           };
-          item.recommendation.expected_return = {
-            conservative: facts.financials.expectedReturnConservative?.value ?? "N/D",
-            optimistic: facts.financials.expectedReturnOptimistic?.value ?? "N/D",
-            payback_period: facts.financials.paybackPeriod,
-          };
-          // year=0 é falsy → a UI omite o ano (catálogo não traz ano por métrica).
-          item.recommendation.impact_metrics = facts.financials.expectedImpacts.map(
-            (e) => ({
-              metric: e.metric,
-              change: e.change,
-              evidence: {
-                study_or_case: e.source,
-                year: 0,
-                url_or_doi: null,
-                br_context: null,
-              },
-            })
-          );
         }
       }
 

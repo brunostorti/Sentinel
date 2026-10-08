@@ -522,16 +522,9 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
           {rec.investment?.total_annual && rec.investment.total_annual !== "N/D" && (
             <span className="inline-flex items-center gap-1">
               <Icon name="payments" size={12} className="text-blue-500" />
-              {rec.investment.total_annual}
+              {rec.investment.total_annual} (estimativa)
             </span>
           )}
-          {rec.expected_return?.payback_period &&
-            rec.expected_return.payback_period !== "N/D" && (
-              <span className="inline-flex items-center gap-1">
-                <Icon name="timer" size={12} className="text-emerald-500" />
-                {rec.expected_return.payback_period}
-              </span>
-            )}
           {plan.timeframe && (
             <span className="inline-flex items-center gap-1">
               <Icon name="schedule" size={12} className="text-violet-500" />
