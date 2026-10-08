@@ -1,3 +1,15 @@
+-- [Nota da auditoria de 2026-10-08]
+-- Versão no banco: 20260317052617 (nome no banco: fix_rls_recursion)
+-- ATENÇÃO: este arquivo NÃO é idêntico ao SQL registrado nessa versão.
+-- O banco registrou uma 1ª versão (policies com subqueries inline, users_self_select e
+-- users_company_select). Depois, a 2ª versão abaixo foi rodada à mão, fora do controle
+-- de migrações: criou get_my_role()/get_my_company_id() e reescreveu as policies.
+-- A produção está no estado desta 2ª versão e as migrações seguintes dependem dela
+-- (ex.: 20260321202709_employees_table usa get_my_role()), por isso ela é mantida aqui.
+-- A 1ª versão continua consultável em supabase_migrations.schema_migrations.statements.
+-- O DROP de participant_surveys_select abaixo não tem efeito ao rodar do zero (a policy
+-- só é criada na migração seguinte); a remoção está em 20261008184914_reconcile_drift.
+
 -- Fix: infinite recursion in RLS policies
 -- Root cause: get_user_role() / get_user_company_id() queried `users` table
 -- which had RLS policies calling those same functions → infinite loop.
