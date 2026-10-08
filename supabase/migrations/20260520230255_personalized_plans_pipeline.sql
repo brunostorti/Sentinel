@@ -1,11 +1,14 @@
--- ============================================
--- Migration 008: Pipeline de Planos Personalizados
+-- [Restaurada em 2026-10-08]
+-- Versão no banco (supabase_migrations.schema_migrations): 20260520230255
+-- Nome no banco: 008_personalized_plans_pipeline
+-- O SQL abaixo é a cópia EXATA do que foi aplicado via MCP em 20/05/2026, recuperado de
+-- schema_migrations.statements. A versão anterior deste arquivo tinha comentários mais
+-- detalhados por seção e já embutia o search_path das funções (que no banco foi aplicado
+-- separadamente em 20260520230533_lock_function_search_path); ela continua no histórico
+-- do git em supabase/migrations/008_personalized_plans_pipeline.sql (commit eb354cb).
 -- Spec: docs/superpowers/specs/2026-05-20-pipeline-de-planos-personalizados-design.md
--- ============================================
-
--- ═══════════════════════════════════════════
--- 0. Limpeza de planos antigos (autorizado pelo usuário — app em testes, sem casos reais)
--- ═══════════════════════════════════════════
+-- ===== SQL original (não editar) =====
+-- Migration 008: Pipeline de Planos Personalizados
 
 DELETE FROM kanban_comments WHERE task_id IN (
   SELECT id FROM kanban_tasks WHERE action_plan_id IS NOT NULL
@@ -13,15 +16,7 @@ DELETE FROM kanban_comments WHERE task_id IN (
 DELETE FROM kanban_tasks WHERE action_plan_id IS NOT NULL;
 DELETE FROM action_plans;
 
--- ═══════════════════════════════════════════
--- 1. action_plan_status: adicionar AI_GENERATION_FAILED
--- ═══════════════════════════════════════════
-
 ALTER TYPE action_plan_status ADD VALUE IF NOT EXISTS 'AI_GENERATION_FAILED';
-
--- ═══════════════════════════════════════════
--- 2. surveys: colunas de orquestração do pipeline IA
--- ═══════════════════════════════════════════
 
 ALTER TABLE surveys
   ADD COLUMN ai_generation_status TEXT NOT NULL DEFAULT 'not_started'
@@ -31,22 +26,14 @@ ALTER TABLE surveys
   ADD COLUMN ai_generation_finished_at TIMESTAMPTZ,
   ADD COLUMN ai_generation_error TEXT;
 
--- ═══════════════════════════════════════════
--- 3. company_profiles  (1:1 com companies)
--- ═══════════════════════════════════════════
-
 CREATE TABLE company_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
-
-  -- Orçamento
   annual_budget_brl NUMERIC,
   budget_per_employee_year_brl NUMERIC,
   budget_horizon TEXT CHECK (budget_horizon IN ('ano_corrente', '12_meses', 'bienio') OR budget_horizon IS NULL),
   budget_flexibility TEXT CHECK (budget_flexibility IN ('rigid', 'flexible', 'unlocked_for_critical') OR budget_flexibility IS NULL),
   existing_wellbeing_spend_brl NUMERIC,
-
-  -- Estrutura/maturidade do RH
   hr_team_size INTEGER,
   has_dedicated_hr BOOLEAN,
   has_internal_training BOOLEAN,
@@ -55,26 +42,19 @@ CREATE TABLE company_profiles (
   decision_speed TEXT CHECK (decision_speed IN ('fast', 'normal', 'slow') OR decision_speed IS NULL),
   culture_type TEXT CHECK (culture_type IN ('startup', 'family', 'corporate', 'public', 'multinational', 'other') OR culture_type IS NULL),
   declared_values TEXT[],
-
-  -- Colaboradores + região
   workforce_composition JSONB,
   predominant_role_type TEXT CHECK (predominant_role_type IN ('office', 'industrial', 'field', 'mixed', 'remote') OR predominant_role_type IS NULL),
   regions TEXT[],
   has_remote BOOLEAN,
   has_shift_workers BOOLEAN,
   has_unionized_workers BOOLEAN,
-
-  -- Restrições/preferências
   constraints TEXT[],
   preferred_modalities TEXT[],
   avoid_modalities TEXT[],
-
-  -- Flags "HR já revisou este campo" (mesmo se ficou vazio)
   regions_reviewed_at TIMESTAMPTZ,
   constraints_reviewed_at TIMESTAMPTZ,
   preferred_modalities_reviewed_at TIMESTAMPTZ,
   workforce_composition_reviewed_at TIMESTAMPTZ,
-
   setup_completeness NUMERIC NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -82,31 +62,22 @@ CREATE TABLE company_profiles (
 
 CREATE INDEX idx_company_profiles_completeness ON company_profiles(setup_completeness);
 
--- Trigger: cria company_profile vazio quando company é criada
 CREATE OR REPLACE FUNCTION create_company_profile_on_company_insert()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public, pg_catalog
-AS $$
+RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO company_profiles (company_id) VALUES (NEW.id)
   ON CONFLICT (company_id) DO NOTHING;
   RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER company_profile_autocreate
 AFTER INSERT ON companies
 FOR EACH ROW EXECUTE FUNCTION create_company_profile_on_company_insert();
 
--- Backfill: cria profiles vazios para empresas existentes
 INSERT INTO company_profiles (company_id)
 SELECT id FROM companies
 ON CONFLICT (company_id) DO NOTHING;
-
--- ═══════════════════════════════════════════
--- 4. company_actions_taken  (histórico de ações)
--- ═══════════════════════════════════════════
 
 CREATE TABLE company_actions_taken (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,15 +97,11 @@ CREATE TABLE company_actions_taken (
 CREATE INDEX idx_company_actions_company_category ON company_actions_taken(company_id, universal_category_id);
 CREATE INDEX idx_company_actions_company_outcome ON company_actions_taken(company_id, outcome);
 
--- ═══════════════════════════════════════════
--- 5. chat_threads
--- ═══════════════════════════════════════════
-
 CREATE TABLE chat_threads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   kind TEXT NOT NULL CHECK (kind IN ('plan', 'company')),
-  resource_id UUID,                          -- action_plans.id se kind='plan'
+  resource_id UUID,
   created_by_user_id UUID NOT NULL REFERENCES users(id),
   title TEXT,
   summary TEXT,
@@ -145,10 +112,6 @@ CREATE TABLE chat_threads (
 
 CREATE INDEX idx_chat_threads_company_kind ON chat_threads(company_id, kind, resource_id);
 CREATE INDEX idx_chat_threads_last_message ON chat_threads(company_id, last_message_at DESC);
-
--- ═══════════════════════════════════════════
--- 6. chat_messages
--- ═══════════════════════════════════════════
 
 CREATE TABLE chat_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -161,55 +124,36 @@ CREATE TABLE chat_messages (
 
 CREATE INDEX idx_chat_messages_thread_time ON chat_messages(thread_id, created_at);
 
--- ═══════════════════════════════════════════
--- 7. action_outcomes  (loop de eficácia)
--- Sobrevive a DELETE do plano (ON DELETE SET NULL) para preservar aprendizado
--- ═══════════════════════════════════════════
-
 CREATE TABLE action_outcomes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   action_plan_id UUID REFERENCES action_plans(id) ON DELETE SET NULL,
-
-  -- Identificação da intervenção independente do FK do plano
   intervention_id TEXT NOT NULL,
   universal_category_id UUID REFERENCES universal_categories(id),
-
   dimension_id UUID NOT NULL REFERENCES questionnaire_scales(id),
-
   survey_id_before UUID NOT NULL REFERENCES surveys(id),
   score_before NUMERIC NOT NULL,
-
   survey_id_after UUID REFERENCES surveys(id),
   score_after NUMERIC,
   delta NUMERIC,
   delta_computed_at TIMESTAMPTZ,
-
   outcome_status TEXT CHECK (outcome_status IN ('pending', 'computed', 'unmeasurable', 'anonymity_blocked') OR outcome_status IS NULL),
-
   hr_attribution TEXT CHECK (hr_attribution IN ('high', 'medium', 'low', 'none', 'cannot_tell') OR hr_attribution IS NULL),
   hr_notes TEXT,
   attribution_collected_at TIMESTAMPTZ,
   attribution_user_id UUID REFERENCES users(id),
   attribution_skip_count INTEGER NOT NULL DEFAULT 0,
-
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Unicidade: um outcome por (plano vivo, dimensão); planos deletados (NULL) podem coexistir
 CREATE UNIQUE INDEX action_outcomes_alive_unique
   ON action_outcomes(action_plan_id, dimension_id)
   WHERE action_plan_id IS NOT NULL;
-
 CREATE INDEX idx_outcomes_company_intervention ON action_outcomes(company_id, intervention_id);
 CREATE INDEX idx_outcomes_company_category ON action_outcomes(company_id, universal_category_id);
 CREATE INDEX idx_outcomes_pending_after ON action_outcomes(survey_id_after) WHERE survey_id_after IS NULL;
 CREATE INDEX idx_outcomes_pending_attribution ON action_outcomes(company_id) WHERE hr_attribution IS NULL AND delta_computed_at IS NOT NULL;
-
--- ═══════════════════════════════════════════
--- 8. profile_events  (timeline de enriquecimento)
--- ═══════════════════════════════════════════
 
 CREATE TABLE profile_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -230,20 +174,13 @@ CREATE INDEX idx_profile_events_pending ON profile_events(company_id, created_at
   WHERE confirmed_at IS NULL AND rejected_at IS NULL;
 CREATE INDEX idx_profile_events_company_field ON profile_events(company_id, field_path);
 
--- ═══════════════════════════════════════════
--- 9. updated_at triggers para tabelas com updated_at
--- ═══════════════════════════════════════════
-
 CREATE OR REPLACE FUNCTION touch_updated_at()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public, pg_catalog
-AS $$
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER company_profiles_touch_updated_at
 BEFORE UPDATE ON company_profiles
@@ -253,10 +190,6 @@ CREATE TRIGGER action_outcomes_touch_updated_at
 BEFORE UPDATE ON action_outcomes
 FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
--- ═══════════════════════════════════════════
--- 10. RLS — Row Level Security
--- ═══════════════════════════════════════════
-
 ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_actions_taken ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_threads ENABLE ROW LEVEL SECURITY;
@@ -264,7 +197,8 @@ ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE action_outcomes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profile_events ENABLE ROW LEVEL SECURITY;
 
--- company_profiles
+-- RLS policies usando funções helper REAIS do banco: get_my_role() / get_my_company_id()
+
 CREATE POLICY "company_profiles_select" ON company_profiles FOR SELECT USING (
   get_my_role() = 'SUPER_ADMIN' OR company_id = get_my_company_id()
 );
@@ -277,7 +211,6 @@ CREATE POLICY "company_profiles_insert" ON company_profiles FOR INSERT WITH CHEC
   get_my_role() = 'SUPER_ADMIN'
 );
 
--- company_actions_taken
 CREATE POLICY "company_actions_select" ON company_actions_taken FOR SELECT USING (
   get_my_role() = 'SUPER_ADMIN' OR company_id = get_my_company_id()
 );
@@ -297,7 +230,6 @@ CREATE POLICY "company_actions_delete" ON company_actions_taken FOR DELETE USING
   )
 );
 
--- chat_threads
 CREATE POLICY "chat_threads_select" ON chat_threads FOR SELECT USING (
   get_my_role() = 'SUPER_ADMIN' OR company_id = get_my_company_id()
 );
@@ -312,7 +244,6 @@ CREATE POLICY "chat_threads_update" ON chat_threads FOR UPDATE USING (
   )
 );
 
--- chat_messages (company_id indireto via thread)
 CREATE POLICY "chat_messages_select" ON chat_messages FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM chat_threads t
@@ -330,7 +261,6 @@ CREATE POLICY "chat_messages_insert" ON chat_messages FOR INSERT WITH CHECK (
   )
 );
 
--- action_outcomes (atribuição: ADMIN/HR; leitura: todos da empresa)
 CREATE POLICY "action_outcomes_select" ON action_outcomes FOR SELECT USING (
   get_my_role() = 'SUPER_ADMIN' OR company_id = get_my_company_id()
 );
@@ -343,7 +273,6 @@ CREATE POLICY "action_outcomes_update" ON action_outcomes FOR UPDATE USING (
   )
 );
 
--- profile_events (ADMIN/HR confirma/rejeita; MANAGER read-only)
 CREATE POLICY "profile_events_select" ON profile_events FOR SELECT USING (
   get_my_role() = 'SUPER_ADMIN' OR company_id = get_my_company_id()
 );
