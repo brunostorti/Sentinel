@@ -312,7 +312,7 @@ export function PlanChatBody({ planId }: { planId: string }) {
         </div>
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ModelSelectorModal companyId={undefined} />
+            <ModelSelectorModal />
             <Button variant="outline" size="sm" className="h-8 px-2 text-muted-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar Imagem">
               <Paperclip className="w-4 h-4" />
             </Button>

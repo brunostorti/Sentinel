@@ -21,7 +21,7 @@ const SUGGESTIONS = [
   "Monte um resumo executivo para a diretoria.",
 ];
 
-export function AssistantView({ userName, companyId }: { userName: string, companyId: string }) {
+export function AssistantView({ userName }: { userName: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -316,7 +316,7 @@ export function AssistantView({ userName, companyId }: { userName: string, compa
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <ModelSelectorModal companyId={companyId} />
+          <ModelSelectorModal />
           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} title="Anexar Imagem">
             <Paperclip className="w-4 h-4 text-muted-foreground mr-2" />
             <span className="text-xs text-muted-foreground">Anexar Arquivo</span>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { suggestProfileValues } from "@/lib/ai/profile/pre-fill";
 
 /**
@@ -25,7 +26,8 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json({ error: "Permissão negada." }, { status: 403 });
   }
 
-  const { data: company } = await supabase
+  // As chaves de IA não são legíveis pela sessão do usuário (migração 022).
+  const { data: company } = await createAdminClient()
     .from("companies")
     .select("industry, employee_count, work_regime, ai_model, ai_api_keys")
     .eq("id", userData.company_id!)

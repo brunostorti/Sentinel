@@ -48,6 +48,18 @@ export async function runPipeline(
   const admin = createAdminClient();
   const run_id = crypto.randomUUID();
 
+  // ─── 0. A pesquisa precisa pertencer à empresa de quem pediu ──────
+  // O pipeline usa o client admin (ignora RLS); sem esta checagem, um usuário
+  // poderia gerar planos com dados e chaves de IA de outra empresa.
+  const { data: owner } = await admin
+    .from("surveys")
+    .select("company_id")
+    .eq("id", surveyId)
+    .maybeSingle();
+  if (!owner || owner.company_id !== companyId) {
+    return { status: "failed", error: "Pesquisa não encontrada para esta empresa." };
+  }
+
   // ─── 1. Idempotência: tenta capturar o "running" lock ─────────────
   const { data: lockResult, error: lockErr } = await admin
     .from("surveys")

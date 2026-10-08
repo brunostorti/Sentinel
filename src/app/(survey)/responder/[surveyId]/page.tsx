@@ -97,8 +97,6 @@ export default async function SurveyResponsePage({ params }: Props) {
     <SurveyForm
       surveyId={survey.id}
       surveyTitle={survey.title}
-      participantId={participant.id}
-      departmentId={participant.department_id}
       questions={questions.map((q) => {
         const dim = q.questionnaire_scales as unknown as {
           id: string;

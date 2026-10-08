@@ -29,8 +29,6 @@ interface Question {
 interface SurveyFormProps {
   surveyId: string;
   surveyTitle: string;
-  participantId: string;
-  departmentId: string;
   questions: Question[];
 }
 
@@ -59,8 +57,6 @@ const LIGHT_TO_LABEL: Record<TrafficLight, DimensionScore["riskLevel"]> = {
 export default function SurveyForm({
   surveyId,
   surveyTitle,
-  participantId,
-  departmentId,
   questions,
 }: SurveyFormProps) {
   const router = useRouter();
@@ -115,8 +111,6 @@ export default function SurveyForm({
 
     const result = await submitSurveyResponse({
       surveyId,
-      participantId,
-      departmentId,
       answers: Object.entries(answers).map(([questionId, score]) => ({
         questionId,
         score,

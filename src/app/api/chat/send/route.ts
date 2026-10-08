@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { streamText, generateText } from "ai";
 import { createModel } from "@/lib/ai/provider-factory";
 import {
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Mensagem vazia." }, { status: 400 });
   }
 
-  const { data: company } = await supabase
+  // As chaves de IA não são legíveis pela sessão do usuário (migração 022).
+  const { data: company } = await createAdminClient()
     .from("companies")
     .select("ai_model, ai_api_keys")
     .eq("id", userData.company_id)

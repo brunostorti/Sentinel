@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { createClient } from "@/lib/supabase/client";
 import { Settings, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -55,76 +54,119 @@ const AI_MODELS = [
   },
 ];
 
-export function ModelSelectorModal({ companyId }: { companyId?: string }) {
+type Provider = "anthropic" | "openai" | "google";
+type MaskedKeys = Record<Provider, string | null>;
+
+const EMPTY_INPUTS: Record<Provider, string> = { anthropic: "", openai: "", google: "" };
+const NO_SAVED_KEYS: MaskedKeys = { anthropic: null, openai: null, google: null };
+
+/**
+ * As chaves nunca chegam ao navegador: a rota /api/company/ai-settings devolve só os
+ * 4 últimos caracteres. Campo em branco mantém a chave salva.
+ */
+export function ModelSelectorModal() {
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("claude-3-5-sonnet-latest");
   const [customModelName, setCustomModelName] = useState("");
-  const [apiKeys, setApiKeys] = useState({ anthropic: "", openai: "", google: "" });
+  const [keyInputs, setKeyInputs] = useState(EMPTY_INPUTS);
+  const [savedKeys, setSavedKeys] = useState<MaskedKeys>(NO_SAVED_KEYS);
+  const [keysToRemove, setKeysToRemove] = useState<Provider[]>([]);
+  const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialFetch, setInitialFetch] = useState(true);
-  const supabase = createClient();
+
+  function applySettings(data: { model: string | null; keys: MaskedKeys; canEdit: boolean }) {
+    if (data.model) {
+      const isStandard = AI_MODELS.some((m) => m.id === data.model && m.id !== "custom");
+      if (isStandard) {
+        setSelectedModel(data.model);
+      } else {
+        setSelectedModel("custom");
+        setCustomModelName(data.model);
+      }
+    }
+    setSavedKeys(data.keys);
+    setCanEdit(data.canEdit);
+    setKeyInputs(EMPTY_INPUTS);
+    setKeysToRemove([]);
+  }
 
   useEffect(() => {
-    if (initialFetch && companyId) {
-      const fetchSettings = async () => {
-        const { data, error } = await supabase
-          .from("companies")
-          .select("ai_model, ai_api_keys")
-          .eq("id", companyId)
-          .single();
-
-        if (error) {
-          toast.error("Erro ao carregar configurações de IA.");
-        } else if (data) {
-          if (data.ai_model) {
-            const isStandard = AI_MODELS.some(m => m.id === data.ai_model && m.id !== "custom");
-            if (isStandard) {
-              setSelectedModel(data.ai_model);
-            } else {
-              setSelectedModel("custom");
-              setCustomModelName(data.ai_model);
-            }
-          }
-          if (data.ai_api_keys) {
-            setApiKeys(data.ai_api_keys as any);
-          }
-        }
-        setInitialFetch(false);
-      };
-      fetchSettings();
-    }
-  }, [open, companyId, initialFetch, supabase]);
+    if (!initialFetch) return;
+    const fetchSettings = async () => {
+      const res = await fetch("/api/company/ai-settings");
+      if (res.ok) {
+        applySettings(await res.json());
+      } else {
+        toast.error("Erro ao carregar configurações de IA.");
+      }
+      setInitialFetch(false);
+    };
+    fetchSettings();
+  }, [initialFetch]);
 
   const handleSave = async () => {
-    if (!companyId) {
-      toast.error("Company ID não fornecido.");
-      return;
-    }
-    
     const finalModel = selectedModel === "custom" ? customModelName : selectedModel;
     if (!finalModel.trim()) {
       toast.error("Nome do modelo inválido.");
       return;
     }
 
-    setLoading(true);
-    const { error } = await supabase
-      .from("companies")
-      .update({
-        ai_model: finalModel,
-        ai_api_keys: apiKeys,
-      })
-      .eq("id", companyId);
+    const keys: Partial<Record<Provider, string | null>> = {};
+    for (const p of keysToRemove) keys[p] = null;
+    for (const [p, value] of Object.entries(keyInputs) as [Provider, string][]) {
+      if (value.trim()) keys[p] = value.trim();
+    }
 
+    setLoading(true);
+    const res = await fetch("/api/company/ai-settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: finalModel, keys }),
+    });
     setLoading(false);
 
-    if (error) {
-      toast.error("Erro ao salvar configurações.");
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      toast.error(body?.error ?? "Erro ao salvar configurações.");
     } else {
+      applySettings(await res.json());
       toast.success("Configurações de IA salvas com sucesso!");
       setOpen(false);
     }
   };
+
+  function keyField(provider: Provider, label: string, placeholder: string, helpUrl: string, helpText: string) {
+    const saved = keysToRemove.includes(provider) ? null : savedKeys[provider];
+    return (
+      <div className="space-y-1">
+        <Label htmlFor={`${provider}-key`} className="text-xs text-muted-foreground">{label}</Label>
+        <Input
+          id={`${provider}-key`}
+          type="password"
+          autoComplete="off"
+          disabled={!canEdit}
+          placeholder={saved ? `Chave salva (${saved}). Deixe em branco para manter` : placeholder}
+          value={keyInputs[provider]}
+          onChange={(e) => setKeyInputs({ ...keyInputs, [provider]: e.target.value })}
+        />
+        <div className="flex items-center gap-3">
+          <a href={helpUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline">
+            {helpText}
+          </a>
+          {canEdit && saved && (
+            <button
+              type="button"
+              className="text-[10px] text-destructive hover:underline"
+              onClick={() => setKeysToRemove([...keysToRemove, provider])}
+            >
+              Remover chave salva
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const selectedModelObj = AI_MODELS.find((m) => m.id === selectedModel);
 
@@ -196,59 +238,26 @@ export function ModelSelectorModal({ companyId }: { companyId?: string }) {
           <div className="space-y-4 border-t pt-4">
             <Label>Chaves de API (Insira a correspondente ao provedor do modelo escolhido)</Label>
             
-            {(!selectedModelObj || selectedModelObj.provider === "anthropic" || selectedModel === "custom") && (
-              <div className="space-y-1">
-                <Label htmlFor="anthropic-key" className="text-xs text-muted-foreground">Anthropic API Key (Claude)</Label>
-                <Input 
-                  id="anthropic-key" 
-                  type="password"
-                  placeholder="sk-ant-..." 
-                  value={apiKeys.anthropic || ""}
-                  onChange={(e) => setApiKeys({...apiKeys, anthropic: e.target.value})}
-                />
-                <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline">
-                  Como obter a chave da Anthropic?
-                </a>
-              </div>
-            )}
+            {(!selectedModelObj || selectedModelObj.provider === "anthropic" || selectedModel === "custom") &&
+              keyField("anthropic", "Anthropic API Key (Claude)", "sk-ant-...", "https://console.anthropic.com/settings/keys", "Como obter a chave da Anthropic?")}
 
-            {(!selectedModelObj || selectedModelObj.provider === "openai" || selectedModel === "custom") && (
-              <div className="space-y-1">
-                <Label htmlFor="openai-key" className="text-xs text-muted-foreground">OpenAI API Key (GPT)</Label>
-                <Input 
-                  id="openai-key" 
-                  type="password"
-                  placeholder="sk-proj-..." 
-                  value={apiKeys.openai || ""}
-                  onChange={(e) => setApiKeys({...apiKeys, openai: e.target.value})}
-                />
-                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline">
-                  Como obter a chave da OpenAI?
-                </a>
-              </div>
-            )}
+            {(!selectedModelObj || selectedModelObj.provider === "openai" || selectedModel === "custom") &&
+              keyField("openai", "OpenAI API Key (GPT)", "sk-proj-...", "https://platform.openai.com/api-keys", "Como obter a chave da OpenAI?")}
 
-            {(!selectedModelObj || selectedModelObj.provider === "google" || selectedModel === "custom") && (
-              <div className="space-y-1">
-                <Label htmlFor="google-key" className="text-xs text-muted-foreground">Google API Key (Gemini)</Label>
-                <Input 
-                  id="google-key" 
-                  type="password"
-                  placeholder="AIza..." 
-                  value={apiKeys.google || ""}
-                  onChange={(e) => setApiKeys({...apiKeys, google: e.target.value})}
-                />
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 hover:underline">
-                  Como obter a chave do Google?
-                </a>
-              </div>
+            {(!selectedModelObj || selectedModelObj.provider === "google" || selectedModel === "custom") &&
+              keyField("google", "Google API Key (Gemini)", "AIza...", "https://aistudio.google.com/app/apikey", "Como obter a chave do Google?")}
+
+            {!canEdit && (
+              <p className="text-xs text-muted-foreground">
+                Apenas RH e Admin podem alterar o modelo e as chaves de IA.
+              </p>
             )}
           </div>
         </div>
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading || !canEdit}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Salvar
           </Button>

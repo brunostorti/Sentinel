@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { DimensionMeta, DimensionScore, DepartmentResult, RawAnswer } from "./types";
 import { aggregateResponseScores } from "./aggregation";
 import { enforceAnonymity } from "./aggregation";
@@ -145,8 +146,10 @@ export async function fetchSurveyDimensionScores(
 
   const responseIds = responses.map((r) => r.id);
 
-  // Fetch all answers for these responses with question metadata
-  const { data: rawAnswers } = await supabase
+  // Respostas brutas não são legíveis por usuários da empresa (RLS, migração 020):
+  // só o servidor as lê, e apenas para os IDs que o cliente do chamador já pôde ver
+  // acima — o escopo da empresa continua garantido pela RLS de survey_responses.
+  const { data: rawAnswers } = await createAdminClient()
     .from("survey_answers")
     .select(
       `

@@ -90,7 +90,9 @@ export async function buildChatSystemPrompt(
         questionnaire_scales(name)
       `)
       .eq("id", resourceId)
-      .single();
+      // resourceId vem do navegador: só aceita planos da própria empresa.
+      .eq("company_id", companyId)
+      .maybeSingle();
 
     const planSummary = plan
       ? JSON.stringify(plan, null, 2).slice(0, 6000)

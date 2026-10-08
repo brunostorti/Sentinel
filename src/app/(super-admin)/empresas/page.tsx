@@ -8,7 +8,7 @@ export default async function CompaniesPage() {
 
   const { data: companies } = await supabase
     .from("companies")
-    .select("*")
+    .select("id, name, cnpj, industry, created_at")
     .order("created_at", { ascending: false });
 
   // Get user counts per company
