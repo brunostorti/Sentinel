@@ -11,8 +11,6 @@
 -- existentes (dados de teste) recebem os novos padrões — o padrão antigo
 -- (claude-3-5-sonnet-20240620) foi descontinuado pela Anthropic.
 
-BEGIN;
-
 ALTER TABLE public.companies
   ADD COLUMN IF NOT EXISTS ai_plan_model TEXT NOT NULL DEFAULT 'claude-opus-5-5',
   ADD COLUMN IF NOT EXISTS ai_chat_model TEXT NOT NULL DEFAULT 'maua';
@@ -28,4 +26,3 @@ COMMENT ON COLUMN public.companies.ai_model IS
 -- liberadas para leitura (a escrita continua só pela rota do servidor).
 GRANT SELECT (ai_plan_model, ai_chat_model) ON public.companies TO authenticated;
 
-COMMIT;

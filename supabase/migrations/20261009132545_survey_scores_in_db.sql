@@ -14,8 +14,6 @@
 -- ocultado — assim qualquer subtração (empresa − setores visíveis) revela, no máximo, a
 -- média de um grupo com 5 ou mais pessoas.
 
-BEGIN;
-
 -- Quem pode consultar uma pesquisa: usuários da própria empresa, SUPER_ADMIN e o
 -- servidor (service_role, usado pelo pipeline de IA).
 CREATE OR REPLACE FUNCTION public.assert_survey_access(p_survey_id uuid)
@@ -202,4 +200,3 @@ GRANT EXECUTE ON FUNCTION public.survey_item_stats(uuid, uuid, uuid) TO authenti
 GRANT EXECUTE ON FUNCTION public.assert_survey_access(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.survey_department_visibility(uuid) TO service_role;
 
-COMMIT;

@@ -20,8 +20,6 @@
 --     (o gestor pode ser o denunciado). Inserção direta pela API foi fechada —
 --     a rota /api/reports/submit valida o colaborador e grava com service role.
 
-BEGIN;
-
 -- ═══ S1. users: só nome e consentimento são editáveis pelo próprio usuário ═══
 REVOKE UPDATE ON public.users FROM anon, authenticated;
 GRANT UPDATE (name, lgpd_consent_at, lgpd_consent_version, updated_at)
@@ -73,4 +71,3 @@ CREATE POLICY reports_update_hr ON public.reports FOR UPDATE TO authenticated
   USING (company_id = get_my_company_id() AND get_my_role() IN ('ADMIN', 'HR'))
   WITH CHECK (company_id = get_my_company_id());
 
-COMMIT;

@@ -1,4 +1,10 @@
 /**
+ * ⚠️ LEGADO — DESATIVADO EM 2026-10-09. NÃO RODE.
+ * Este script gravava uma versão NÃO oficial do COPSOQ II (perguntas que não existem no
+ * manual português) e apagava as perguntas e dimensões de TODOS os instrumentos. A versão
+ * oficial (Silva et al., Universidade de Aveiro) vem da migração
+ * supabase/migrations/20261009124759_copsoq_ii_oficial.sql. Mantido só como histórico.
+ *
  * Seed script: populates questionnaire_scales and questionnaire_items
  * with the full COPSOQ II question bank from the Portuguese national
  * validation (COPSOQ-Manual-Portugal2013.pdf, N = 4,162 workers).
@@ -23,6 +29,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+console.error(
+  "scripts/seed-copsoq.ts é legado e foi desativado: gravava um COPSOQ II não oficial e " +
+    "apagava as perguntas de todos os instrumentos. A versão oficial vem da migração " +
+    "20261009124759_copsoq_ii_oficial.sql."
+);
+process.exit(1);
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");

@@ -11,8 +11,6 @@
 --     regime) — modelo e chaves passam pela rota do servidor.
 -- As policies RLS de companies não mudam.
 
-BEGIN;
-
 REVOKE SELECT, UPDATE ON public.companies FROM anon, authenticated;
 
 GRANT SELECT (
@@ -24,4 +22,3 @@ GRANT UPDATE (
   name, industry, logo_url, employee_count, work_regime, updated_at
 ) ON public.companies TO authenticated;
 
-COMMIT;

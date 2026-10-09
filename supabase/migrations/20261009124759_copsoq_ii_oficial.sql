@@ -27,8 +27,6 @@
 -- últimas 4 semanas, sentiu… Cansado?") recebem o enunciado no próprio texto, porque o
 -- formulário mostra uma pergunta por vez.
 
-BEGIN;
-
 -- 1. Valores de referência nacionais nas dimensões
 ALTER TABLE public.questionnaire_scales
   ADD COLUMN IF NOT EXISTS reference_mean numeric(4,2),
@@ -274,4 +272,3 @@ BEGIN
   END IF;
 END $$;
 
-COMMIT;

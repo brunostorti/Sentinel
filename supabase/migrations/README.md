@@ -28,12 +28,24 @@ Com a Supabase CLI o fluxo seria `supabase migration new <nome>` + `supabase db 
 
 ## Dados iniciais (seeds)
 
-Os bancos de questões dos instrumentos **não** ficam nesta pasta. A fonte oficial são os
-scripts em `scripts/` (`seed-copsoq.ts`, `seed-copsoq-iii.ts`, `seed-jss.ts`, `seed-olbi.ts`),
-que gravam em `questionnaire_scales` / `questionnaire_items` via service role.
+**COPSOQ II:** a versão portuguesa oficial (Silva et al.) é criada pela migração
+`20261009124759_copsoq_ii_oficial.sql`, gerada por script a partir do texto do manual. A
+versão anterior, não oficial, ficou arquivada no banco (`copsoq_ii_legado`, inativa) e o
+`scripts/seed-copsoq.ts` que a gravava foi desativado (ele também apagava as perguntas de
+todos os instrumentos).
+
+Os demais bancos de questões ainda vêm dos scripts em `scripts/` (`seed-copsoq-iii.ts`,
+`seed-jss.ts`, `seed-olbi.ts`), que gravam em `questionnaire_scales` /
+`questionnaire_items` via service role.
 O antigo `003_copsoq_seed.sql` (nunca aplicado em produção, escrito para as tabelas
 `copsoq_*` anteriores à renomeação) foi removido em 2026-10-08; ele continua no histórico
 do git (commit a11ea42).
+
+## Testes
+
+`supabase/tests/` guarda testes em SQL que criam dados sintéticos, conferem o resultado e
+desfazem tudo (`ROLLBACK`). Rode no SQL Editor; se algo falhar aparece uma exceção
+"FALHOU: ...".
 
 ## Histórico
 

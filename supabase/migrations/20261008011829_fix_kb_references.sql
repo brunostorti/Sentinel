@@ -22,8 +22,6 @@
 --   • relevance = 'primary' só quando a fonte avalia a eficácia da intervenção;
 --     associação de risco ou fundamentação teórica = 'secondary' ou 'context'.
 
-BEGIN;
-
 -- ═══════════════════════════════════════════
 -- 1. REMOÇÕES (ON DELETE CASCADE remove os vínculos)
 -- ═══════════════════════════════════════════
@@ -309,4 +307,3 @@ JOIN kb_references r ON r.citation_key = v.citation_key;
 
 DROP TABLE _claim_fix;
 
-COMMIT;

@@ -8,8 +8,6 @@
 -- de 1 hora gerados no servidor (src/app/(dashboard)/denuncias/page.tsx).
 -- Em 08/10/2026 o bucket tinha 0 arquivos e nenhuma denúncia com anexo.
 
-BEGIN;
-
 DROP POLICY IF EXISTS "Public can upload to reports bucket" ON storage.objects;
 DROP POLICY IF EXISTS "Public can view reports bucket" ON storage.objects;
 
@@ -19,4 +17,3 @@ SET public = false,
     allowed_mime_types = ARRAY['application/pdf', 'image/jpeg', 'image/png']
 WHERE id = 'reports';
 
-COMMIT;
