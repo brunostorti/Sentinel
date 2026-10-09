@@ -12,6 +12,7 @@ import type { AnalystReport, PipelineContext } from "./types";
 import type { CompanyProfile } from "../profile/schema";
 import { buildPerfilCompacto } from "../profile/narrative";
 import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
+import { toFavorability } from "@/lib/copsoq/scoring";
 
 interface CompanyInfo {
   name: string;
@@ -20,9 +21,10 @@ interface CompanyInfo {
   work_regime: string | null;
 }
 
-function severityLabel(score: number): string {
-  if (score < 20) return "CRÍTICO";
-  if (score < 33) return "GRAVE";
+/** Gravidade pela favorabilidade (0-100, alto = bom): vale para "alto = risco" e "alto = bom". */
+function severityLabel(favorability: number): string {
+  if (favorability < 20) return "CRÍTICO";
+  if (favorability < 33) return "GRAVE";
   return "ATENÇÃO";
 }
 
@@ -36,7 +38,7 @@ function buildDimensionsBlock(context: PipelineContext): string {
     (d) =>
       `- dimension_id="${d.dimensionId}" | nome="${d.name}" | categoria=${d.universalCategory ?? d.category} | score=${d.displayScore}/100 | ${
         d.trafficLight === "RED" ? "RISCO" : "INTERMÉDIO"
-      } | ${severityLabel(d.displayScore)} | direction=${d.scoringDirection}`
+      } | ${severityLabel(toFavorability(d.meanScore, d.scoringDirection))} | direction=${d.scoringDirection}`
   );
   return `## Dimensões em Risco
 USE EXATAMENTE o dimension_id (uuid) listado para cada dimensão no seu output. NÃO invente IDs.

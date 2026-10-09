@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { toDisplayScore, type ScoringDirection } from "@/lib/constants";
+import { toDisplayScore, UNIVERSAL_CATEGORY_LABELS, type ScoringDirection } from "@/lib/constants";
 import type { DimensionScore, DepartmentResult } from "./types";
-import { toTrafficLight } from "./scoring";
+import { toFavorability, toTrafficLight } from "./scoring";
 
 /** Fetch dashboard KPIs for a company */
 export async function fetchDashboardKPIs(
@@ -249,46 +249,47 @@ export async function fetchAllSurveysWithResponses(
   return results;
 }
 
-/** Aggregate scores across multiple surveys into a "general" view by averaging universal categories */
+/**
+ * Visão geral de várias pesquisas (e instrumentos): uma linha por categoria universal
+ * (Carga de Trabalho, Liderança...). Como uma categoria junta dimensões em que alto é
+ * risco e outras em que alto é favorável, a média é feita sobre a FAVORABILIDADE
+ * (0-100, alto = bom) — o resultado sai com direção HIGH_IS_FAVORABLE e semáforo
+ * coerente com ela.
+ */
 export function aggregateMultiSurveyScores(
   allSurveyScores: { scores: DimensionScore[]; isAnonymized: boolean }[]
 ): { scores: DimensionScore[]; isAnonymized: boolean } {
-  // Collect all scores grouped by universal category
-  const categoryScores = new Map<string, { scores: DimensionScore[]; totalDisplayScore: number; count: number }>();
+  const groups = new Map<string, { scores: DimensionScore[]; favorability: number }>();
 
   for (const surveyResult of allSurveyScores) {
     if (surveyResult.isAnonymized || !surveyResult.scores.length) continue;
-
     for (const score of surveyResult.scores) {
-      const key = score.universalCategory ?? score.name;
-      const existing = categoryScores.get(key);
-      if (existing) {
-        existing.scores.push(score);
-        existing.totalDisplayScore += score.displayScore;
-        existing.count++;
-      } else {
-        categoryScores.set(key, {
-          scores: [score],
-          totalDisplayScore: score.displayScore,
-          count: 1,
-        });
-      }
+      const key = score.universalCategory ?? `dim:${score.name}`;
+      const group = groups.get(key) ?? { scores: [], favorability: 0 };
+      group.scores.push(score);
+      group.favorability += toFavorability(score.meanScore, score.scoringDirection);
+      groups.set(key, group);
     }
   }
 
-  if (categoryScores.size === 0) return { scores: [], isAnonymized: false };
+  if (groups.size === 0) return { scores: [], isAnonymized: false };
 
-  // Average per universal category, using first score as template
   const aggregated: DimensionScore[] = [];
-  for (const [, data] of categoryScores) {
-    const avg = Math.round(data.totalDisplayScore / data.count);
-    const template = data.scores[0];
+  for (const [key, group] of groups) {
+    const mean = group.favorability / group.scores.length;
+    const label = group.scores[0].universalCategory
+      ? (UNIVERSAL_CATEGORY_LABELS[group.scores[0].universalCategory] ?? group.scores[0].name)
+      : group.scores[0].name;
     aggregated.push({
-      ...template,
-      meanScore: avg,
-      displayScore: avg,
-      trafficLight: avg >= 66 ? "GREEN" : avg >= 33 ? "YELLOW" : "RED",
-      questionCount: data.scores.reduce((sum, s) => sum + s.questionCount, 0),
+      dimensionId: `geral:${key}`,
+      name: label,
+      category: label,
+      universalCategory: group.scores[0].universalCategory,
+      scoringDirection: "HIGH_IS_FAVORABLE",
+      meanScore: mean,
+      displayScore: toDisplayScore(mean),
+      trafficLight: toTrafficLight(mean, "HIGH_IS_FAVORABLE"),
+      questionCount: group.scores.reduce((sum, s) => sum + s.questionCount, 0),
     });
   }
 
@@ -390,6 +391,7 @@ export async function fetchHistoricalTrends(
     dimensionId: string;
     name: string;
     category: string;
+    scoringDirection: ScoringDirection;
     scores: { surveyId: string; displayScore: number }[];
   }[];
 }> {
@@ -423,7 +425,7 @@ export async function fetchHistoricalTrends(
   // Fetch scores for each survey
   const allScores = new Map<
     string,
-    { name: string; category: string; scores: { surveyId: string; displayScore: number }[] }
+    { name: string; category: string; scoringDirection: ScoringDirection; scores: { surveyId: string; displayScore: number }[] }
   >();
 
   for (const survey of surveys) {
@@ -439,6 +441,7 @@ export async function fetchHistoricalTrends(
         allScores.set(score.dimensionId, {
           name: score.name,
           category: score.category,
+          scoringDirection: score.scoringDirection,
           scores: [{ surveyId: survey.id, displayScore: score.displayScore }],
         });
       }
@@ -452,6 +455,7 @@ export async function fetchHistoricalTrends(
       dimensionId,
       name: d.name,
       category: d.category,
+      scoringDirection: d.scoringDirection,
       scores: d.scores,
     }));
 

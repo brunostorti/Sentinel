@@ -6,9 +6,12 @@ import {
 } from "@/lib/constants";
 import type { DimensionMeta, DimensionScore, RawAnswer } from "./types";
 
-/** Tercile cut-points on the 0-100 normalized scale */
-const TERCILE_LOW = 33;
-const TERCILE_HIGH = 66;
+/**
+ * Pontos de corte dos tercis no 0-100. O manual do COPSOQ II PT divide a amplitude 1-5
+ * "em três partes iguais" (cortes 2,33 e 3,66): no 0-100 isso é 100/3 e 200/3.
+ */
+const TERCILE_LOW = 100 / 3;
+const TERCILE_HIGH = 200 / 3;
 
 /** Invert a normalized score: score = 100 - raw */
 export function invertScore(raw: number): number {
@@ -25,6 +28,14 @@ export function computeDimensionMean(
     return acc + adjusted;
   }, 0);
   return sum / scores.length;
+}
+
+/**
+ * Favorabilidade 0-100: alto é sempre bom. Inverte as dimensões em que alto = risco.
+ * Use para comparar ou fazer média de dimensões com direções diferentes.
+ */
+export function toFavorability(mean: number, direction: ScoringDirection): number {
+  return direction === "HIGH_IS_RISK" ? 100 - mean : mean;
 }
 
 /** Map a 0-100 mean score to a traffic light based on scoring direction */

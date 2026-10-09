@@ -54,9 +54,6 @@ export function toDisplayScore(mean: number): number {
   return Math.round(mean);
 }
 
-/** 0-100 thresholds for traffic light */
-export const THRESHOLDS = { LOW: 33, HIGH: 67 } as const;
-
 /** Minimum responses per department to show metrics */
 export const ANONYMITY_THRESHOLD = 5;
 

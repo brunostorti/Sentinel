@@ -13,6 +13,7 @@ import {
   fetchHistoricalTrends,
 } from "@/lib/copsoq/dashboard";
 
+import { toFavorability } from "@/lib/copsoq/scoring";
 import { runAnalyst } from "./analyst";
 import { runCurator } from "./curator";
 import { runConsultant } from "./consultant";
@@ -176,7 +177,9 @@ export async function runPipeline(
           });
           const previous = sorted[sorted.length - 2].displayScore;
           const current = sorted[sorted.length - 1].displayScore;
-          const diff = current - previous;
+          // Pela favorabilidade: burnout SUBINDO é piora (antes aparecia como melhora)
+          const diff =
+            toFavorability(current, d.scoringDirection) - toFavorability(previous, d.scoringDirection);
           return {
             name: d.name,
             currentScore: current,

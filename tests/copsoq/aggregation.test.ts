@@ -4,100 +4,113 @@ import {
   aggregateResponseScores,
   computeTrend,
 } from "@/lib/copsoq/aggregation";
+import { aggregateMultiSurveyScores } from "@/lib/copsoq/dashboard";
 import type { DimensionScore } from "@/lib/copsoq/types";
 
-describe("enforceAnonymity", () => {
-  it("returns true when response count is below threshold", () => {
-    expect(enforceAnonymity(4)).toBe(true);
+function score(partial: Partial<DimensionScore>): DimensionScore {
+  return {
+    dimensionId: "d1",
+    name: "Dimensão",
+    category: "Categoria",
+    scoringDirection: "HIGH_IS_RISK",
+    meanScore: 50,
+    displayScore: 50,
+    trafficLight: "YELLOW",
+    questionCount: 10,
+    ...partial,
+  };
+}
+
+describe("enforceAnonymity (regra de 5)", () => {
+  it("oculta abaixo de 5 respostas", () => {
     expect(enforceAnonymity(0)).toBe(true);
-    expect(enforceAnonymity(1)).toBe(true);
+    expect(enforceAnonymity(4)).toBe(true);
   });
 
-  it("returns false when response count meets threshold", () => {
+  it("mostra a partir de 5 respostas", () => {
     expect(enforceAnonymity(5)).toBe(false);
     expect(enforceAnonymity(10)).toBe(false);
   });
 });
 
-describe("aggregateResponseScores", () => {
-  it("averages multiple responses for same dimension", () => {
+describe("aggregateResponseScores (mesma regra da função do banco)", () => {
+  it("faz a média por respondente e depois entre respondentes", () => {
     const responses = [
-      // Response 1: dimension A scores [3, 4] → mean 3.5
+      // Respondente 1: perguntas 50 e 75 → média 62,5
       [
-        { questionId: "q1", dimensionId: "dA", score: 3, isInverted: false },
-        { questionId: "q2", dimensionId: "dA", score: 4, isInverted: false },
+        { questionId: "q1", dimensionId: "dA", score: 50, isInverted: false },
+        { questionId: "q2", dimensionId: "dA", score: 75, isInverted: false },
       ],
-      // Response 2: dimension A scores [5, 5] → mean 5.0
+      // Respondente 2: perguntas 100 e 100 → média 100
       [
-        { questionId: "q1", dimensionId: "dA", score: 5, isInverted: false },
-        { questionId: "q2", dimensionId: "dA", score: 5, isInverted: false },
+        { questionId: "q1", dimensionId: "dA", score: 100, isInverted: false },
+        { questionId: "q2", dimensionId: "dA", score: 100, isInverted: false },
       ],
     ];
+    const dimensions = [{ id: "dA", name: "Teste", category: "Teste", scoringDirection: "HIGH_IS_RISK" as const }];
 
-    const dimensions = [
-      {
-        id: "dA",
-        name: "Test Dimension",
-        category: "Test",
-        scoringDirection: "HIGH_IS_RISK" as const,
-      },
-    ];
-
-    const result = aggregateResponseScores(responses, dimensions);
-    // Response 1 mean: 3.5, Response 2 mean: 5.0 → overall mean: 4.25
-    expect(result[0].meanScore).toBe(4.25);
-    expect(result[0].trafficLight).toBe("RED"); // 4.25 > 3.66
+    const [result] = aggregateResponseScores(responses, dimensions);
+    expect(result.meanScore).toBe(81.25);
+    expect(result.trafficLight).toBe("RED");
   });
 
-  it("returns empty array for no responses", () => {
+  it("devolve vazio sem respostas", () => {
     expect(aggregateResponseScores([], [])).toEqual([]);
   });
 });
 
-describe("computeTrend", () => {
-  it("computes positive change for improving HIGH_IS_RISK", () => {
-    const current: DimensionScore = {
-      dimensionId: "d1",
-      name: "Test",
-      category: "Cat",
-      scoringDirection: "HIGH_IS_RISK",
-      meanScore: 2.0,
-      displayScore: 25,
-      trafficLight: "GREEN",
-      questionCount: 3,
-    };
-    const previous: DimensionScore = {
-      ...current,
-      meanScore: 3.0,
-      displayScore: 50,
-      trafficLight: "YELLOW",
-    };
+describe("aggregateMultiSurveyScores (visão geral)", () => {
+  it("não mistura direções: média da favorabilidade dentro da categoria", () => {
+    const result = aggregateMultiSurveyScores([
+      {
+        isAnonymized: false,
+        scores: [
+          // Comunicação: Conflitos laborais (alto = risco) em 80 → favorabilidade 20
+          score({ dimensionId: "a", name: "Conflitos laborais", universalCategory: "communication", scoringDirection: "HIGH_IS_RISK", meanScore: 80 }),
+          // Comunicação: Previsibilidade (alto = bom) em 40 → favorabilidade 40
+          score({ dimensionId: "b", name: "Previsibilidade", universalCategory: "communication", scoringDirection: "HIGH_IS_FAVORABLE", meanScore: 40 }),
+        ],
+      },
+    ]);
 
-    const trend = computeTrend(current, previous);
-    expect(trend.changePercent).toBe(-50); // score went down 50% (25 → 50)
-    expect(trend.improved).toBe(true); // for HIGH_IS_RISK, lower score = better
+    expect(result.scores).toHaveLength(1);
+    const [communication] = result.scores;
+    expect(communication.name).toBe("Comunicação e Transparência");
+    expect(communication.scoringDirection).toBe("HIGH_IS_FAVORABLE");
+    expect(communication.meanScore).toBe(30);
+    expect(communication.trafficLight).toBe("RED");
   });
 
-  it("computes negative change for worsening HIGH_IS_FAVORABLE", () => {
-    const current: DimensionScore = {
-      dimensionId: "d1",
-      name: "Test",
-      category: "Cat",
-      scoringDirection: "HIGH_IS_FAVORABLE",
-      meanScore: 2.0,
-      displayScore: 25,
-      trafficLight: "RED",
-      questionCount: 3,
-    };
-    const previous: DimensionScore = {
-      ...current,
-      meanScore: 4.0,
-      displayScore: 75,
-      trafficLight: "GREEN",
-    };
+  it("carga de trabalho alta é vermelho, não verde", () => {
+    const result = aggregateMultiSurveyScores([
+      { isAnonymized: false, scores: [score({ universalCategory: "workload", scoringDirection: "HIGH_IS_RISK", meanScore: 70 })] },
+    ]);
+    expect(result.scores[0].meanScore).toBe(30);
+    expect(result.scores[0].trafficLight).toBe("RED");
+  });
 
+  it("ignora pesquisas ocultas pela regra de 5", () => {
+    const result = aggregateMultiSurveyScores([
+      { isAnonymized: true, scores: [score({ universalCategory: "workload", meanScore: 90 })] },
+    ]);
+    expect(result.scores).toEqual([]);
+  });
+});
+
+describe("computeTrend", () => {
+  it("queda de pontuação é melhora quando alto = risco", () => {
+    const current = score({ scoringDirection: "HIGH_IS_RISK", displayScore: 25 });
+    const previous = score({ scoringDirection: "HIGH_IS_RISK", displayScore: 50 });
     const trend = computeTrend(current, previous);
-    expect(trend.changePercent).toBeCloseTo(-66.67, 0);
-    expect(trend.improved).toBe(false); // for HIGH_IS_FAVORABLE, lower score = worse
+    expect(trend.changePercent).toBe(-50);
+    expect(trend.improved).toBe(true);
+  });
+
+  it("queda de pontuação é piora quando alto = favorável", () => {
+    const current = score({ scoringDirection: "HIGH_IS_FAVORABLE", displayScore: 25 });
+    const previous = score({ scoringDirection: "HIGH_IS_FAVORABLE", displayScore: 75 });
+    const trend = computeTrend(current, previous);
+    expect(trend.changePercent).toBeCloseTo(-66.67, 1);
+    expect(trend.improved).toBe(false);
   });
 });

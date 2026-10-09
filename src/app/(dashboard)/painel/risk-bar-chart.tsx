@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DimensionScore } from "@/lib/copsoq/types";
+import { toFavorability } from "@/lib/copsoq/scoring";
 
 interface RiskBarChartProps {
   scores: DimensionScore[];
@@ -31,7 +32,8 @@ export function RiskBarChart({ scores }: RiskBarChartProps) {
     const order = { RED: 0, YELLOW: 1, GREEN: 2 };
     const levelDiff = order[a.trafficLight] - order[b.trafficLight];
     if (levelDiff !== 0) return levelDiff;
-    return a.displayScore - b.displayScore;
+    // Pior primeiro: menor favorabilidade (vale para "alto = risco" e "alto = bom")
+    return toFavorability(a.meanScore, a.scoringDirection) - toFavorability(b.meanScore, b.scoringDirection);
   });
 
   const data = sorted.map((s) => ({
