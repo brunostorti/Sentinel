@@ -342,7 +342,7 @@ export default async function SurveyFlowPage({
 
         <FlowCard
           step="6. Certificado"
-          title="Certificado NR1"
+          title="Certificado Sentinel"
           icon="verified"
           href={cycleContext ? `/certificados?cycleId=${cycleContext.cycleId}` : "/certificados"}
           badge={{

@@ -92,7 +92,7 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-xs">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Icon name="verified_user" size={14} className="text-primary" />
-            <span className="font-medium">Conformidade legal:</span>
+            <span className="font-medium">Base legal:</span>
           </div>
           {r.nr1_compliance && (
             <span className="text-foreground/80">{r.nr1_compliance}</span>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { LGPD_CONSENT_VERSION } from "@/lib/lgpd";
 
 /**
  * GET /api/account/lgpd-status
- * Retorna se o usuário logado já consentiu com a LGPD.
+ * Retorna se o usuário logado já consentiu com a versão ATUAL do termo LGPD.
  * Usado pelo modal de consentimento no carregamento do app.
  */
 export async function GET(_req: NextRequest) {
@@ -26,7 +27,7 @@ export async function GET(_req: NextRequest) {
 
   return NextResponse.json({
     authenticated: true,
-    consented: data.lgpd_consent_at !== null,
+    consented: data.lgpd_consent_at !== null && data.lgpd_consent_version === LGPD_CONSENT_VERSION,
     consented_at: data.lgpd_consent_at,
     version: data.lgpd_consent_version,
   });

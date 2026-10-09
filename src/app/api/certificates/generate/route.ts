@@ -36,8 +36,8 @@ function getBaseUrl(req: Request) {
 
 const TIER_TITLE: Record<1 | 2 | 3, string> = {
   1: "Avaliação de Riscos Psicossociais",
-  2: "Plano de Ação Implementado",
-  3: "Ciclo de Melhoria Comprovado",
+  2: "Plano de Ação Aprovado",
+  3: "Ciclo de Reavaliação Concluído",
 };
 
 export async function POST(req: Request) {
@@ -106,6 +106,7 @@ export async function POST(req: Request) {
     const certificates = certRows ?? [];
     const approvedPlans = plans.filter((p) => ["APPROVED", "COMPLETED"].includes(p.status)).length;
     const pendingPlans = plans.filter((p) => p.status === "PENDING_REVIEW").length;
+    const completedPlans = plans.filter((p) => p.status === "COMPLETED").length;
 
     const closed = cycle.surveys.filter((s) => s.status === "CLOSED");
     const closedScores = await Promise.all(
@@ -167,11 +168,11 @@ export async function POST(req: Request) {
     // que foi conquistado, uma frase por etapa alcançada — nada de item
     // pendente ou não cumprido aparece aqui (isso fica no hub do ciclo).
     const highlights: string[] = [
-      `Avaliação de riscos psicossociais (COPSOQ II) concluída, com ${responseRate}% de adesão dos colaboradores (${totalResponses} de ${totalInvited} convidados).`,
+      `Avaliação de riscos psicossociais concluída, com ${responseRate}% de adesão dos colaboradores (${totalResponses} de ${totalInvited} convidados).`,
     ];
     if (tier >= 2) {
       highlights.push(
-        `${plans.length} plano${plans.length === 1 ? "" : "s"} de ação implementado${plans.length === 1 ? "" : "s"} para mitigação dos riscos identificados, com ${approvedPlans} aprovado${approvedPlans === 1 ? "" : "s"} pela gestão.`
+        `${approvedPlans} plano${approvedPlans === 1 ? "" : "s"} de ação aprovado${approvedPlans === 1 ? "" : "s"} pela gestão para os riscos identificados${completedPlans > 0 ? `, com ${completedPlans} concluído${completedPlans === 1 ? "" : "s"}` : ""}.`
       );
     }
     if (tier === 3) {
@@ -326,7 +327,7 @@ async function buildCertificatePdf(data: CertificateData): Promise<Uint8Array> {
   y -= 16;
   centeredText(
     page,
-    "de identificação e gerenciamento de riscos psicossociais, nos termos da NR-1 e da Lei 14.831/2024,",
+    "de identificação e gerenciamento de riscos psicossociais previsto na NR-1,",
     y,
     12,
     times,

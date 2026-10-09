@@ -15,8 +15,8 @@ import { GenerateCertificateButton } from "./generate-certificate-button";
 
 const TIER_LABEL: Record<1 | 2 | 3, string> = {
   1: "Nível 1 — Avaliação Realizada",
-  2: "Nível 2 — Plano de Ação Implementado",
-  3: "Nível 3 — Ciclo de Melhoria Comprovado",
+  2: "Nível 2 — Plano de Ação Aprovado",
+  3: "Nível 3 — Ciclo de Reavaliação Concluído",
 };
 
 // Mesma logica de "quanto mais avancado, mais forte" do resto do app: azul

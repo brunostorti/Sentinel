@@ -105,8 +105,8 @@ export default async function MeusDadosPage() {
               <li>Mensagens individuais de chat são anonimizadas.</li>
               <li>
                 <strong>Planos aprovados, ações concluídas e scores de
-                pesquisa permanecem</strong> (registros de cumprimento de NR-1 e
-                Lei 14.831 — base legal: obrigação legal).
+                pesquisa permanecem</strong> (registros da gestão de riscos exigida
+                pela NR-1 — base legal: obrigação legal).
               </li>
               <li>
                 Pesquisas que você respondeu <strong>já são anônimas por

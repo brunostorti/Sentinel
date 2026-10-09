@@ -186,10 +186,10 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 - **RESOLVER** — elimina a causa-raiz organizacional do risco (mudança em processo, carga, jornada, gestão, estrutura). Use quando a intervenção ataca a fonte e o risco é alto/crítico (RED) e endereçável internamente. É a estratégia preferencial sempre que viável (eliminação na fonte). Coerente com roadmap que muda processo/jornada.
 - **MITIGAR** — reduz a probabilidade ou o impacto sem eliminar a causa (treinamentos, apoio, ajustes parciais, controles administrativos). Use para riscos YELLOW, ou RED quando a causa-raiz não pode ser removida no ciclo atual. É o PADRÃO quando em dúvida entre MITIGAR e RESOLVER e a ação não elimina a fonte.
 - **TRANSFERIR** — delega a execução/responsabilidade clínica a terceiro especializado (EAP/PAE, clínica de saúde mental, consultoria externa, seguro). Use quando a competência exigida é externa à empresa (ex.: atendimento psicológico) — coerente com 'vendors' como núcleo da solução e 'internal_alternative' fraca/nula.
-- **ACEITAR** — risco residual baixo, sob monitoramento, sem ação corretiva imediata custo-efetiva. Uso RARO e SOMENTE para dimensões YELLOW de baixa severidade. NUNCA use ACEITAR para uma dimensão RED — sob a NR-1/Portaria MTE 1.419/2024 e a Lei 14.831 o empregador é LEGALMENTE OBRIGADO a agir sobre riscos identificados.
+- **ACEITAR** — risco residual baixo, sob monitoramento, sem ação corretiva imediata custo-efetiva. Uso RARO e SOMENTE para dimensões YELLOW de baixa severidade. NUNCA use ACEITAR para uma dimensão RED — pela NR-1 (Portaria MTE 1.419/2024), riscos classificados como prioritários exigem medidas de prevenção no plano de ação (item 1.5.5.2). A Lei 14.831/2024 é um certificado voluntário: nunca a trate como obrigação.
 
 ### Compliance & Riscos
-- nr1_compliance: "Atende NR-1, Portaria MTE 1.419/2024 — gestão de riscos psicossociais" ou null.
+- nr1_compliance: em uma frase, qual exigência da NR-1 este plano ajuda a cumprir (ex.: "Medida de prevenção para o plano de ação do PGR — NR-1, item 1.5.5.2") ou null. Nunca afirme que o plano, sozinho, garante conformidade com a NR-1.
 - compliance_extra: LGPD, NR-17, CLT quando aplicável.
 - risk_if_not_acted: consequências de não agir, ancoradas no que a pesquisa revelou e nas referências (sem valores monetários).
 - implementation_risks: 2-3 itens — o que dá errado AO EXECUTAR + mitigation.

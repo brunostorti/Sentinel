@@ -53,12 +53,12 @@ export function DashboardFooter() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3 text-[10px] text-muted-foreground">
-        <span>Conformidade:</span>
+        <span>Referências:</span>
         <span className="rounded border border-border bg-card px-1.5 py-0.5 font-mono">
           NR-1 (Portaria MTE 1.419/2024)
         </span>
         <span className="rounded border border-border bg-card px-1.5 py-0.5 font-mono">
-          Lei 14.831/2024
+          Lei 14.831/2024 (certificação voluntária)
         </span>
         <span className="rounded border border-border bg-card px-1.5 py-0.5 font-mono">
           LGPD (Lei 13.709/2018)

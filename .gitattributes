@@ -1,0 +1,10 @@
+# Arquivos binários: o Git nunca deve converter fim de linha neles (autocrlf
+# corromperia PDFs gerados sem compressão, que parecem texto).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

@@ -272,7 +272,7 @@ export default function SurveyForm({
       <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-3">
         <Icon name="lock" size={16} className="text-primary shrink-0" />
         <p className="text-xs text-muted-foreground">
-          Suas respostas são completamente anônimas e não podem ser rastreadas.
+          Suas respostas são anônimas: não ficam ligadas ao seu nome, e os resultados só aparecem em grupos de pelo menos 5 pessoas.
         </p>
       </div>
     </div>

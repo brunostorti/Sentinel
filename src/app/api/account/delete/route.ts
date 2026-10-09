@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     notes: [
       "Sua conta foi removida.",
       "Mensagens individuais de chat foram anonimizadas.",
-      "Registros agregados (planos aprovados, ações tomadas, scores anônimos de pesquisa) foram mantidos para cumprir obrigações regulatórias (NR-1 / Lei 14.831).",
+      "Registros agregados (planos aprovados, ações tomadas, scores anônimos de pesquisa) foram mantidos como registro da gestão de riscos exigida pela NR-1.",
       "Faça logout e feche a sessão.",
     ],
   });

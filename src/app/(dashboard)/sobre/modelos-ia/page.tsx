@@ -145,6 +145,17 @@ export default function ModelosIaPage() {
         </Card>
       </section>
 
+      {/* Embeddings */}
+      <section>
+        <h2 className="text-xl font-black">Busca em documentos (embeddings)</h2>
+        <Card className="mt-3 p-5 text-sm leading-relaxed text-muted-foreground">
+          Para encontrar o trecho certo de uma norma ou de um documento da empresa, o
+          Sentinel converte os textos em vetores com um único modelo, fixo para todas as
+          empresas: o <strong>text-embedding-3-large da OpenAI</strong>. Ele é usado sempre,
+          qualquer que seja o modelo escolhido para planos e chat.
+        </Card>
+      </section>
+
       {/* Footer cross-links */}
       <div className="flex flex-wrap gap-3 border-t border-border pt-6">
         <Link

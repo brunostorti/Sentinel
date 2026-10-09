@@ -31,7 +31,7 @@ export default function PrivacidadePage() {
           <BasisCard
             icon="how_to_reg"
             title="Consentimento"
-            body="Para coleta de respostas individuais em pesquisas psicossociais. O colaborador autoriza explicitamente ao acessar via magic link e clicar em &quot;Concordo&quot;."
+            body="Para coleta de respostas individuais em pesquisas psicossociais. A participação é voluntária, e o colaborador é informado sobre o anonimato ao entrar e ao responder."
           />
           <BasisCard
             icon="rule"
@@ -99,7 +99,7 @@ export default function PrivacidadePage() {
               <DataRow
                 tipo="Logs de denúncias anônimas"
                 categoria="Sensível (denúncia)"
-                finalidade="Canal compliance (Lei 14.831/2024)"
+                finalidade="Canal de denúncias anônimas (prevenção ao assédio)"
                 retencao="Protocolo único, sem dados do denunciante"
               />
             </tbody>
@@ -117,9 +117,9 @@ export default function PrivacidadePage() {
               ID.</strong> A tabela <code className="font-mono text-xs">survey_responses</code>{" "}
               contém apenas <code className="font-mono text-xs">survey_id</code>,{" "}
               <code className="font-mono text-xs">department_id</code> e{" "}
-              <code className="font-mono text-xs">submitted_at</code>. O token de
-              entrada (<code className="font-mono text-xs">survey_tokens</code>)
-              é descartado após uso.
+              <code className="font-mono text-xs">submitted_at</code> (guardado só
+              com o dia, sem horário). O registro de participação indica apenas se
+              a pessoa já respondeu, sem ligação com as respostas.
             </li>
             <li>
               <strong>Regra de 5 (k-anonymity):</strong> dimensões só são
@@ -197,6 +197,15 @@ export default function PrivacidadePage() {
                 em risco e o texto digitado no chat — nunca respostas
                 individuais da pesquisa. Anthropic, OpenAI e Google não usam
                 dados recebidos pela API paga para treinar modelos.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Badge variant="outline">OpenAI (embeddings)</Badge>
+              <span className="text-muted-foreground">
+                Busca nos documentos da empresa e na base de referências
+                (recurso em implantação): os trechos de texto são convertidos em
+                vetores pela OpenAI (modelo text-embedding-3-large), qualquer que
+                seja o modelo escolhido para planos e chat.
               </span>
             </li>
             <li className="flex items-start gap-2">

@@ -106,9 +106,9 @@ export default function LoginPage() {
                     <Icon name="lock" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">100% Anônimo</p>
+                    <p className="text-sm font-bold">Respostas anônimas</p>
                     <p className="mt-0.5 text-xs leading-5 text-blue-50/80">
-                      Suas respostas não podem ser rastreadas.
+                      Não ficam ligadas ao seu nome; resultados só em grupos de 5 ou mais.
                     </p>
                   </div>
                 </div>
@@ -117,9 +117,9 @@ export default function LoginPage() {
                     <Icon name="verified" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">Conformidade Total</p>
+                    <p className="text-sm font-bold">Apoio à NR-1</p>
                     <p className="mt-0.5 text-xs leading-5 text-blue-50/80">
-                      Lei 14.831/2024 e NR-1.
+                      Gestão de riscos psicossociais no trabalho.
                     </p>
                   </div>
                 </div>

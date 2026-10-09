@@ -38,7 +38,7 @@ export const tutorialSlides: TutorialSlide[] = [
   {
     title: "4. Coleta anônima",
     description:
-      "Cada colaborador recebe um link individual por e-mail. Você acompanha a adesão em tempo real e pode disparar lembretes, mas nunca vê quem respondeu o quê.",
+      "Cada colaborador entra com o e-mail cadastrado e recebe um link individual de acesso. Você acompanha a adesão em tempo real e pode copiar uma mensagem de lembrete para enviar pelos canais da empresa, mas nunca vê quem respondeu o quê.",
     icon: "lock",
   },
   {
@@ -68,7 +68,7 @@ export const tutorialSlides: TutorialSlide[] = [
   {
     title: "9. Conformidade e certificado",
     description:
-      "O ciclo acompanha as evidências exigidas pela NR-1 em três etapas: identificar o risco, agir sobre ele e comprovar o resultado. Cumpridas, liberam o certificado e os relatórios da Lei 14.831.",
+      "O ciclo acompanha as evidências exigidas pela NR-1 em três etapas: identificar o risco, agir sobre ele e comprovar o resultado. Cumpridas, liberam o certificado do Sentinel e os relatórios.",
     icon: "verified",
   },
   {
