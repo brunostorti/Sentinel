@@ -1,0 +1,75 @@
+{
+  "_comentario": "Base global do RAG. Ingestão: npx tsx --env-file=.env.local scripts/rag/ingest-global.ts. Os arquivos ficam em docs/referencias/ (fora do git); se não existirem, o script baixa da URL oficial.",
+  "documentos": [
+    {
+      "slug": "nr1-cap-1-5-portaria-1419-2024",
+      "title": "NR-1, capítulo 1.5 — Gerenciamento de riscos ocupacionais (Portaria MTE nº 1.419/2024)",
+      "source_type": "norma",
+      "publisher": "Ministério do Trabalho e Emprego",
+      "year": 2024,
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/seguranca-e-saude-no-trabalho/sst-portarias/2024/portaria-mte-no-1-419-nr-01-gro-nova-redacao.pdf",
+      "file": "docs/referencias/nr1-portaria-1419-2024/portaria-mte-no-1-419-nr-01-gro-nova-redacao.pdf",
+      "format": "pdf",
+      "kb_reference": "NR1_2024",
+      "citation": "BRASIL. Ministério do Trabalho e Emprego. Portaria MTE nº 1.419, de 27 de agosto de 2024. Aprova a nova redação do capítulo 1.5 (Gerenciamento de riscos ocupacionais) e altera o Anexo I da Norma Regulamentadora nº 1. Diário Oficial da União, Brasília, 28 ago. 2024."
+    },
+    {
+      "slug": "mte-guia-fatores-riscos-psicossociais-2025",
+      "title": "Guia de informações sobre os fatores de riscos psicossociais relacionados ao trabalho",
+      "source_type": "guia_oficial",
+      "publisher": "Ministério do Trabalho e Emprego",
+      "year": 2025,
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/acesso-a-informacao/participacao-social/conselhos-e-orgaos-colegiados/comissao-tripartite-partitaria-permanente/normas-regulamentadora/normas-regulamentadoras-vigentes/guia-nr-01-revisado.pdf",
+      "file": "docs/referencias/mte-guia-psicossociais-2025/guia-nr-01-revisado.pdf",
+      "format": "pdf",
+      "kb_reference": "MTE2025_GuiaPsicossocial",
+      "citation": "BRASIL. Ministério do Trabalho e Emprego. Guia de informações sobre os fatores de riscos psicossociais relacionados ao trabalho: NR-1 — Gerenciamento de riscos ocupacionais (GRO). Brasília: MTE, 2025."
+    },
+    {
+      "slug": "mte-manual-gro-pgr-2026",
+      "title": "Manual do GRO/PGR da NR-1",
+      "source_type": "manual_tecnico",
+      "publisher": "Ministério do Trabalho e Emprego",
+      "year": 2026,
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/manuais-e-publicacoes/2026/manual_gro_pgr_da_nr_1.pdf",
+      "file": "docs/referencias/manual-gro-pgr-2026/manual_gro_pgr_da_nr_1.pdf",
+      "format": "pdf",
+      "citation": "BRASIL. Ministério do Trabalho e Emprego. Manual do Gerenciamento de Riscos Ocupacionais (GRO) e do Programa de Gerenciamento de Riscos (PGR) da NR-1. Brasília: MTE, 2026."
+    },
+    {
+      "slug": "mte-perguntas-respostas-gro-pgr-2026",
+      "title": "Perguntas e respostas sobre o capítulo 1.5 da NR-1 (GRO/PGR)",
+      "source_type": "guia_oficial",
+      "publisher": "Ministério do Trabalho e Emprego",
+      "year": 2026,
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/manuais-e-publicacoes/2026/perguntas-e-respostas-gro-pgr-maio-2026",
+      "file": "docs/referencias/mte-perguntas-respostas-maio-2026/perguntas-e-respostas-gro-pgr-maio-2026.pdf",
+      "format": "pdf",
+      "citation": "BRASIL. Ministério do Trabalho e Emprego. NR-1 — Gerenciamento de riscos ocupacionais (GRO): perguntas e respostas sobre o capítulo 1.5 da NR-1. 1ª rodada. Brasília: MTE, 2026."
+    },
+    {
+      "slug": "lei-14831-2024",
+      "title": "Lei nº 14.831/2024 — Certificado Empresa Promotora da Saúde Mental",
+      "source_type": "lei",
+      "publisher": "Presidência da República",
+      "year": 2024,
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l14831.htm",
+      "file": "docs/referencias/lei-14831-2024/l14831.htm",
+      "format": "html",
+      "kb_reference": "Lei14831_2024",
+      "citation": "BRASIL. Lei nº 14.831, de 27 de março de 2024. Institui o Certificado Empresa Promotora da Saúde Mental e estabelece os requisitos para a concessão da certificação. Diário Oficial da União, Brasília, 28 mar. 2024."
+    },
+    {
+      "slug": "copsoq-ii-manual-portugal",
+      "title": "Copenhagen Psychosocial Questionnaire (COPSOQ II) — versão portuguesa: manual",
+      "source_type": "instrumento",
+      "publisher": "Universidade de Aveiro",
+      "year": 2013,
+      "url": "https://www.copsoq-network.org/assets/Uploads/COPSOQ-Manual-Portugal2013.pdf",
+      "file": "docs/referencias/copsoq-ii-manual-portugal/COPSOQ-Manual-Portugal2013.pdf",
+      "format": "pdf",
+      "kb_reference": "Silva2013_COPSOQ2_PT",
+      "citation": "SILVA, C. F. et al. Copenhagen Psychosocial Questionnaire (COPSOQ): Portugal e países africanos de língua oficial portuguesa. Aveiro: Universidade de Aveiro, 2013."
+    }
+  ]
+}
