@@ -40,11 +40,21 @@ A lista fica em `docs/rag/fontes.json` (título, órgão, ano, URL oficial, cita
 ficam fora do git (`docs/referencias/`); o script de ingestão baixa da URL oficial quando o
 arquivo local não existe.
 
-**Planos de outras empresas (exemplos):** planos aprovados de empresas marcadas como "empresa
-de exemplo" (dados sintéticos criados pela equipe) entram na base global **anonimizados**: sem
-nome da empresa, sem nomes de setores ou pessoas; só setor econômico, porte, dimensão, nível de
-risco, a intervenção e o resultado medido, se houver. Empresas reais só entrariam com
-autorização expressa em contrato (fora do escopo da v1).
+**Planos de outras empresas (exemplos):** planos aprovados ou concluídos de empresas com
+`companies.share_plans_as_examples = true` entram na base global **anonimizados**
+(`src/lib/rag/example-plans.ts`, `scripts/rag/index-example-plans.ts`). Entram setor
+econômico, porte em faixa, dimensão e nível, a intervenção, as etapas, os indicadores, a situação
+e o resultado medido ("funcionou?", logo no início do texto). Saem o nome da empresa, os nomes de
+setores, as contagens de pessoas e a justificativa, que cita perguntas e setores reais.
+- Em 09/10 foram marcadas as empresas de demonstração Vértice Logística (`verticelog.demo`) e
+  GlobalCorp (contas `@sentinel.com`), com 7 planos. Empresas reais só com autorização expressa
+  em contrato.
+- A empresa de origem fica em `kb_documents.origin_company_id`. A busca não devolve a uma
+  empresa o próprio plano como "exemplo", e os exemplos não são legíveis pelo navegador (RLS):
+  só o servidor os usa.
+- No gerador de planos, cada item recebe até 2 exemplos numa busca separada, para não
+  competirem com as normas. A IA é orientada a usá-los como referência prática, nunca como
+  evidência científica.
 
 ## 4. Ingestão (como um documento vira trechos pesquisáveis)
 

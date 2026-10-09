@@ -99,6 +99,8 @@ export interface GlobalDocumentMeta {
   year: number | null;
   url: string | null;
   citation: string | null;
+  /** Planos de exemplo: empresa de origem (a busca não devolve o exemplo a ela). */
+  originCompanyId?: string | null;
 }
 
 /**
@@ -128,6 +130,7 @@ export async function upsertGlobalDocument(
     url: meta.url,
     citation: meta.citation,
     company_id: null,
+    origin_company_id: meta.originCompanyId ?? null,
     updated_at: new Date().toISOString(),
   };
 

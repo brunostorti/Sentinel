@@ -61,7 +61,17 @@ async function retrieveSources(
       matchCount: 3,
       sourceTypes: ["norma", "manual_tecnico", "guia_oficial"],
     }),
-    ...queries.map((query) => searchKnowledge(admin, { companyId, query, matchCount: 3 })),
+    // Por item: 3 trechos de normas/guias/documentos + até 2 planos de exemplo de outras
+    // empresas (anonimizados), buscados à parte para não competirem com as normas.
+    ...queries.map(async (query) => [
+      ...(await searchKnowledge(admin, {
+        companyId,
+        query,
+        matchCount: 3,
+        sourceTypes: ["norma", "lei", "guia_oficial", "manual_tecnico", "instrumento", "referencia_cientifica", "documento_empresa"],
+      })),
+      ...(await searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["plano_exemplo"] })),
+    ]),
   ]);
 
   const ordered: RetrievedChunk[] = [];
