@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
+import { kanbanTaskFor, PLAN_FOR_TASK_FIELDS, type PlanForTask } from "@/lib/action-plans/kanban-task";
 
 /** Get or create the first kanban column for the company */
 async function getFirstKanbanColumn(
@@ -55,7 +56,7 @@ export async function reviewActionPlan(
 
   const { data: plan } = await supabase
     .from("action_plans")
-    .select("id, company_id, status, survey_id, dimension_id, ai_recommendation")
+    .select(PLAN_FOR_TASK_FIELDS)
     .eq("id", planId)
     .single();
 
@@ -75,24 +76,11 @@ export async function reviewActionPlan(
   if (updateError) return { error: "Erro ao atualizar plano." };
 
   if (decision === "APPROVED") {
-    const recommendation = plan.ai_recommendation as {
-      title: string;
-      rationale: string;
-      suggested_role: string;
-      estimated_impact: string;
-    };
-
     const firstColumnId = await getFirstKanbanColumn(supabase, userData.company_id);
     if (firstColumnId) {
-      await supabase.from("kanban_tasks").insert({
-        company_id: userData.company_id,
-        column_id: firstColumnId,
-        title: recommendation.title,
-        description: `${recommendation.rationale}\n\nImpacto esperado: ${recommendation.estimated_impact}\nResponsável sugerido: ${recommendation.suggested_role}`,
-        dimension_id: plan.dimension_id,
-        source_survey_id: plan.survey_id,
-        action_plan_id: plan.id,
-      });
+      await supabase
+        .from("kanban_tasks")
+        .insert(kanbanTaskFor(plan as unknown as PlanForTask, userData.company_id, firstColumnId));
     }
   }
 
@@ -120,7 +108,7 @@ export async function bulkApproveActionPlans(planIds: string[]) {
   // Fetch all plans in one query
   const { data: plans } = await supabase
     .from("action_plans")
-    .select("id, company_id, status, survey_id, dimension_id, ai_recommendation")
+    .select(PLAN_FOR_TASK_FIELDS)
     .in("id", planIds)
     .eq("company_id", userData.company_id)
     .eq("status", "PENDING_REVIEW");
@@ -141,23 +129,9 @@ export async function bulkApproveActionPlans(planIds: string[]) {
   // Create kanban tasks — lookup column once
   const firstColumnId = await getFirstKanbanColumn(supabase, userData.company_id);
   if (firstColumnId) {
-    const tasks = plans.map((plan) => {
-      const rec = plan.ai_recommendation as {
-        title: string;
-        rationale: string;
-        suggested_role: string;
-        estimated_impact: string;
-      };
-      return {
-        company_id: userData.company_id,
-        column_id: firstColumnId,
-        title: rec.title,
-        description: `${rec.rationale}\n\nImpacto esperado: ${rec.estimated_impact}\nResponsável sugerido: ${rec.suggested_role}`,
-        dimension_id: plan.dimension_id,
-        source_survey_id: plan.survey_id,
-        action_plan_id: plan.id,
-      };
-    });
+    const tasks = plans.map((plan) =>
+      kanbanTaskFor(plan as unknown as PlanForTask, userData.company_id, firstColumnId)
+    );
 
     await supabase.from("kanban_tasks").insert(tasks);
   }

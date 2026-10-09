@@ -10,8 +10,8 @@ import type { DimensionMeta, DimensionScore, RawAnswer } from "./types";
  * Pontos de corte dos tercis no 0-100. O manual do COPSOQ II PT divide a amplitude 1-5
  * "em três partes iguais" (cortes 2,33 e 3,66): no 0-100 isso é 100/3 e 200/3.
  */
-const TERCILE_LOW = 100 / 3;
-const TERCILE_HIGH = 200 / 3;
+export const TERCILE_LOW = 100 / 3;
+export const TERCILE_HIGH = 200 / 3;
 
 /** Invert a normalized score: score = 100 - raw */
 export function invertScore(raw: number): number {

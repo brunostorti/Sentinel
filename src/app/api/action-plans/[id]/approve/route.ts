@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { kanbanTaskFor, PLAN_FOR_TASK_FIELDS, type PlanForTask } from "@/lib/action-plans/kanban-task";
 
 /**
  * POST /api/action-plans/:id/approve
  *
  * Side-effects:
  *  - status='APPROVED'
- *  - cria task no Kanban (coluna "A Definir" / primeira coluna)
- *  - se investimento estimado divergir do annual_budget_brl declarado,
- *    cria profile_events pendente
+ *  - cria task no Kanban (primeira coluna), com prazo inicial pelo critério do
+ *    Dossiê NR-1 (src/lib/action-plans/kanban-task.ts)
  */
 export async function POST(
   _req: NextRequest,
@@ -31,7 +31,7 @@ export async function POST(
 
   const { data: plan, error: planErr } = await supabase
     .from("action_plans")
-    .select("id, company_id, status, survey_id, dimension_id, ai_recommendation")
+    .select(PLAN_FOR_TASK_FIELDS)
     .eq("id", id)
     .eq("company_id", userData.company_id!)
     .single();
@@ -61,22 +61,10 @@ export async function POST(
     .limit(1)
     .maybeSingle();
 
-  const rec = plan.ai_recommendation as {
-    title?: string;
-    description?: string;
-    quick_action?: string;
-  } | null;
-
-  if (firstColumn && rec) {
-    await supabase.from("kanban_tasks").insert({
-      company_id: userData.company_id!,
-      column_id: firstColumn.id,
-      action_plan_id: plan.id,
-      source_survey_id: plan.survey_id,
-      dimension_id: plan.dimension_id,
-      title: rec.title ?? "Plano de ação",
-      description: rec.quick_action ?? rec.description ?? "",
-    });
+  if (firstColumn) {
+    await supabase
+      .from("kanban_tasks")
+      .insert(kanbanTaskFor(plan as unknown as PlanForTask, userData.company_id!, firstColumn.id));
   }
 
   return NextResponse.json({ status: "approved" });

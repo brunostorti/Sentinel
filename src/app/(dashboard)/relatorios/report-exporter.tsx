@@ -336,6 +336,16 @@ export function ReportExporter({
                   PDF
                 </Button>
               </div>
+              {report.status === "CLOSED" && totalResponded > 0 && (
+                <a
+                  href={`/api/nr1/dossie?surveyId=${report.surveyId}`}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
+                  title="Critérios, inventário de riscos, riscos evidentes e plano de ação para o PGR"
+                >
+                  <Icon name="gavel" size={14} />
+                  Dossiê NR-1 (PDF)
+                </a>
+              )}
             </CardContent>
           </Card>
         );
