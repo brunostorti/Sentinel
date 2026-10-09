@@ -106,7 +106,7 @@ const SCALES: ScaleDef[] = [
   },
   // 5. Demandas para Esconder Emocoes
   {
-    name: "Demandas para Esconder Emocoes",
+    name: "Demandas para Esconder Emoções",
     category: "Demands",
     description:
       "Necessidade de ocultar sentimentos no ambiente de trabalho. " +
@@ -117,7 +117,7 @@ const SCALES: ScaleDef[] = [
   },
   // 6. Influencia no Trabalho
   {
-    name: "Influencia no Trabalho",
+    name: "Influência no Trabalho",
     category: "Work Organisation",
     description:
       "Grau de controle e participacao nas decisoes sobre o proprio trabalho. " +
@@ -183,7 +183,7 @@ const SCALES: ScaleDef[] = [
   },
   // 12. Conflito de Papeis
   {
-    name: "Conflito de Papeis",
+    name: "Conflito de Papéis",
     category: "Interpersonal Relations",
     description:
       "Presenca de exigencias contraditorias ou incompativeis com valores pessoais. " +
@@ -194,7 +194,7 @@ const SCALES: ScaleDef[] = [
   },
   // 13. Qualidade da Lideranca
   {
-    name: "Qualidade da Lideranca",
+    name: "Qualidade da Liderança",
     category: "Interpersonal Relations",
     description:
       "Competencia do superior imediato em gestao, desenvolvimento e resolucao de conflitos. " +
@@ -249,7 +249,7 @@ const SCALES: ScaleDef[] = [
   },
   // 18. Justica e Respeito
   {
-    name: "Justica e Respeito",
+    name: "Justiça e Respeito",
     category: "Values",
     description:
       "Percepcao de equidade na resolucao de conflitos e tratamento de sugestoes. " +
@@ -260,7 +260,7 @@ const SCALES: ScaleDef[] = [
   },
   // 19. Confianca em Relacao a Chefia
   {
-    name: "Confianca em Relacao a Chefia",
+    name: "Confiança em Relação à Chefia",
     category: "Values",
     description:
       "Grau de transparencia da chefia e liberdade de expressao dos funcionarios. " +
@@ -271,7 +271,7 @@ const SCALES: ScaleDef[] = [
   },
   // 20. Inseguranca no Trabalho
   {
-    name: "Inseguranca no Trabalho",
+    name: "Insegurança no Trabalho",
     category: "Job Insecurity",
     description:
       "Preocupacoes com desemprego, transferencia involuntaria e obsolescencia tecnologica. " +
@@ -282,7 +282,7 @@ const SCALES: ScaleDef[] = [
   },
   // 21. Satisfacao no Trabalho
   {
-    name: "Satisfacao no Trabalho",
+    name: "Satisfação no Trabalho",
     category: "Health and Wellbeing",
     description:
       "Satisfacao geral com condicoes, perspectivas, uso de habilidades e trabalho como um todo. " +
@@ -293,7 +293,7 @@ const SCALES: ScaleDef[] = [
   },
   // 22. Conflito Trabalho-Familia
   {
-    name: "Conflito Trabalho-Familia",
+    name: "Conflito Trabalho-Família",
     category: "Health and Wellbeing",
     description:
       "Interferencia do trabalho na vida pessoal e familiar. " +
@@ -326,7 +326,7 @@ const SCALES: ScaleDef[] = [
   },
   // 25. Saude Geral
   {
-    name: "Saude Geral",
+    name: "Saúde Geral",
     category: "Health and Wellbeing",
     description:
       "Autoavaliacao do estado geral de saude. " +
@@ -359,21 +359,21 @@ const ITEMS: ItemDef[] = [
     orderIndex: 1,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "A sua carga de trabalho se acumula por nao poder ser realizada no dia a dia?",
+    text: "A sua carga de trabalho se acumula por não poder ser realizada no dia a dia?",
   },
   {
     scaleName: "Demandas Quantitativas",
     orderIndex: 2,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce nao tem tempo para completar todas as tarefas do seu trabalho?",
+    text: "Com que frequência você não tem tempo para completar todas as tarefas do seu trabalho?",
   },
   {
     scaleName: "Demandas Quantitativas",
     orderIndex: 3,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce fica atrasado(a) com o seu trabalho?",
+    text: "Você fica atrasado(a) com o seu trabalho?",
   },
 
   // ── 2. Ritmo de Trabalho (1 item) — likert_frequency_5 ──
@@ -382,7 +382,7 @@ const ITEMS: ItemDef[] = [
     orderIndex: 4,
     isInverted: false,
     responseFormatCode: "likert_frequency_5",
-    text: "Voce precisa trabalhar muito rapido?",
+    text: "Você precisa trabalhar muito rápido?",
   },
 
   // ── 3. Demandas Cognitivas (3 items) — copsoq3_time_frequency ──
@@ -391,21 +391,21 @@ const ITEMS: ItemDef[] = [
     orderIndex: 5,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho exige que voce se lembre de muitas coisas?",
+    text: "O seu trabalho exige que você se lembre de muitas coisas?",
   },
   {
     scaleName: "Demandas Cognitivas",
     orderIndex: 6,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho exige que voce tome decisoes dificeis?",
+    text: "O seu trabalho exige que você tome decisões difíceis?",
   },
   {
     scaleName: "Demandas Cognitivas",
     orderIndex: 7,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho exige que voce proponha novas ideias?",
+    text: "O seu trabalho exige que você proponha novas ideias?",
   },
 
   // ── 4. Demandas Emocionais (2 items) — copsoq3_time_frequency ──
@@ -414,46 +414,46 @@ const ITEMS: ItemDef[] = [
     orderIndex: 8,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho e emocionalmente desgastante?",
+    text: "O seu trabalho é emocionalmente desgastante?",
   },
   {
     scaleName: "Demandas Emocionais",
     orderIndex: 9,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho exige que voce se envolva emocionalmente?",
+    text: "O seu trabalho exige que você se envolva emocionalmente?",
   },
 
   // ── 5. Demandas para Esconder Emocoes (1 item) — copsoq3_time_frequency ──
   {
-    scaleName: "Demandas para Esconder Emocoes",
+    scaleName: "Demandas para Esconder Emoções",
     orderIndex: 10,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho exige que voce esconda seus sentimentos?",
+    text: "O seu trabalho exige que você esconda seus sentimentos?",
   },
 
   // ── 6. Influencia no Trabalho (3 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Influencia no Trabalho",
+    scaleName: "Influência no Trabalho",
     orderIndex: 11,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce tem influencia sobre a quantidade de trabalho que lhe e atribuida?",
+    text: "Você tem influência sobre a quantidade de trabalho que lhe é atribuída?",
   },
   {
-    scaleName: "Influencia no Trabalho",
+    scaleName: "Influência no Trabalho",
     orderIndex: 12,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce pode influenciar as decisoes sobre o seu trabalho?",
+    text: "Você pode influenciar as decisões sobre o seu trabalho?",
   },
   {
-    scaleName: "Influencia no Trabalho",
+    scaleName: "Influência no Trabalho",
     orderIndex: 13,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce tem voz ativa sobre o que e como faz no seu trabalho?",
+    text: "Você tem voz ativa sobre o que e como faz no seu trabalho?",
   },
 
   // ── 7. Possibilidades de Desenvolvimento (3 items) — copsoq3_time_frequency ──
@@ -462,14 +462,14 @@ const ITEMS: ItemDef[] = [
     orderIndex: 14,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho lhe da oportunidades de desenvolver suas competencias?",
+    text: "O seu trabalho lhe dá oportunidades de desenvolver suas competências?",
   },
   {
     scaleName: "Possibilidades de Desenvolvimento",
     orderIndex: 15,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce pode usar suas habilidades ou conhecimentos no seu trabalho?",
+    text: "Você pode usar suas habilidades ou conhecimentos no seu trabalho?",
   },
   {
     scaleName: "Possibilidades de Desenvolvimento",
@@ -485,21 +485,21 @@ const ITEMS: ItemDef[] = [
     orderIndex: 17,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho tem significado para voce?",
+    text: "O seu trabalho tem significado para você?",
   },
   {
     scaleName: "Significado do Trabalho",
     orderIndex: 18,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce sente que o trabalho que faz e importante?",
+    text: "Você sente que o trabalho que faz é importante?",
   },
   {
     scaleName: "Significado do Trabalho",
     orderIndex: 19,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce se sente motivado(a) e envolvido(a) com o seu trabalho?",
+    text: "Você se sente motivado(a) e envolvido(a) com o seu trabalho?",
   },
 
   // ── 9. Compromisso com o Local de Trabalho (3 items) — copsoq3_engagement ──
@@ -508,21 +508,21 @@ const ITEMS: ItemDef[] = [
     orderIndex: 20,
     isInverted: false,
     responseFormatCode: "copsoq3_engagement",
-    text: "Voce gosta de contar as pessoas sobre o seu local de trabalho?",
+    text: "Você gosta de contar às pessoas sobre o seu local de trabalho?",
   },
   {
     scaleName: "Compromisso com o Local de Trabalho",
     orderIndex: 21,
     isInverted: false,
     responseFormatCode: "copsoq3_engagement",
-    text: "Voce sente que os problemas do seu local de trabalho sao tambem seus?",
+    text: "Você sente que os problemas do seu local de trabalho são também seus?",
   },
   {
     scaleName: "Compromisso com o Local de Trabalho",
     orderIndex: 22,
     isInverted: false,
     responseFormatCode: "copsoq3_engagement",
-    text: "Voce sente que o seu local de trabalho tem grande significado pessoal para voce?",
+    text: "Você sente que o seu local de trabalho tem grande significado pessoal para você?",
   },
 
   // ── 10. Previsibilidade (2 items) — copsoq3_time_frequency ──
@@ -531,14 +531,14 @@ const ITEMS: ItemDef[] = [
     orderIndex: 23,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "No seu local de trabalho, voce e informado(a) com antecedencia sobre decisoes importantes?",
+    text: "No seu local de trabalho, você é informado(a) com antecedência sobre decisões importantes?",
   },
   {
     scaleName: "Previsibilidade",
     orderIndex: 24,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce recebe toda a informacao necessaria para fazer bem o seu trabalho?",
+    text: "Você recebe toda a informação necessária para fazer bem o seu trabalho?",
   },
 
   // ── 11. Clareza de Papel (3 items) — copsoq3_time_frequency ──
@@ -554,67 +554,67 @@ const ITEMS: ItemDef[] = [
     orderIndex: 26,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce sabe exatamente o que se espera de voce no trabalho?",
+    text: "Você sabe exatamente o que se espera de você no trabalho?",
   },
   {
     scaleName: "Clareza de Papel",
     orderIndex: 27,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce sabe exatamente quais sao suas responsabilidades?",
+    text: "Você sabe exatamente quais são suas responsabilidades?",
   },
 
   // ── 12. Conflito de Papeis (3 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Conflito de Papeis",
+    scaleName: "Conflito de Papéis",
     orderIndex: 28,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce precisa fazer coisas que acha desnecessarias no trabalho?",
+    text: "Você precisa fazer coisas que acha desnecessárias no trabalho?",
   },
   {
-    scaleName: "Conflito de Papeis",
+    scaleName: "Conflito de Papéis",
     orderIndex: 29,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Recebe exigencias contraditorias no trabalho?",
+    text: "Recebe exigências contraditórias no trabalho?",
   },
   {
-    scaleName: "Conflito de Papeis",
+    scaleName: "Conflito de Papéis",
     orderIndex: 30,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce precisa fazer coisas que vao contra os seus valores?",
+    text: "Você precisa fazer coisas que vão contra os seus valores?",
   },
 
   // ── 13. Qualidade da Lideranca (4 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Qualidade da Lideranca",
+    scaleName: "Qualidade da Liderança",
     orderIndex: 31,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Ate que ponto seu superior imediato se certifica de que cada membro da equipe tem boas oportunidades de desenvolvimento?",
+    text: "Até que ponto seu superior imediato se certifica de que cada membro da equipe tem boas oportunidades de desenvolvimento?",
   },
   {
-    scaleName: "Qualidade da Lideranca",
+    scaleName: "Qualidade da Liderança",
     orderIndex: 32,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Ate que ponto seu superior imediato da prioridade a satisfacao no trabalho?",
+    text: "Até que ponto seu superior imediato dá prioridade à satisfação no trabalho?",
   },
   {
-    scaleName: "Qualidade da Lideranca",
+    scaleName: "Qualidade da Liderança",
     orderIndex: 33,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Ate que ponto seu superior imediato e bom em planejar o trabalho?",
+    text: "Até que ponto seu superior imediato é bom em planejar o trabalho?",
   },
   {
-    scaleName: "Qualidade da Lideranca",
+    scaleName: "Qualidade da Liderança",
     orderIndex: 34,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Ate que ponto seu superior imediato e bom em resolver conflitos?",
+    text: "Até que ponto seu superior imediato é bom em resolver conflitos?",
   },
 
   // ── 14. Apoio Social de Superiores (2 items) — copsoq3_time_frequency ──
@@ -623,14 +623,14 @@ const ITEMS: ItemDef[] = [
     orderIndex: 35,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia seu superior imediato esta disposto a ouvi-lo(a) sobre seus problemas no trabalho?",
+    text: "Com que frequência seu superior imediato está disposto a ouvi-lo(a) sobre seus problemas no trabalho?",
   },
   {
     scaleName: "Apoio Social de Superiores",
     orderIndex: 36,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce recebe ajuda e apoio do seu superior imediato?",
+    text: "Com que frequência você recebe ajuda e apoio do seu superior imediato?",
   },
 
   // ── 15. Apoio Social de Colegas (2 items) — copsoq3_time_frequency ──
@@ -639,14 +639,14 @@ const ITEMS: ItemDef[] = [
     orderIndex: 37,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia seus colegas estao dispostos a ouvi-lo(a) sobre seus problemas no trabalho?",
+    text: "Com que frequência seus colegas estão dispostos a ouvi-lo(a) sobre seus problemas no trabalho?",
   },
   {
     scaleName: "Apoio Social de Colegas",
     orderIndex: 38,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce recebe ajuda e apoio dos seus colegas?",
+    text: "Com que frequência você recebe ajuda e apoio dos seus colegas?",
   },
 
   // ── 16. Comunidade Social no Trabalho (3 items) — copsoq3_time_frequency ──
@@ -655,21 +655,21 @@ const ITEMS: ItemDef[] = [
     orderIndex: 39,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Existe um bom espirito de equipe entre voce e seus colegas?",
+    text: "Existe um bom espírito de equipe entre você e seus colegas?",
   },
   {
     scaleName: "Comunidade Social no Trabalho",
     orderIndex: 40,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Existe boa colaboracao entre os colegas no trabalho?",
+    text: "Existe boa colaboração entre os colegas no trabalho?",
   },
   {
     scaleName: "Comunidade Social no Trabalho",
     orderIndex: 41,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce se sente parte de uma comunidade no seu local de trabalho?",
+    text: "Você se sente parte de uma comunidade no seu local de trabalho?",
   },
 
   // ── 17. Reconhecimento (3 items) — copsoq3_time_frequency ──
@@ -678,14 +678,14 @@ const ITEMS: ItemDef[] = [
     orderIndex: 42,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "O seu trabalho e reconhecido e apreciado pela chefia?",
+    text: "O seu trabalho é reconhecido e apreciado pela chefia?",
   },
   {
     scaleName: "Reconhecimento",
     orderIndex: 43,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce e tratado(a) de forma justa no seu local de trabalho?",
+    text: "Você é tratado(a) de forma justa no seu local de trabalho?",
   },
   {
     scaleName: "Reconhecimento",
@@ -697,103 +697,103 @@ const ITEMS: ItemDef[] = [
 
   // ── 18. Justica e Respeito (2 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Justica e Respeito",
+    scaleName: "Justiça e Respeito",
     orderIndex: 45,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Os conflitos sao resolvidos de forma justa?",
+    text: "Os conflitos são resolvidos de forma justa?",
   },
   {
-    scaleName: "Justica e Respeito",
+    scaleName: "Justiça e Respeito",
     orderIndex: 46,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "As sugestoes dos funcionarios sao tratadas com seriedade pela chefia?",
+    text: "As sugestões dos funcionários são tratadas com seriedade pela chefia?",
   },
 
   // ── 19. Confianca em Relacao a Chefia (2 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Confianca em Relacao a Chefia",
+    scaleName: "Confiança em Relação à Chefia",
     orderIndex: 47,
     isInverted: true, // INVERTED — only inverted item in the instrument
     responseFormatCode: "copsoq3_time_frequency",
-    text: "A chefia esconde informacoes dos funcionarios?",
+    text: "A chefia esconde informações dos funcionários?",
   },
   {
-    scaleName: "Confianca em Relacao a Chefia",
+    scaleName: "Confiança em Relação à Chefia",
     orderIndex: 48,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Os funcionarios podem expressar suas opinioes e sentimentos?",
+    text: "Os funcionários podem expressar suas opiniões e sentimentos?",
   },
 
   // ── 20. Inseguranca no Trabalho (3 items) — likert_extent_5 ──
   {
-    scaleName: "Inseguranca no Trabalho",
+    scaleName: "Insegurança no Trabalho",
     orderIndex: 49,
     isInverted: false,
     responseFormatCode: "likert_extent_5",
-    text: "Voce se preocupa em ficar desempregado(a)?",
+    text: "Você se preocupa em ficar desempregado(a)?",
   },
   {
-    scaleName: "Inseguranca no Trabalho",
+    scaleName: "Insegurança no Trabalho",
     orderIndex: 50,
     isInverted: false,
     responseFormatCode: "likert_extent_5",
-    text: "Voce se preocupa com ser transferido(a) para outro trabalho contra sua vontade?",
+    text: "Você se preocupa com ser transferido(a) para outro trabalho contra sua vontade?",
   },
   {
-    scaleName: "Inseguranca no Trabalho",
+    scaleName: "Insegurança no Trabalho",
     orderIndex: 51,
     isInverted: false,
     responseFormatCode: "likert_extent_5",
-    text: "Voce se preocupa com novas tecnologias tornarem voce dispensavel?",
+    text: "Você se preocupa com novas tecnologias tornarem você dispensável?",
   },
 
   // ── 21. Satisfacao no Trabalho (4 items) — copsoq3_satisfaction ──
   {
-    scaleName: "Satisfacao no Trabalho",
+    scaleName: "Satisfação no Trabalho",
     orderIndex: 52,
     isInverted: false,
     responseFormatCode: "copsoq3_satisfaction",
-    text: "Em relacao as suas condicoes de trabalho, quao satisfeito(a) esta?",
+    text: "Em relação às suas condições de trabalho, quão satisfeito(a) está?",
   },
   {
-    scaleName: "Satisfacao no Trabalho",
+    scaleName: "Satisfação no Trabalho",
     orderIndex: 53,
     isInverted: false,
     responseFormatCode: "copsoq3_satisfaction",
-    text: "Em relacao as suas perspectivas de trabalho, quao satisfeito(a) esta?",
+    text: "Em relação às suas perspectivas de trabalho, quão satisfeito(a) está?",
   },
   {
-    scaleName: "Satisfacao no Trabalho",
+    scaleName: "Satisfação no Trabalho",
     orderIndex: 54,
     isInverted: false,
     responseFormatCode: "copsoq3_satisfaction",
-    text: "Em relacao a forma como suas habilidades sao utilizadas, quao satisfeito(a) esta?",
+    text: "Em relação à forma como suas habilidades são utilizadas, quão satisfeito(a) está?",
   },
   {
-    scaleName: "Satisfacao no Trabalho",
+    scaleName: "Satisfação no Trabalho",
     orderIndex: 55,
     isInverted: false,
     responseFormatCode: "copsoq3_satisfaction",
-    text: "Em relacao ao seu trabalho de modo geral, quao satisfeito(a) esta?",
+    text: "Em relação ao seu trabalho de modo geral, quão satisfeito(a) está?",
   },
 
   // ── 22. Conflito Trabalho-Familia (2 items) — copsoq3_time_frequency ──
   {
-    scaleName: "Conflito Trabalho-Familia",
+    scaleName: "Conflito Trabalho-Família",
     orderIndex: 56,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
     text: "O seu trabalho ocupa tanta energia que isso tem um efeito negativo na sua vida privada?",
   },
   {
-    scaleName: "Conflito Trabalho-Familia",
+    scaleName: "Conflito Trabalho-Família",
     orderIndex: 57,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Voce sente que o trabalho ocupa tanto do seu tempo que isso tem um efeito negativo na sua vida privada?",
+    text: "Você sente que o trabalho ocupa tanto do seu tempo que isso tem um efeito negativo na sua vida privada?",
   },
 
   // ── 23. Burnout (4 items) — copsoq3_time_frequency ──
@@ -802,28 +802,28 @@ const ITEMS: ItemDef[] = [
     orderIndex: 58,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente esgotado(a)?",
+    text: "Com que frequência você se sente esgotado(a)?",
   },
   {
     scaleName: "Burnout",
     orderIndex: 59,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente fisicamente exausto(a)?",
+    text: "Com que frequência você se sente fisicamente exausto(a)?",
   },
   {
     scaleName: "Burnout",
     orderIndex: 60,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente emocionalmente exausto(a)?",
+    text: "Com que frequência você se sente emocionalmente exausto(a)?",
   },
   {
     scaleName: "Burnout",
     orderIndex: 61,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente cansado(a)?",
+    text: "Com que frequência você se sente cansado(a)?",
   },
 
   // ── 24. Estresse (4 items) — copsoq3_time_frequency ──
@@ -832,37 +832,37 @@ const ITEMS: ItemDef[] = [
     orderIndex: 62,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce tem dificuldade em relaxar?",
+    text: "Com que frequência você tem dificuldade em relaxar?",
   },
   {
     scaleName: "Estresse",
     orderIndex: 63,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce fica irritado(a)?",
+    text: "Com que frequência você fica irritado(a)?",
   },
   {
     scaleName: "Estresse",
     orderIndex: 64,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente tenso(a)?",
+    text: "Com que frequência você se sente tenso(a)?",
   },
   {
     scaleName: "Estresse",
     orderIndex: 65,
     isInverted: false,
     responseFormatCode: "copsoq3_time_frequency",
-    text: "Com que frequencia voce se sente estressado(a)?",
+    text: "Com que frequência você se sente estressado(a)?",
   },
 
   // ── 25. Saude Geral (1 item) — copsoq3_health ──
   {
-    scaleName: "Saude Geral",
+    scaleName: "Saúde Geral",
     orderIndex: 66,
     isInverted: false,
     responseFormatCode: "copsoq3_health",
-    text: "Em geral, como voce avalia a sua saude?",
+    text: "Em geral, como você avalia a sua saúde?",
   },
 
   // ── 26. Comportamentos Ofensivos (4 items) — likert_frequency_5 ──
@@ -871,28 +871,28 @@ const ITEMS: ItemDef[] = [
     orderIndex: 67,
     isInverted: false,
     responseFormatCode: "likert_frequency_5",
-    text: "Voce foi exposto(a) a bullying no local de trabalho nos ultimos 12 meses?",
+    text: "Você foi exposto(a) a bullying no local de trabalho nos últimos 12 meses?",
   },
   {
     scaleName: "Comportamentos Ofensivos",
     orderIndex: 68,
     isInverted: false,
     responseFormatCode: "likert_frequency_5",
-    text: "Voce foi exposto(a) a assedio sexual no trabalho nos ultimos 12 meses?",
+    text: "Você foi exposto(a) a assédio sexual no trabalho nos últimos 12 meses?",
   },
   {
     scaleName: "Comportamentos Ofensivos",
     orderIndex: 69,
     isInverted: false,
     responseFormatCode: "likert_frequency_5",
-    text: "Voce foi exposto(a) a ameacas de violencia no trabalho nos ultimos 12 meses?",
+    text: "Você foi exposto(a) a ameaças de violência no trabalho nos últimos 12 meses?",
   },
   {
     scaleName: "Comportamentos Ofensivos",
     orderIndex: 70,
     isInverted: false,
     responseFormatCode: "likert_frequency_5",
-    text: "Voce foi exposto(a) a violencia fisica no trabalho nos ultimos 12 meses?",
+    text: "Você foi exposto(a) a violência física no trabalho nos últimos 12 meses?",
   },
 ];
 
@@ -911,11 +911,11 @@ async function seed() {
     .upsert(
       {
         code: "copsoq_iii",
-        name: "COPSOQ III — Versao Media",
+        name: "COPSOQ III — Versão Média",
         description:
-          "Copenhagen Psychosocial Questionnaire, 3a edicao (Burr et al., 2019). " +
-          "Versao Media com 70 itens em 26 escalas. Avalia fatores psicossociais no trabalho " +
-          "com escores de 0-100. Escala Work Engagement (UWES) excluida por exigir licenca comercial.",
+          "Copenhagen Psychosocial Questionnaire, 3ª edição (Burr et al., 2019). " +
+          "Versão Média com 70 itens em 26 escalas. Avalia fatores psicossociais no trabalho " +
+          "com escores de 0-100. Escala Work Engagement (UWES) excluída por exigir licença comercial.",
         version_label: "Middle",
         source:
           "Burr H, Berthelsen H, Moncada S, et al. (2019). Safety and Health at Work, 10(4), 482-503.",
@@ -1122,7 +1122,7 @@ async function seed() {
 
   console.log(`${ITEMS.length} items inserted\n`);
   console.log("=== COPSOQ III (Middle) SEED SUMMARY ===");
-  console.log(`Instrumento: COPSOQ III — Versao Media`);
+  console.log(`Instrumento: COPSOQ III — Versão Média`);
   console.log(`Total escalas:   ${SCALES.length}`);
   console.log(`Total itens:     ${ITEMS.length}`);
   console.log(`Itens invertidos: ${invertedCount} (${invertedItems})`);

@@ -12,7 +12,7 @@
  * The convergent validity of two burnout instruments: A multi-trait
  * multi-method analysis. European Journal of Psychological Assessment, 19(1).
  *
- * PT-BR translation — 16 items, 2 subscales (Exaustao, Desengajamento).
+ * PT-BR translation — 16 items, 2 subscales (Exaustão, Desengajamento).
  * 4-point Likert agreement scale (response_format: likert_agree_4).
  */
 
@@ -58,7 +58,7 @@ interface ItemDef {
 
 const SCALES: ScaleDef[] = [
   {
-    name: "Exaustao",
+    name: "Exaustão",
     category: "Burnout",
     description:
       "Consequencias da tensao fisica, afetiva e cognitiva prolongada no trabalho, " +
@@ -100,10 +100,10 @@ const ITEMS: ItemDef[] = [
   },
   // Item 2 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 2,
     isInverted: false,
-    text: "Ha dias em que me sinto cansado(a) antes mesmo de chegar ao trabalho.",
+    text: "Há dias em que me sinto cansado(a) antes mesmo de chegar ao trabalho.",
   },
   // Item 3 — Disengagement
   {
@@ -114,7 +114,7 @@ const ITEMS: ItemDef[] = [
   },
   // Item 4 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 4,
     isInverted: false,
     text: "Depois do trabalho, preciso de mais tempo para relaxar e me sentir melhor.",
@@ -128,10 +128,10 @@ const ITEMS: ItemDef[] = [
   },
   // Item 6 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 6,
     isInverted: false,
-    text: "Ultimamente, tendo a pensar menos durante o trabalho e faze-lo quase mecanicamente.",
+    text: "Ultimamente, tendo a pensar menos durante o trabalho e fazê-lo quase mecanicamente.",
   },
   // Item 7 — Disengagement, Inverted
   {
@@ -142,7 +142,7 @@ const ITEMS: ItemDef[] = [
   },
   // Item 8 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 8,
     isInverted: false,
     text: "Durante o trabalho, frequentemente me sinto emocionalmente esgotado(a).",
@@ -156,7 +156,7 @@ const ITEMS: ItemDef[] = [
   },
   // Item 10 — Exhaustion, Inverted
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 10,
     isInverted: true,
     text: "Depois do trabalho, geralmente me sinto bem e com energia.",
@@ -166,18 +166,18 @@ const ITEMS: ItemDef[] = [
     scaleName: "Desengajamento",
     orderIndex: 11,
     isInverted: false,
-    text: "As vezes me sinto enjoado(a) com as tarefas do meu trabalho.",
+    text: "Às vezes me sinto enjoado(a) com as tarefas do meu trabalho.",
   },
   // Item 12 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 12,
     isInverted: false,
     text: "Depois do trabalho, costumo me sentir cansado(a) e sem energia.",
   },
   // Item 13 — Exhaustion, Inverted
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 13,
     isInverted: true,
     text: "Geralmente, consigo administrar bem a quantidade de trabalho.",
@@ -187,18 +187,18 @@ const ITEMS: ItemDef[] = [
     scaleName: "Desengajamento",
     orderIndex: 14,
     isInverted: true,
-    text: "Este e o unico tipo de trabalho que me imagino fazendo.",
+    text: "Este é o único tipo de trabalho que me imagino fazendo.",
   },
   // Item 15 — Disengagement, Inverted
   {
     scaleName: "Desengajamento",
     orderIndex: 15,
     isInverted: true,
-    text: "Sinto que o meu trabalho e cada vez mais uma experiencia positiva.",
+    text: "Sinto que o meu trabalho é cada vez mais uma experiência positiva.",
   },
   // Item 16 — Exhaustion
   {
-    scaleName: "Exaustao",
+    scaleName: "Exaustão",
     orderIndex: 16,
     isInverted: false,
     text: "Durante o trabalho, frequentemente me sinto fisicamente exausto(a).",
@@ -220,9 +220,9 @@ async function seed() {
         code: "olbi",
         name: "OLBI — Oldenburg Burnout Inventory",
         description:
-          "Inventario de Burnout de Oldenburg (Demerouti et al., 2003). " +
-          "Avalia duas dimensoes centrais do burnout: exaustao e desengajamento. " +
-          "16 itens com escala Likert de 4 pontos (concordancia).",
+          "Inventário de Burnout de Oldenburg (Demerouti et al., 2003). " +
+          "Avalia duas dimensões centrais do burnout: exaustão e desengajamento. " +
+          "16 itens com escala Likert de 4 pontos (concordância).",
         total_questions: 16,
         estimated_minutes: 5,
         is_active: true,
@@ -354,14 +354,14 @@ async function seed() {
   }
 
   // ── 7. Summary ────────────────────────────────────────────────────────────
-  const exhaustionItems = ITEMS.filter((i) => i.scaleName === "Exaustao");
+  const exhaustionItems = ITEMS.filter((i) => i.scaleName === "Exaustão");
   const disengagementItems = ITEMS.filter((i) => i.scaleName === "Desengajamento");
   const invertedItems = ITEMS.filter((i) => i.isInverted);
 
   console.log(`${ITEMS.length} items inserted\n`);
   console.log("=== OLBI SEED SUMMARY ===");
   console.log(`Total items:          ${ITEMS.length}`);
-  console.log(`Exaustao items:       ${exhaustionItems.length} (${exhaustionItems.map((i) => i.orderIndex).join(", ")})`);
+  console.log(`Exaustão items:       ${exhaustionItems.length} (${exhaustionItems.map((i) => i.orderIndex).join(", ")})`);
   console.log(`Desengajamento items: ${disengagementItems.length} (${disengagementItems.map((i) => i.orderIndex).join(", ")})`);
   console.log(`Inverted items:       ${invertedItems.length} (${invertedItems.map((i) => i.orderIndex).join(", ")})`);
   console.log(`Response format:      likert_agree_4`);
