@@ -71,9 +71,10 @@ export function PlanChatBody({ planId }: { planId: string }) {
     const currentAttachments = [...attachments];
     setAttachments([]); // clear attachments early for UX
 
-    startTransition(() => {
+    // Async: a transição (isPending) dura até a resposta terminar de chegar.
+    startTransition(async () => {
       let assistantText = "";
-      sendChatStream(
+      await sendChatStream(
         { kind: "plan", resource_id: planId, content, attachments: currentAttachments },
         {
           onDelta: (chunk) => {
@@ -250,6 +251,17 @@ export function PlanChatBody({ planId }: { planId: string }) {
               </div>
             </div>
           ))}
+          {isPending && messages[messages.length - 1]?.role === "user" && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl bg-muted px-3 py-2 text-sm">
+                <span className="inline-flex gap-1 text-muted-foreground">
+                  <span className="animate-bounce">·</span>
+                  <span className="animate-bounce [animation-delay:0.15s]">·</span>
+                  <span className="animate-bounce [animation-delay:0.3s]">·</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -312,7 +324,7 @@ export function PlanChatBody({ planId }: { planId: string }) {
         </div>
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ModelSelectorModal companyId={undefined} />
+            <ModelSelectorModal />
             <Button variant="outline" size="sm" className="h-8 px-2 text-muted-foreground" onClick={() => fileInputRef.current?.click()} title="Anexar Imagem">
               <Paperclip className="w-4 h-4" />
             </Button>

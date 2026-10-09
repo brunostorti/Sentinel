@@ -296,11 +296,12 @@ export default function NovaDenunciaPage() {
                 id="files"
                 type="file"
                 multiple
+                accept="application/pdf,image/jpeg,image/png"
                 className="cursor-pointer rounded-lg"
                 onChange={(e) => setFiles(Array.from(e.target.files || []))}
               />
               <p className="text-[10px] text-muted-foreground">
-                Formatos aceitos: Imagens, PDF, Documentos. Máx 5MB por arquivo.
+                Formatos aceitos: PDF, JPG ou PNG. Até 5 arquivos, máx. 10 MB cada.
               </p>
             </div>
 

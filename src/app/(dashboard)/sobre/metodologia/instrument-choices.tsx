@@ -24,7 +24,7 @@ const INSTRUMENTS_CARDS = [
     icon: "assignment",
     color: "bg-blue-100 text-blue-600",
     desc: "Copenhagen Psychosocial Questionnaire II. Validação portuguesa (N=4.162 trabalhadores). Avalia fatores psicossociais no trabalho em 35 dimensões.",
-    objetivo: "Médias e grandes corporações que buscam conformidade robusta com regulação de saúde mental (Lei 14.831) e avaliação profunda.",
+    objetivo: "Médias e grandes empresas que querem uma avaliação aprofundada para a gestão de riscos da NR-1 (e, se desejarem, para buscar o certificado voluntário da Lei 14.831).",
     metricas: [
       "Exigências quantitativas, cognitivas e emocionais",
       "Qualidade de liderança e apoio social",

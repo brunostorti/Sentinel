@@ -1,7 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
 
 async function enrollParticipants(supabase: any, surveyId: string, targetDeptIds: string[] | null, companyId: string) {
@@ -418,15 +419,25 @@ export async function closeSurvey(surveyId: string) {
 
   if (error) return { error: "Erro ao encerrar pesquisa." };
 
-  // Trigger AI action plan generation in background
-  triggerActionPlanGeneration(surveyId, survey.company_id).catch(
-    (err) => console.error("AI plan generation failed:", err)
+  // Gera os planos depois de responder ao usuário. Com after(), a plataforma mantém a
+  // função viva até o fim (sem ele, a Vercel pode congelar a geração no meio).
+  const companyId = survey.company_id;
+  after(() =>
+    triggerActionPlanGeneration(surveyId, companyId).catch((err) =>
+      console.error("AI plan generation failed:", err)
+    )
   );
 
   return { success: true };
 }
 
-export async function sendReminders(surveyId: string) {
+/**
+ * Monta a mensagem de convite/lembrete para o RH enviar pelo canal da empresa
+ * (e-mail, Teams, WhatsApp). O Sentinel ainda não envia e-mails: o link de acesso
+ * individual é pedido pelo próprio colaborador em /entrar, no aparelho dele —
+ * um link gerado aqui não funcionaria no navegador do colaborador.
+ */
+export async function getReminderMessage(surveyId: string) {
   const supabase = await createClient();
 
   const { data: authData } = await supabase.auth.getUser();
@@ -442,10 +453,9 @@ export async function sendReminders(surveyId: string) {
     return { error: "Sem permissão." };
   }
 
-  // Verify survey is ACTIVE and belongs to company
   const { data: survey } = await supabase
     .from("surveys")
-    .select("id, company_id, status, title")
+    .select("id, company_id, status, title, expires_at")
     .eq("id", surveyId)
     .single();
 
@@ -457,44 +467,30 @@ export async function sendReminders(surveyId: string) {
     return { error: "Apenas pesquisas ativas podem receber lembretes." };
   }
 
-  // Fetch non-respondents (has_accessed = false)
-  const { data: nonRespondents } = await supabase
+  const { count: pending } = await supabase
     .from("survey_participants")
-    .select("email")
+    .select("*", { count: "exact", head: true })
     .eq("survey_id", surveyId)
     .eq("has_accessed", false);
 
-  if (!nonRespondents || nonRespondents.length === 0) {
+  if (!pending) {
     return { error: "Todos os colaboradores já responderam." };
   }
 
-  // Send magic link to each non-respondent via admin client
-  const adminClient = createAdminClient();
-  let sentCount = 0;
-  const errors: string[] = [];
+  const headersList = await headers();
+  const origin = headersList.get("x-forwarded-host")
+    ? `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("x-forwarded-host")}`
+    : headersList.get("origin") ?? "http://localhost:3000";
+  const deadline = survey.expires_at
+    ? ` até ${new Date(survey.expires_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+    : "";
 
-  for (const participant of nonRespondents) {
-    const { error } = await adminClient.auth.admin.generateLink({
-      type: "magiclink",
-      email: participant.email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_APP_URL : "http://localhost:3000"}/pesquisas`,
-      },
-    });
+  const message = [
+    `Olá! A pesquisa "${survey.title}" sobre as condições de trabalho está aberta${deadline}.`,
+    `Para responder, acesse ${origin}/entrar e informe o seu e-mail corporativo: você receberá um link de acesso.`,
+    "As respostas são anônimas: não ficam ligadas ao seu nome, e os resultados só aparecem em grupos de pelo menos 5 pessoas.",
+    "Se você já respondeu, desconsidere esta mensagem. Obrigado pela participação!",
+  ].join("\n\n");
 
-    if (error) {
-      errors.push(participant.email);
-    } else {
-      sentCount++;
-    }
-  }
-
-  if (sentCount === 0) {
-    return { error: "Não foi possível enviar os lembretes." };
-  }
-
-  return {
-    success: true,
-    message: `${sentCount} lembrete(s) enviado(s) com sucesso.${errors.length > 0 ? ` ${errors.length} falha(s).` : ""}`,
-  };
+  return { success: true, message, pending };
 }

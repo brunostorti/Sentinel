@@ -83,7 +83,7 @@ export default async function MetodologiaPage(props: { searchParams?: Promise<{ 
           Esta plataforma usa inteligência artificial assistida para gerar planos
           de ação a partir de pesquisas psicossociais. Todas as recomendações são
           embasadas em literatura científica indexada, diretrizes internacionais
-          (OMS/OIT) e regulação brasileira (NR-1, Lei 14.831/2024). Esta página
+          (OMS/OIT) e regulação brasileira (NR-1 e o certificado voluntário da Lei 14.831/2024). Esta página
           documenta integralmente as fontes.
         </p>
       </div>

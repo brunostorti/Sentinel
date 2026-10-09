@@ -18,14 +18,8 @@ export function PlanOverview({
     r.investment?.total_annual && r.investment.total_annual !== "N/D"
       ? r.investment.total_annual
       : null;
-  const payback =
-    r.expected_return?.payback_period && r.expected_return.payback_period !== "N/D"
-      ? r.expected_return.payback_period
-      : null;
-
   const kpis = [
-    investment && { icon: "payments", color: "text-blue-500", label: investment },
-    payback && { icon: "timer", color: "text-emerald-500", label: payback },
+    investment && { icon: "payments", color: "text-blue-500", label: `${investment} (estimativa)` },
     timeframe && { icon: "schedule", color: "text-violet-500", label: timeframe },
   ].filter(Boolean) as { icon: string; color: string; label: string }[];
 

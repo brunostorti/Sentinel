@@ -29,8 +29,6 @@ interface Question {
 interface SurveyFormProps {
   surveyId: string;
   surveyTitle: string;
-  participantId: string;
-  departmentId: string;
   questions: Question[];
 }
 
@@ -59,8 +57,6 @@ const LIGHT_TO_LABEL: Record<TrafficLight, DimensionScore["riskLevel"]> = {
 export default function SurveyForm({
   surveyId,
   surveyTitle,
-  participantId,
-  departmentId,
   questions,
 }: SurveyFormProps) {
   const router = useRouter();
@@ -115,8 +111,6 @@ export default function SurveyForm({
 
     const result = await submitSurveyResponse({
       surveyId,
-      participantId,
-      departmentId,
       answers: Object.entries(answers).map(([questionId, score]) => ({
         questionId,
         score,
@@ -278,7 +272,7 @@ export default function SurveyForm({
       <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-3">
         <Icon name="lock" size={16} className="text-primary shrink-0" />
         <p className="text-xs text-muted-foreground">
-          Suas respostas são completamente anônimas e não podem ser rastreadas.
+          Suas respostas são anônimas: não ficam ligadas ao seu nome, e os resultados só aparecem em grupos de pelo menos 5 pessoas.
         </p>
       </div>
     </div>

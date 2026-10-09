@@ -1,9 +1,13 @@
 /**
- * Fornecedores brasileiros verificados.
+ * Fornecedores brasileiros por intervenção.
  *
  * Cada fornecedor está vinculado a uma ou mais `intervention_id` do catálogo.
- * Preços baseados em pesquisa pública 2025 (sites/landing pages dos fornecedores).
  * O Consultant usa essa lista para preencher `vendors[]` na recommendation final.
+ *
+ * Auditoria de 07/10/2026: links conferidos (HTTP 200). Nenhum fornecedor publica
+ * preço no site, então NÃO guardamos faixa de preço — o plano exibe "Sob consulta".
+ * Descrições são neutras (o que o serviço é), sem alegações de mercado não verificáveis.
+ * Listar um fornecedor não é endosso: é ponto de partida para o RH cotar.
  */
 
 export interface Provider {
@@ -13,9 +17,6 @@ export interface Provider {
   /** Em quais interventions essa empresa atua */
   applicable_to_intervention_ids: string[];
   modality: string; // ex: "teleterapia B2B", "plataforma SaaS"
-  price_range: string; // ex: "R$35-60/colab/mês"
-  price_per_employee_month_min: number;
-  price_per_employee_month_max: number;
   contact_url: string;
   description: string;
   regions_attended: "nacional" | string[]; // UFs ou "nacional"
@@ -29,66 +30,46 @@ export const PROVIDERS_BR: Provider[] = [
     name: "Zenklub",
     applicable_to_intervention_ids: ["burnout.teleterapia-b2b"],
     modality: "Teleterapia B2B (sessões online com psicólogos)",
-    price_range: "R$35-60/colab/mês",
-    price_per_employee_month_min: 35,
-    price_per_employee_month_max: 60,
     contact_url: "https://www.zenklub.com.br/empresas",
-    description:
-      "Maior plataforma de teleterapia B2B do Brasil. >5.000 psicólogos. Pacotes com sessões/colaborador/mês.",
+    description: "Plataforma de saúde mental para empresas, com atendimento psicológico online.",
     regions_attended: "nacional",
   },
   {
     provider_id: "vittude",
     name: "Vittude",
     applicable_to_intervention_ids: ["burnout.teleterapia-b2b"],
-    modality: "Teleterapia B2B + workshops de bem-estar",
-    price_range: "R$40-70/colab/mês",
-    price_per_employee_month_min: 40,
-    price_per_employee_month_max: 70,
+    modality: "Teleterapia B2B + ações de bem-estar",
     contact_url: "https://www.vittude.com.br/empresas",
-    description:
-      "Plataforma de saúde mental corporativa com terapia individual, workshops e dashboards de uso.",
+    description: "Plataforma de saúde mental corporativa com terapia online para colaboradores.",
     regions_attended: "nacional",
   },
   {
     provider_id: "psicologia-viva",
     name: "Psicologia Viva",
     applicable_to_intervention_ids: ["burnout.teleterapia-b2b"],
-    modality: "Teleterapia + plantão psicológico 24h",
-    price_range: "R$30-55/colab/mês",
-    price_per_employee_month_min: 30,
-    price_per_employee_month_max: 55,
-    contact_url: "https://www.psicologiaviva.com.br/empresas",
-    description:
-      "Plataforma com plantão emergencial 24/7 + sessões agendadas. Boa para indústria.",
+    modality: "Teleterapia (consultas online com psicólogos)",
+    contact_url: "https://www.psicologiaviva.com.br/",
+    description: "Plataforma de consultas online com psicólogos.",
     regions_attended: "nacional",
   },
 
-  /* ─── Bem-estar / Fitness ─── */
+  /* ─── Bem-estar / Atividade física ─── */
   {
     provider_id: "wellhub",
     name: "Wellhub (ex-Gympass)",
     applicable_to_intervention_ids: ["burnout.workplace-fitness-program"],
-    modality: "Acesso a academias, apps de meditação, nutricionistas",
-    price_range: "R$80-150/colab/mês",
-    price_per_employee_month_min: 80,
-    price_per_employee_month_max: 150,
-    contact_url: "https://wellhub.com/pt-br/empresas/",
-    description:
-      "Plataforma de bem-estar com rede de >50.000 academias no Brasil + apps integrados (Calm, Strava, Wysa).",
+    modality: "Benefício corporativo de bem-estar (academias e apps)",
+    contact_url: "https://wellhub.com/pt-br/",
+    description: "Assinatura corporativa de bem-estar: atividade física, mindfulness, nutrição e sono.",
     regions_attended: "nacional",
   },
   {
     provider_id: "totalpass",
     name: "TotalPass",
     applicable_to_intervention_ids: ["burnout.workplace-fitness-program"],
-    modality: "Academias + saúde mental + nutrição",
-    price_range: "R$60-120/colab/mês",
-    price_per_employee_month_min: 60,
-    price_per_employee_month_max: 120,
+    modality: "Benefício corporativo de academias e bem-estar",
     contact_url: "https://www.totalpass.com/empresas",
-    description:
-      "Alternativa nacional ao Wellhub com pacotes flexíveis e foco em interior do Brasil.",
+    description: "Benefício corporativo de acesso a academias e serviços de bem-estar.",
     regions_attended: "nacional",
   },
 
@@ -100,13 +81,9 @@ export const PROVIDERS_BR: Provider[] = [
       "offensive.anti-harassment-channel",
       "leadership.feedback-channel",
     ],
-    modality: "Canal de denúncia com investigação",
-    price_range: "R$5-15/colab/mês",
-    price_per_employee_month_min: 5,
-    price_per_employee_month_max: 15,
+    modality: "Canal de denúncias para RH e compliance",
     contact_url: "https://www.safespace.com.br/",
-    description:
-      "Canal de denúncia anônimo + módulo de investigação para RH. Líder em compliance no Brasil.",
+    description: "Canal de denúncias para RH e compliance, com recebimento anônimo de relatos.",
     regions_attended: "nacional",
   },
   {
@@ -116,28 +93,20 @@ export const PROVIDERS_BR: Provider[] = [
       "offensive.anti-harassment-channel",
       "leadership.feedback-channel",
     ],
-    modality: "Canal de denúncia + ouvidoria terceirizada",
-    price_range: "R$3-10/colab/mês",
-    price_per_employee_month_min: 3,
-    price_per_employee_month_max: 10,
+    modality: "Canal de denúncias terceirizado",
     contact_url: "https://www.contatoseguro.com.br/",
-    description:
-      "Ouvidoria terceirizada com triagem por equipe própria. Modelo SaaS + serviço.",
+    description: "Canal de denúncias terceirizado para empresas.",
     regions_attended: "nacional",
   },
 
   /* ─── Pesquisa de clima / Engajamento ─── */
   {
     provider_id: "pulses",
-    name: "Pulses by Gupy",
+    name: "Pulses (Gupy)",
     applicable_to_intervention_ids: ["meaning.pulse-surveys"],
-    modality: "Pulse surveys + analytics de clima",
-    price_range: "R$8-20/colab/mês",
-    price_per_employee_month_min: 8,
-    price_per_employee_month_max: 20,
+    modality: "Plataforma de clima e engajamento",
     contact_url: "https://www.pulses.com.br/",
-    description:
-      "Plataforma brasileira de pulse surveys com gamificação e benchmarks setoriais.",
+    description: "Plataforma de pesquisas de clima e engajamento (pulse surveys).",
     regions_attended: "nacional",
   },
   {
@@ -147,32 +116,24 @@ export const PROVIDERS_BR: Provider[] = [
       "meaning.pulse-surveys",
       "leadership.feedback-channel",
     ],
-    modality: "Engajamento, eNPS, clima e cultura",
-    price_range: "R$10-25/colab/mês",
-    price_per_employee_month_min: 10,
-    price_per_employee_month_max: 25,
+    modality: "Plataforma de experiência do colaborador",
     contact_url: "https://www.pinpeople.com.br/",
-    description:
-      "Plataforma de people analytics com dashboards executivos e diagnóstico cultural.",
+    description: "Plataforma de pesquisas e análise da experiência do colaborador.",
     regions_attended: "nacional",
   },
 
   /* ─── Feedback / Engajamento estruturado ─── */
   {
     provider_id: "feedz",
-    name: "Feedz",
+    name: "Feedz (TOTVS)",
     applicable_to_intervention_ids: [
       "communication.bidirectional-feedback",
-      "recognition.peer-recognition-platform",
+      "social.peer-recognition-platform",
       "leadership.weekly-1on1",
     ],
-    modality: "Plataforma de feedback contínuo + 1:1 + reconhecimento",
-    price_range: "R$15-30/colab/mês",
-    price_per_employee_month_min: 15,
-    price_per_employee_month_max: 30,
+    modality: "Plataforma de feedback, 1:1, clima e reconhecimento",
     contact_url: "https://www.feedz.com.br/",
-    description:
-      "Feedback contínuo, 1:1 estruturado, OKR e reconhecimento. Brasileira, integra com Slack/Teams.",
+    description: "Sistema de gestão de desempenho e engajamento de colaboradores.",
     regions_attended: "nacional",
   },
   {
@@ -182,13 +143,9 @@ export const PROVIDERS_BR: Provider[] = [
       "communication.bidirectional-feedback",
       "recognition.formal-program",
     ],
-    modality: "Performance, OKRs, 1:1 e reconhecimento",
-    price_range: "R$20-40/colab/mês",
-    price_per_employee_month_min: 20,
-    price_per_employee_month_max: 40,
+    modality: "Plataforma de desempenho, OKRs, 1:1 e reconhecimento",
     contact_url: "https://qulture.rocks/",
-    description:
-      "Plataforma robusta de performance + cultura. Mais cara, foca empresas médias/grandes.",
+    description: "Plataforma de gestão de desempenho e aprendizagem.",
     regions_attended: "nacional",
   },
 ];
@@ -199,15 +156,5 @@ export function getProvidersForIntervention(
 ): Provider[] {
   return PROVIDERS_BR.filter((p) =>
     p.applicable_to_intervention_ids.includes(interventionId)
-  );
-}
-
-/** Filtra providers por orçamento/colab/mês máximo */
-export function getAffordableProviders(
-  interventionId: string,
-  maxPerEmployeeMonth: number
-): Provider[] {
-  return getProvidersForIntervention(interventionId).filter(
-    (p) => p.price_per_employee_month_min <= maxPerEmployeeMonth
   );
 }

@@ -15,8 +15,8 @@ interface CertData {
 
 const TIER_LABEL: Record<1 | 2 | 3, string> = {
   1: "Nível 1 — Avaliação Realizada",
-  2: "Nível 2 — Plano de Ação Implementado",
-  3: "Nível 3 — Ciclo de Melhoria Comprovado",
+  2: "Nível 2 — Plano de Ação Aprovado",
+  3: "Nível 3 — Ciclo de Reavaliação Concluído",
 };
 
 export default function ValidacaoPage() {
@@ -95,8 +95,10 @@ export default function ValidacaoPage() {
               {isValid ? "Certificado Autêntico e Válido" : "Certificado Expirado"}
             </h1>
             <p className="text-zinc-400 text-sm mt-2">
-              Declaração emitida via Sentinel com base em evidências registradas na
-              plataforma, referente à NR-1 e à Lei 14.831/2024.
+              Declaração emitida pelo Sentinel com base em evidências registradas na
+              plataforma sobre a gestão de riscos psicossociais (NR-1). Não substitui
+              o Certificado Empresa Promotora da Saúde Mental (Lei 14.831/2024),
+              concedido pelo governo federal.
             </p>
           </div>
         </div>

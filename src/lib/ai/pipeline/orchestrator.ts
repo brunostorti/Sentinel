@@ -13,6 +13,7 @@ import {
   fetchHistoricalTrends,
 } from "@/lib/copsoq/dashboard";
 
+import { toFavorability } from "@/lib/copsoq/scoring";
 import { runAnalyst } from "./analyst";
 import { runCurator } from "./curator";
 import { runConsultant } from "./consultant";
@@ -20,6 +21,13 @@ import { buildGroundedFacts, timeframeLabel, type GroundedFacts } from "./ground
 import { computeOutcomes } from "../learning/outcomes";
 import { CATALOG, getInterventionById } from "../knowledge-base/catalog";
 import { filterAndAnnotate, filterByCategories } from "../knowledge-base/filters";
+import {
+  describeAiError,
+  missingPlanKeyMessage,
+  resolveAiConfig,
+  type CompanyAiSettings,
+  type ResolvedAiConfig,
+} from "../provider-factory";
 import type {
   PipelineContext,
   DepartmentBreakdown,
@@ -48,6 +56,18 @@ export async function runPipeline(
   const admin = createAdminClient();
   const run_id = crypto.randomUUID();
 
+  // ─── 0. A pesquisa precisa pertencer à empresa de quem pediu ──────
+  // O pipeline usa o client admin (ignora RLS); sem esta checagem, um usuário
+  // poderia gerar planos com dados e chaves de IA de outra empresa.
+  const { data: owner } = await admin
+    .from("surveys")
+    .select("company_id")
+    .eq("id", surveyId)
+    .maybeSingle();
+  if (!owner || owner.company_id !== companyId) {
+    return { status: "failed", error: "Pesquisa não encontrada para esta empresa." };
+  }
+
   // ─── 1. Idempotência: tenta capturar o "running" lock ─────────────
   const { data: lockResult, error: lockErr } = await admin
     .from("surveys")
@@ -69,6 +89,7 @@ export async function runPipeline(
     return { status: "skipped" };
   }
 
+  let aiConfig: ResolvedAiConfig | undefined;
   try {
     // ─── 1.5. Loop de aprendizado: fecha outcomes pendentes ANTES de gerar novos ──
     try {
@@ -83,23 +104,26 @@ export async function runPipeline(
     const { data: surveyRow } = await admin
       .from("surveys")
       .select(
-        "title, version, companies(name, industry, employee_count, work_regime, ai_model, ai_api_keys)"
+        "title, version, companies(name, industry, employee_count, work_regime, ai_plan_model, ai_chat_model, ai_api_keys)"
       )
       .eq("id", surveyId)
       .single();
 
     if (!surveyRow) throw new Error("Survey não encontrada");
 
-    const company = (surveyRow.companies as unknown) as {
+    const company = (surveyRow.companies as unknown) as ({
       name: string;
       industry: string | null;
       employee_count: number | null;
       work_regime: string | null;
-      ai_model: string | null;
-      ai_api_keys: any | null;
-    } | null;
+    } & CompanyAiSettings) | null;
 
     if (!company) throw new Error("Company não encontrada");
+
+    // Planos só com provedor externo: sem a chave, nem começamos.
+    aiConfig = resolveAiConfig(company, "plan");
+    const missingKey = missingPlanKeyMessage(aiConfig);
+    if (missingKey) throw new Error(missingKey);
 
     const { scores } = await fetchSurveyDimensionScores(admin, surveyId);
     if (scores.length === 0) {
@@ -153,7 +177,9 @@ export async function runPipeline(
           });
           const previous = sorted[sorted.length - 2].displayScore;
           const current = sorted[sorted.length - 1].displayScore;
-          const diff = current - previous;
+          // Pela favorabilidade: burnout SUBINDO é piora (antes aparecia como melhora)
+          const diff =
+            toFavorability(current, d.scoringDirection) - toFavorability(previous, d.scoringDirection);
           return {
             name: d.name,
             currentScore: current,
@@ -215,14 +241,12 @@ export async function runPipeline(
       totalParticipants: totalParticipants ?? 0,
       departmentBreakdowns: deptBreakdowns,
       trends,
-      aiConfig: {
-        model: company.ai_model || "claude-3-5-sonnet-20240620",
-        keys: company.ai_api_keys || {},
-      },
+      aiConfig,
     };
 
     // ─── 4. Stage 1 — Analyst ─────────────────────────────────────────
     onProgress?.(2, "Analisando dimensões em risco");
+    console.log(`[pipeline ${run_id}] Modelo: ${context.aiConfig.model}`);
     console.log(`[pipeline ${run_id}] Stage 1 (Analyst) iniciando — ${scores.length} dimensões, ${scores.filter(s => s.trafficLight === "RED" || s.trafficLight === "YELLOW").length} em risco`);
     const report = await runAnalyst(context, company, profile);
     console.log(`[pipeline ${run_id}] Stage 1 OK — ${report.prioritized_dimensions.length} dimensões priorizadas: ${report.prioritized_dimensions.map(d => d.dimension_name).join(", ")}`);
@@ -432,6 +456,11 @@ export async function runPipeline(
         groundingByIntervention.get(item.intervention_id);
       const intervention = getInterventionById(item.intervention_id);
 
+      item.recommendation.generated_by = {
+        model: context.aiConfig.model,
+        generated_at: new Date().toISOString(),
+      };
+
       if (facts) {
         item.recommendation.facts = facts;
         if (facts.financials) {
@@ -440,24 +469,6 @@ export async function runPipeline(
             per_employee_month: facts.financials.investmentPerEmployeeMonth.value,
             breakdown: facts.financials.investment.formula ?? "",
           };
-          item.recommendation.expected_return = {
-            conservative: facts.financials.expectedReturnConservative?.value ?? "N/D",
-            optimistic: facts.financials.expectedReturnOptimistic?.value ?? "N/D",
-            payback_period: facts.financials.paybackPeriod,
-          };
-          // year=0 é falsy → a UI omite o ano (catálogo não traz ano por métrica).
-          item.recommendation.impact_metrics = facts.financials.expectedImpacts.map(
-            (e) => ({
-              metric: e.metric,
-              change: e.change,
-              evidence: {
-                study_or_case: e.source,
-                year: 0,
-                url_or_doi: null,
-                br_context: null,
-              },
-            })
-          );
         }
       }
 
@@ -562,7 +573,8 @@ export async function runPipeline(
       outcomes_created: outcomesToInsert.length,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    console.error("[pipeline] falha:", err);
+    const message = describeAiError(err, aiConfig);
     await admin
       .from("surveys")
       .update({

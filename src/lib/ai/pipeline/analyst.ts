@@ -7,11 +7,12 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor } from "../provider-factory";
 import type { AnalystReport, PipelineContext } from "./types";
 import type { CompanyProfile } from "../profile/schema";
 import { buildPerfilCompacto } from "../profile/narrative";
-import { extractJsonObject } from "./json-utils";
+import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
+import { toFavorability } from "@/lib/copsoq/scoring";
 
 interface CompanyInfo {
   name: string;
@@ -20,9 +21,10 @@ interface CompanyInfo {
   work_regime: string | null;
 }
 
-function severityLabel(score: number): string {
-  if (score < 20) return "CRÍTICO";
-  if (score < 33) return "GRAVE";
+/** Gravidade pela favorabilidade (0-100, alto = bom): vale para "alto = risco" e "alto = bom". */
+function severityLabel(favorability: number): string {
+  if (favorability < 20) return "CRÍTICO";
+  if (favorability < 33) return "GRAVE";
   return "ATENÇÃO";
 }
 
@@ -36,7 +38,7 @@ function buildDimensionsBlock(context: PipelineContext): string {
     (d) =>
       `- dimension_id="${d.dimensionId}" | nome="${d.name}" | categoria=${d.universalCategory ?? d.category} | score=${d.displayScore}/100 | ${
         d.trafficLight === "RED" ? "RISCO" : "INTERMÉDIO"
-      } | ${severityLabel(d.displayScore)} | direction=${d.scoringDirection}`
+      } | ${severityLabel(toFavorability(d.meanScore, d.scoringDirection))} | direction=${d.scoringDirection}`
   );
   return `## Dimensões em Risco
 USE EXATAMENTE o dimension_id (uuid) listado para cada dimensão no seu output. NÃO invente IDs.
@@ -150,15 +152,17 @@ Hipóteses do que está CAUSANDO (não sintoma). Ex: "estrutura organizacional s
 
 Devolva APENAS o JSON.`;
 
-  const model = createModel(context.aiConfig.model, context.aiConfig.keys);
+  const model = createModel(context.aiConfig);
   
-  const { text } = await generateText({
+  const { text, finishReason } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(context.aiConfig),
   });
 
   const report = extractJsonObject<AnalystReport>(text);
   if (!report) {
+    console.error(`[analyst] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 1 (Analyst): JSON inválido.");
   }
   return report;

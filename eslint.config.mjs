@@ -3,6 +3,8 @@ import coreWebVitals from "eslint-config-next/core-web-vitals";
 import typescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
+  // Cópias de trabalho de outras sessões do Claude Code (git worktrees).
+  { ignores: [".claude/**"] },
   ...nextConfig,
   ...coreWebVitals,
   ...typescript,

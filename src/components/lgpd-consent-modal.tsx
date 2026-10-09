@@ -108,7 +108,7 @@ export function LgpdConsentModal() {
           <p className="mt-2 text-muted-foreground">
             Tratamos seus dados com base em: <strong>seu consentimento</strong>{" "}
             (este formulário), <strong>cumprimento de obrigação legal</strong>{" "}
-            (NR-1 e Lei 14.831/2024) e{" "}
+            (gestão de riscos da NR-1) e{" "}
             <strong>legítimo interesse organizacional</strong> (dados agregados
             de saúde ocupacional).
           </p>
@@ -116,8 +116,10 @@ export function LgpdConsentModal() {
           <h3 className="mt-4 font-bold">Compartilhamento com terceiros</h3>
           <p className="mt-2 text-muted-foreground">
             Hospedagem em Supabase (PostgreSQL no Brasil, AES-256 em repouso) e
-            Vercel. Geração de IA via Anthropic Claude (sem envio de PII
-            direta). Todos com cláusulas de proteção de dados.
+            Vercel. Geração de planos e chat pelo provedor de IA escolhido pela
+            empresa (Anthropic, OpenAI, Google ou IA da Mauá) e busca em
+            documentos com embeddings da OpenAI. Não enviamos respostas
+            individuais da pesquisa. Todos com cláusulas de proteção de dados.
           </p>
 
           <p className="mt-5 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">

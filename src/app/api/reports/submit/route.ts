@@ -3,6 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
 
+const MAX_ATTACHMENTS = 5;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+/** Tipo MIME aceito → extensão gravada (os mesmos tipos do limite do bucket). */
+const ALLOWED_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+};
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
@@ -56,29 +65,48 @@ export async function POST(req: Request) {
     const randomPart = crypto.randomBytes(3).toString("hex").toUpperCase();
     const protocol = `PROT-2026-${randomPart}`;
 
-    // 2. Upload attachments if any
-    const attachments: string[] = [];
-    for (const file of files) {
-      if (file.size === 0) continue;
+    // 2. Upload attachments if any. O bucket é privado (migração 021): guardamos só o
+    // caminho do arquivo; a tela do RH gera links temporários assinados.
+    const realFiles = files.filter((f) => f.size > 0);
+    if (realFiles.length > MAX_ATTACHMENTS) {
+      return NextResponse.json(
+        { error: `Envie no máximo ${MAX_ATTACHMENTS} anexos.` },
+        { status: 400 }
+      );
+    }
+    for (const file of realFiles) {
+      if (!ALLOWED_TYPES[file.type]) {
+        return NextResponse.json(
+          { error: "Anexos aceitos: PDF, JPG ou PNG." },
+          { status: 400 }
+        );
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        return NextResponse.json(
+          { error: "Cada anexo pode ter no máximo 10 MB." },
+          { status: 400 }
+        );
+      }
+    }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `${companyId}/${fileName}`;
+    const attachments: string[] = [];
+    for (const file of realFiles) {
+      // Extensão derivada do tipo validado, nunca do nome enviado pelo cliente.
+      const filePath = `${companyId}/${crypto.randomUUID()}.${ALLOWED_TYPES[file.type]}`;
 
       const { error: uploadError } = await admin.storage
         .from("reports")
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
-        continue;
+        return NextResponse.json(
+          { error: "Não foi possível enviar um dos anexos. Tente novamente." },
+          { status: 500 }
+        );
       }
 
-      const { data: { publicUrl } } = admin.storage
-        .from("reports")
-        .getPublicUrl(filePath);
-
-      attachments.push(publicUrl);
+      attachments.push(filePath);
     }
 
     // 3. Insert report. The authenticated email is used only as an access gate;

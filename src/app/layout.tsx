@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Sentinel — Plataforma de Saude Psicossocial",
+  title: "Sentinel — Plataforma de Saúde Psicossocial",
   description:
-    "Pesquisas COPSOQ II para conformidade com a Lei 14.831/2024. Anonimato absoluto e planos de acao com IA.",
+    "Avaliação de riscos psicossociais para a gestão exigida pela NR-1, com respostas anônimas e planos de ação gerados com IA.",
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

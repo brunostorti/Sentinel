@@ -6,11 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 import { toast } from "sonner";
-import {
-  activateSurvey,
-  closeSurvey,
-  sendReminders,
-} from "../actions";
+import { activateSurvey, closeSurvey } from "../actions";
+import { ReminderButton } from "../reminder-button";
 
 interface CollectionPanelProps {
   surveyId: string;
@@ -39,12 +36,12 @@ export function CollectionPanel({
   canManage,
 }: CollectionPanelProps) {
   const router = useRouter();
-  const [busy, setBusy] = useState<"activate" | "close" | "remind" | null>(null);
+  const [busy, setBusy] = useState<"activate" | "close" | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   async function run(
-    kind: "activate" | "close" | "remind",
+    kind: "activate" | "close",
     fn: () => Promise<{ error?: string; message?: string }>
   ) {
     setBusy(kind);
@@ -142,15 +139,7 @@ export function CollectionPanel({
 
               {status === "ACTIVE" && (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={() => run("remind", () => sendReminders(surveyId))}
-                    disabled={busy !== null}
-                    className="gap-1.5"
-                  >
-                    <Icon name="mail" size={17} />
-                    {busy === "remind" ? "Enviando..." : "Enviar lembretes"}
-                  </Button>
+                  <ReminderButton surveyId={surveyId} iconSize={17} disabled={busy !== null} />
                   <Button
                     onClick={() => run("close", () => closeSurvey(surveyId))}
                     disabled={busy !== null}

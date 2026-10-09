@@ -6,32 +6,30 @@
  *   1. Evidência da própria pesquisa — quais perguntas puxaram o score, com a
  *      distribuição real das respostas (respeita a Regra de 5).
  *   2. Setor real em risco + headcount real (fim do target_department: "all").
- *   3. Números financeiros calculados em código (headcount × benchmark com fonte).
+ *   3. Investimento estimado calculado em código (headcount × faixa interna de custo).
  *
- * Princípio: o LLM nunca mais emite um número sozinho. Todo valor exibido tem fonte
- * e fórmula visível.
+ * Princípio: o LLM nunca emite um número sozinho. Todo valor exibido tem fórmula
+ * visível e é rotulado pelo que é. Não há projeção de retorno/payback: não existe
+ * benchmark verificável que a sustente (auditoria de 07/10/2026).
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ScoringDirection } from "@/lib/constants";
 import { ANONYMITY_THRESHOLD } from "@/lib/constants";
 import type { DimensionScore } from "@/lib/copsoq/types";
-import {
-  INACTION_COSTS,
-  type Intervention,
-} from "../knowledge-base/catalog";
+import type { Intervention } from "../knowledge-base/catalog";
 import type { DepartmentBreakdown } from "./types";
 
 /* ──────────────────────────────────────────────────────────────────────
  * Tipos do pacote de fatos
  * ────────────────────────────────────────────────────────────────────── */
 
-/** Um número sempre acompanhado de fonte e (quando aplicável) da fórmula. */
+/** Um número sempre acompanhado da origem e (quando aplicável) da fórmula. */
 export interface SourcedNumber {
   label: string;
   value: string; // já formatado (ex: "R$ 1.400.000")
   rawValue: number;
-  source: string; // benchmark/estudo de origem
+  source: string; // de onde vem o número (ex.: estimativa interna)
   formula?: string; // como o número foi calculado (transparência)
 }
 
@@ -44,15 +42,9 @@ export interface SurveyEvidenceItem {
 }
 
 export interface FinancialFacts {
-  inactionCost: SourcedNumber;
   investment: SourcedNumber;
   investmentPerEmployeeMonth: SourcedNumber;
-  expectedReturnConservative: SourcedNumber | null;
-  expectedReturnOptimistic: SourcedNumber | null;
-  paybackPeriod: string;
-  expectedImpacts: { metric: string; change: string; source: string }[];
-  isAdministrative: boolean; // < R$5k/ano → ação administrativa, sem ROI
-  effectivenessNote: string;
+  estimateNote: string;
 }
 
 export interface GroundedFacts {
@@ -73,10 +65,6 @@ function brl(n: number): string {
     currency: "BRL",
     maximumFractionDigits: 0,
   });
-}
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
 }
 
 /** Mapeia o timeframe do catálogo para um rótulo PT legível. */
@@ -104,69 +92,39 @@ export async function buildSurveyEvidence(
   scoringDirection: ScoringDirection,
   departmentId?: string
 ): Promise<{ items: SurveyEvidenceItem[]; respondents: number }> {
-  let respQuery = admin
-    .from("survey_responses")
-    .select("id")
-    .eq("survey_id", surveyId);
-  if (departmentId) respQuery = respQuery.eq("department_id", departmentId);
+  // Estatísticas por pergunta calculadas no banco (survey_item_stats, migração 025),
+  // já com inversão e regra de 5 (inclusive a supressão complementar): resultado vazio
+  // significa grupo oculto ou sem respostas.
+  const { data, error } = await admin.rpc("survey_item_stats", {
+    p_survey_id: surveyId,
+    p_dimension_id: dimensionId,
+    p_department_id: departmentId ?? null,
+  });
+  if (error) {
+    console.error("survey_item_stats:", error.message);
+    return { items: [], respondents: 0 };
+  }
 
-  const { data: responses } = await respQuery;
-  const respondents = responses?.length ?? 0;
-
-  // Regra de 5: não expõe nada abaixo do limiar de anonimato.
+  const rows = (data ?? []) as {
+    question_text: string;
+    respondents: number;
+    mean_score: number | string;
+    high_count: number;
+    low_count: number;
+  }[];
+  const respondents = rows.reduce((max, r) => Math.max(max, r.respondents), 0);
   if (respondents < ANONYMITY_THRESHOLD) return { items: [], respondents };
 
-  const responseIds = responses!.map((r) => r.id);
-
-  const { data: answers } = await admin
-    .from("survey_answers")
-    .select(
-      `
-      score,
-      question_id,
-      questionnaire_items ( text, dimension_id, is_inverted )
-    `
-    )
-    .in("survey_response_id", responseIds);
-
-  if (!answers?.length) return { items: [], respondents };
-
-  // Agrupa por pergunta, aplicando inversão (alinha "alto = pior").
-  const byQuestion = new Map<string, { text: string; adjusted: number[] }>();
-  for (const a of answers) {
-    const qi = a.questionnaire_items as unknown as {
-      text: string;
-      dimension_id: string;
-      is_inverted: boolean;
-    } | null;
-    if (!qi || qi.dimension_id !== dimensionId) continue;
-
-    const raw = a.score as number;
-    const adjusted = qi.is_inverted ? 100 - raw : raw;
-    const entry = byQuestion.get(a.question_id as string) ?? {
-      text: qi.text,
-      adjusted: [],
-    };
-    entry.adjusted.push(adjusted);
-    byQuestion.set(a.question_id as string, entry);
-  }
-
-  const items: SurveyEvidenceItem[] = [];
-  for (const q of byQuestion.values()) {
-    const n = q.adjusted.length;
-    if (n === 0) continue;
-    const mean = q.adjusted.reduce((s, v) => s + v, 0) / n;
+  const items: SurveyEvidenceItem[] = rows.map((r) => {
     // Nível crítico: depende da direção da pontuação.
-    const criticalCount = q.adjusted.filter((v) =>
-      scoringDirection === "HIGH_IS_RISK" ? v >= 75 : v <= 25
-    ).length;
-    items.push({
-      questionText: q.text,
-      meanScore: Math.round(mean),
-      criticalPercent: Math.round((criticalCount / n) * 100),
-      respondents: n,
-    });
-  }
+    const critical = scoringDirection === "HIGH_IS_RISK" ? r.high_count : r.low_count;
+    return {
+      questionText: r.question_text,
+      meanScore: Math.round(Number(r.mean_score)),
+      criticalPercent: Math.round((critical / r.respondents) * 100),
+      respondents: r.respondents,
+    };
+  });
 
   // Pior primeiro.
   items.sort((a, b) =>
@@ -210,106 +168,39 @@ export function pickWorstDepartment(
 }
 
 /* ──────────────────────────────────────────────────────────────────────
- * 3. Números financeiros — calculados em código, com fonte
+ * 3. Investimento estimado — calculado em código, rotulado como estimativa
  * ────────────────────────────────────────────────────────────────────── */
+
+const ESTIMATE_SOURCE =
+  "Estimativa interna da equipe Sentinel (faixa de custo não verificada)";
 
 export function computeFinancials(
   intervention: Intervention,
-  headcount: number,
-  criticalFraction: number
+  headcount: number
 ): FinancialFacts {
   const hc = Math.max(1, Math.round(headcount));
-  const frac = clamp(criticalFraction, 0.1, 1);
+  const { min, max } = intervention.cost_per_employee;
 
-  // Custo de inação: benchmark de presenteísmo × fração realmente afetada (da pesquisa).
-  const presentCost = INACTION_COSTS.presenteeism.annual_cost_per_employee;
-  const inactionRaw = Math.round(hc * frac * presentCost);
-  const inactionCost: SourcedNumber = {
-    label: "Custo anual estimado de inação (presenteísmo)",
-    value: brl(inactionRaw),
-    rawValue: inactionRaw,
-    source: INACTION_COSTS.presenteeism.source,
-    formula: `${hc} colab × ${Math.round(frac * 100)}% em nível crítico × ${brl(
-      presentCost
-    )}/colab/ano`,
-  };
-
-  // Investimento: headcount × faixa de custo do catálogo.
-  const invMin = Math.round(hc * intervention.cost_per_employee.min);
-  const invMax = Math.round(hc * intervention.cost_per_employee.max);
   const investment: SourcedNumber = {
-    label: "Investimento anual",
-    value: `${brl(invMin)} – ${brl(invMax)}`,
-    rawValue: invMax,
-    source: "Faixa de mercado (catálogo de intervenções)",
-    formula: `${hc} colab × ${brl(intervention.cost_per_employee.min)}–${brl(
-      intervention.cost_per_employee.max
-    )}/colab/ano`,
+    label: "Investimento anual estimado",
+    value: `${brl(Math.round(hc * min))} – ${brl(Math.round(hc * max))}`,
+    rawValue: Math.round(hc * max),
+    source: ESTIMATE_SOURCE,
+    formula: `${hc} colab × ${brl(min)}–${brl(max)}/colab/ano`,
   };
   const investmentPerEmployeeMonth: SourcedNumber = {
-    label: "Por colaborador/mês",
-    value: `${brl(Math.round(intervention.cost_per_employee.min / 12))} – ${brl(
-      Math.round(intervention.cost_per_employee.max / 12)
-    )}`,
-    rawValue: Math.round(intervention.cost_per_employee.max / 12),
-    source: "Faixa de mercado (catálogo de intervenções)",
+    label: "Por colaborador/mês (estimativa)",
+    value: `${brl(Math.round(min / 12))} – ${brl(Math.round(max / 12))}`,
+    rawValue: Math.round(max / 12),
+    source: ESTIMATE_SOURCE,
   };
 
-  // Impactos esperados: vêm do catálogo (já com fonte real).
-  const expectedImpacts = intervention.expected_impact.map((e) => ({
-    metric: e.metric,
-    change: `${e.change_percent > 0 ? "+" : ""}${e.change_percent}%`,
-    source: e.evidence_source,
-  }));
-
-  // Ação administrativa (<R$5k/ano) não tem ROI calculado (regra metodológica).
-  const isAdministrative = invMax < 5000;
-
-  let expectedReturnConservative: SourcedNumber | null = null;
-  let expectedReturnOptimistic: SourcedNumber | null = null;
-  let paybackPeriod = "—";
-
-  if (!isAdministrative && inactionRaw > 0) {
-    // Retorno = parcela recuperável do custo de inação (premissa 30–50% de efetividade).
-    // Teto de ROI 5x sobre o investimento (alinhado às regras anteriores do pipeline).
-    const cap = invMax * 5;
-    const consRaw = Math.min(Math.round(inactionRaw * 0.3), cap);
-    const optRaw = Math.min(Math.round(inactionRaw * 0.5), cap);
-
-    expectedReturnConservative = {
-      label: "Retorno anual estimado (conservador)",
-      value: brl(consRaw),
-      rawValue: consRaw,
-      source: "Projeção: 30% de efetividade sobre o custo de inação evitável",
-      formula: `${brl(inactionRaw)} × 30%`,
-    };
-    expectedReturnOptimistic = {
-      label: "Retorno anual estimado (otimista)",
-      value: brl(optRaw),
-      rawValue: optRaw,
-      source: "Projeção: 50% de efetividade sobre o custo de inação evitável",
-      formula: `${brl(inactionRaw)} × 50%`,
-    };
-
-    const monthlyReturn = consRaw / 12;
-    if (monthlyReturn > 0) {
-      const months = Math.ceil(invMax / monthlyReturn);
-      paybackPeriod = months <= 36 ? `${months} meses` : ">36 meses";
-    }
-  }
-
   return {
-    inactionCost,
     investment,
     investmentPerEmployeeMonth,
-    expectedReturnConservative,
-    expectedReturnOptimistic,
-    paybackPeriod,
-    expectedImpacts,
-    isAdministrative,
-    effectivenessNote:
-      "Investimento e custo de inação derivam de benchmarks citados × headcount real da empresa. " +
-      "Os retornos são projeções com premissa de 30–50% de efetividade sobre o custo evitável (alinhado à literatura), com teto de ROI de 5x.",
+    estimateNote:
+      "Ordem de grandeza para planejamento: headcount real da empresa × faixa de custo estimada pela equipe Sentinel, " +
+      "não um orçamento de fornecedor. Não exibimos projeção de retorno ou payback porque não há benchmark verificável que a sustente.",
   };
 }
 
@@ -370,14 +261,7 @@ export async function buildGroundedFacts(args: {
     headcount = companyHeadcount;
   }
 
-  const criticalFraction =
-    evidence.items.length > 0
-      ? evidence.items.reduce((s, e) => s + e.criticalPercent, 0) /
-        evidence.items.length /
-        100
-      : 0.3;
-
-  const financials = computeFinancials(intervention, headcount, criticalFraction);
+  const financials = computeFinancials(intervention, headcount);
 
   return {
     department,

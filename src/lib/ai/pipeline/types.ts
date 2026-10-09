@@ -5,6 +5,7 @@
 
 import type { DimensionScore } from "@/lib/copsoq/types";
 import type { GroundedFacts } from "./grounding";
+import type { ResolvedAiConfig } from "../provider-factory";
 
 /* ──────────────────────────────────────────────────────────────────────
  * Contexto compartilhado por todos os estágios
@@ -20,10 +21,7 @@ export interface PipelineContext {
   totalParticipants: number;
   departmentBreakdowns: DepartmentBreakdown[];
   trends: DimensionTrendInfo[];
-  aiConfig: {
-    model: string;
-    keys: Record<string, string>;
-  };
+  aiConfig: ResolvedAiConfig;
 }
 
 export interface DepartmentBreakdown {
@@ -150,29 +148,13 @@ export interface AIRecommendation {
     timing: string;
   };
 
-  // Custos & retorno — INJETADOS PELO CÓDIGO (grounding), não pelo LLM.
+  // Investimento ESTIMADO — INJETADO PELO CÓDIGO (grounding), não pelo LLM.
+  // A evidência de eficácia vem das referências verificadas (kb_references).
   investment?: {
     total_annual: string;
     per_employee_month: string;
     breakdown: string;
   };
-  expected_return?: {
-    conservative: string;
-    optimistic: string;
-    payback_period: string;
-  };
-
-  // Impacto + evidência reforçada — INJETADO PELO CÓDIGO (catálogo + fontes).
-  impact_metrics?: {
-    metric: string;
-    change: string;
-    evidence: {
-      study_or_case: string;
-      year: number;
-      url_or_doi: string | null;
-      br_context: string | null;
-    };
-  }[];
 
   // Riscos
   risk_if_not_acted: string;
@@ -190,6 +172,12 @@ export interface AIRecommendation {
    * dados reais da pesquisa + benchmarks com fonte. O LLM NÃO produz isto.
    */
   facts?: GroundedFacts;
+
+  /** Qual modelo gerou o plano (auditoria). INJETADO PELO CÓDIGO. */
+  generated_by?: {
+    model: string;
+    generated_at: string;
+  };
 }
 
 /**

@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { DimensionMeta, DimensionScore, DepartmentResult, RawAnswer } from "./types";
-import { aggregateResponseScores } from "./aggregation";
-import { enforceAnonymity } from "./aggregation";
+import { toDisplayScore, UNIVERSAL_CATEGORY_LABELS, type ScoringDirection } from "@/lib/constants";
+import type { DimensionScore, DepartmentResult } from "./types";
+import { toFavorability, toTrafficLight } from "./scoring";
 
 /** Fetch dashboard KPIs for a company */
 export async function fetchDashboardKPIs(
@@ -71,125 +71,131 @@ export async function fetchDashboardKPIs(
   };
 }
 
-/** Fetch dimension scores for a specific survey, optionally filtered by department */
-export async function fetchSurveyDimensionScores(
+export interface GroupScores {
+  scores: DimensionScore[];
+  /** true quando o grupo está oculto pela regra de 5 (inclui a supressão complementar) */
+  isAnonymized: boolean;
+  responseCount: number;
+}
+
+export interface SurveyScoreBreakdown {
+  company: GroupScores;
+  /** Por setor (department_id). Setores sem respostas não aparecem. */
+  departments: Map<string, GroupScores>;
+}
+
+const EMPTY_GROUP: GroupScores = { scores: [], isAnonymized: false, responseCount: 0 };
+
+interface ScoreRow {
+  scope: "company" | "department";
+  department_id: string | null;
+  dimension_id: string;
+  respondents: number;
+  mean_score: number | string | null;
+  suppressed: boolean;
+}
+
+/**
+ * Médias por dimensão de uma pesquisa — da empresa inteira e de cada setor.
+ *
+ * O cálculo acontece no banco (função survey_dimension_scores, migração 025): só
+ * médias agregadas saem de lá, sem o limite de 1.000 linhas da API, e a regra de 5
+ * já vem aplicada com supressão complementar (impede descobrir um setor oculto por
+ * subtração). O banco também confere se quem chama pode ver a pesquisa.
+ */
+export async function fetchSurveyScoreBreakdown(
   supabase: SupabaseClient,
-  surveyId: string,
-  departmentId?: string
-): Promise<{ scores: DimensionScore[]; isAnonymized: boolean }> {
-  // Get the survey version + instrument
+  surveyId: string
+): Promise<SurveyScoreBreakdown> {
   const { data: survey } = await supabase
     .from("surveys")
     .select("version, instrument_id")
     .eq("id", surveyId)
     .single();
 
-  if (!survey) return { scores: [], isAnonymized: false };
+  if (!survey) return { company: EMPTY_GROUP, departments: new Map() };
 
-  // Fetch dimensions/scales — filter by instrument, and by version if applicable
+  // Dimensões do instrumento — e, nos instrumentos com versões (COPSOQ), só as da versão aplicada
   let scaleQuery = supabase
     .from("questionnaire_scales")
     .select("id, name, category, scoring_direction, universal_categories(code)");
-
-  if (survey.instrument_id) {
-    scaleQuery = scaleQuery.eq("instrument_id", survey.instrument_id);
-  }
-
-  // Only filter by version column for versioned instruments (COPSOQ)
+  if (survey.instrument_id) scaleQuery = scaleQuery.eq("instrument_id", survey.instrument_id);
   if (survey.version) {
     const versionColumn =
-      survey.version === "SHORT"
-        ? "short_version"
-        : survey.version === "MEDIUM"
-          ? "medium_version"
-          : "long_version";
+      survey.version === "SHORT" ? "short_version" : survey.version === "MEDIUM" ? "medium_version" : "long_version";
     scaleQuery = scaleQuery.eq(versionColumn, true);
   }
 
-  const { data: rawDimensions } = await scaleQuery;
+  const [{ data: rawDimensions }, { data: rows, error }] = await Promise.all([
+    scaleQuery.order("display_order"),
+    supabase.rpc("survey_dimension_scores", { p_survey_id: surveyId }),
+  ]);
 
-  if (!rawDimensions?.length) return { scores: [], isAnonymized: false };
+  if (error) {
+    console.error("survey_dimension_scores:", error.message);
+    return { company: EMPTY_GROUP, departments: new Map() };
+  }
+  if (!rawDimensions?.length || !rows?.length) return { company: EMPTY_GROUP, departments: new Map() };
 
-  // Build a map of dimension id → universal category code
-  const universalCategoryMap = new Map<string, string>();
-  for (const d of rawDimensions) {
-    const uc = d.universal_categories as unknown as { code: string } | null;
-    if (uc?.code) universalCategoryMap.set(d.id, uc.code);
+  const meta = new Map(
+    rawDimensions.map((d) => [
+      d.id,
+      {
+        name: d.name as string,
+        category: d.category as string,
+        scoringDirection: d.scoring_direction as ScoringDirection,
+        universalCategory: (d.universal_categories as unknown as { code: string } | null)?.code,
+        order: rawDimensions.indexOf(d),
+      },
+    ])
+  );
+
+  const groups = new Map<string, GroupScores>(); // chave: "company" ou id do setor
+  for (const row of rows as ScoreRow[]) {
+    const dim = meta.get(row.dimension_id);
+    if (!dim) continue;
+    const key = row.scope === "company" ? "company" : (row.department_id ?? "");
+    const group = groups.get(key) ?? { scores: [], isAnonymized: row.suppressed, responseCount: 0 };
+    group.responseCount = Math.max(group.responseCount, row.respondents);
+    if (row.suppressed || row.mean_score === null) {
+      group.isAnonymized = true;
+    } else {
+      const mean = Number(row.mean_score);
+      group.scores.push({
+        dimensionId: row.dimension_id,
+        name: dim.name,
+        category: dim.category,
+        universalCategory: dim.universalCategory,
+        scoringDirection: dim.scoringDirection,
+        meanScore: mean,
+        displayScore: toDisplayScore(mean),
+        trafficLight: toTrafficLight(mean, dim.scoringDirection),
+        questionCount: row.respondents,
+      });
+    }
+    groups.set(key, group);
   }
 
-  const dimensions: DimensionMeta[] = rawDimensions.map((d) => ({
-    id: d.id,
-    name: d.name,
-    category: d.category,
-    scoringDirection: d.scoring_direction,
-  }));
-
-  // Fetch responses
-  let responseQuery = supabase
-    .from("survey_responses")
-    .select("id")
-    .eq("survey_id", surveyId);
-
-  if (departmentId) {
-    responseQuery = responseQuery.eq("department_id", departmentId);
+  // Mesma ordem de exibição do instrumento
+  for (const g of groups.values()) {
+    if (g.isAnonymized) g.scores = [];
+    g.scores.sort((a, b) => (meta.get(a.dimensionId)?.order ?? 0) - (meta.get(b.dimensionId)?.order ?? 0));
   }
 
-  const { data: responses } = await responseQuery;
+  const company = groups.get("company") ?? EMPTY_GROUP;
+  groups.delete("company");
+  return { company, departments: groups };
+}
 
-  if (!responses?.length) return { scores: [], isAnonymized: false };
-
-  // Anonymity check
-  if (enforceAnonymity(responses.length)) {
-    return { scores: [], isAnonymized: true };
-  }
-
-  const responseIds = responses.map((r) => r.id);
-
-  // Fetch all answers for these responses with question metadata
-  const { data: rawAnswers } = await supabase
-    .from("survey_answers")
-    .select(
-      `
-      score,
-      survey_response_id,
-      question_id,
-      questionnaire_items (
-        dimension_id,
-        is_inverted
-      )
-    `
-    )
-    .in("survey_response_id", responseIds);
-
-  if (!rawAnswers?.length) return { scores: [], isAnonymized: false };
-
-  // Group answers by response
-  const responseMap = new Map<string, RawAnswer[]>();
-  for (const a of rawAnswers) {
-    const q = a.questionnaire_items as unknown as {
-      dimension_id: string;
-      is_inverted: boolean;
-    };
-    const answer: RawAnswer = {
-      questionId: a.question_id,
-      dimensionId: q.dimension_id,
-      score: a.score,
-      isInverted: q.is_inverted,
-    };
-    const existing = responseMap.get(a.survey_response_id) ?? [];
-    existing.push(answer);
-    responseMap.set(a.survey_response_id, existing);
-  }
-
-  const allResponses = Array.from(responseMap.values());
-  const scores = aggregateResponseScores(allResponses, dimensions);
-
-  // Inject universal category codes into scores
-  for (const score of scores) {
-    score.universalCategory = universalCategoryMap.get(score.dimensionId);
-  }
-
-  return { scores, isAnonymized: false };
+/** Fetch dimension scores for a specific survey, optionally filtered by department */
+export async function fetchSurveyDimensionScores(
+  supabase: SupabaseClient,
+  surveyId: string,
+  departmentId?: string
+): Promise<{ scores: DimensionScore[]; isAnonymized: boolean }> {
+  const breakdown = await fetchSurveyScoreBreakdown(supabase, surveyId);
+  const group = departmentId ? (breakdown.departments.get(departmentId) ?? EMPTY_GROUP) : breakdown.company;
+  return { scores: group.scores, isAnonymized: group.isAnonymized };
 }
 
 /** Fetch all non-draft surveys with their response counts */
@@ -243,46 +249,47 @@ export async function fetchAllSurveysWithResponses(
   return results;
 }
 
-/** Aggregate scores across multiple surveys into a "general" view by averaging universal categories */
+/**
+ * Visão geral de várias pesquisas (e instrumentos): uma linha por categoria universal
+ * (Carga de Trabalho, Liderança...). Como uma categoria junta dimensões em que alto é
+ * risco e outras em que alto é favorável, a média é feita sobre a FAVORABILIDADE
+ * (0-100, alto = bom) — o resultado sai com direção HIGH_IS_FAVORABLE e semáforo
+ * coerente com ela.
+ */
 export function aggregateMultiSurveyScores(
   allSurveyScores: { scores: DimensionScore[]; isAnonymized: boolean }[]
 ): { scores: DimensionScore[]; isAnonymized: boolean } {
-  // Collect all scores grouped by universal category
-  const categoryScores = new Map<string, { scores: DimensionScore[]; totalDisplayScore: number; count: number }>();
+  const groups = new Map<string, { scores: DimensionScore[]; favorability: number }>();
 
   for (const surveyResult of allSurveyScores) {
     if (surveyResult.isAnonymized || !surveyResult.scores.length) continue;
-
     for (const score of surveyResult.scores) {
-      const key = score.universalCategory ?? score.name;
-      const existing = categoryScores.get(key);
-      if (existing) {
-        existing.scores.push(score);
-        existing.totalDisplayScore += score.displayScore;
-        existing.count++;
-      } else {
-        categoryScores.set(key, {
-          scores: [score],
-          totalDisplayScore: score.displayScore,
-          count: 1,
-        });
-      }
+      const key = score.universalCategory ?? `dim:${score.name}`;
+      const group = groups.get(key) ?? { scores: [], favorability: 0 };
+      group.scores.push(score);
+      group.favorability += toFavorability(score.meanScore, score.scoringDirection);
+      groups.set(key, group);
     }
   }
 
-  if (categoryScores.size === 0) return { scores: [], isAnonymized: false };
+  if (groups.size === 0) return { scores: [], isAnonymized: false };
 
-  // Average per universal category, using first score as template
   const aggregated: DimensionScore[] = [];
-  for (const [, data] of categoryScores) {
-    const avg = Math.round(data.totalDisplayScore / data.count);
-    const template = data.scores[0];
+  for (const [key, group] of groups) {
+    const mean = group.favorability / group.scores.length;
+    const label = group.scores[0].universalCategory
+      ? (UNIVERSAL_CATEGORY_LABELS[group.scores[0].universalCategory] ?? group.scores[0].name)
+      : group.scores[0].name;
     aggregated.push({
-      ...template,
-      meanScore: avg,
-      displayScore: avg,
-      trafficLight: avg >= 66 ? "GREEN" : avg >= 33 ? "YELLOW" : "RED",
-      questionCount: data.scores.reduce((sum, s) => sum + s.questionCount, 0),
+      dimensionId: `geral:${key}`,
+      name: label,
+      category: label,
+      universalCategory: group.scores[0].universalCategory,
+      scoringDirection: "HIGH_IS_FAVORABLE",
+      meanScore: mean,
+      displayScore: toDisplayScore(mean),
+      trafficLight: toTrafficLight(mean, "HIGH_IS_FAVORABLE"),
+      questionCount: group.scores.reduce((sum, s) => sum + s.questionCount, 0),
     });
   }
 
@@ -354,32 +361,19 @@ export async function fetchDepartmentDimensionScores(
   surveyId: string,
   departments: { id: string; name: string }[]
 ): Promise<DepartmentResult[]> {
-  const results: DepartmentResult[] = [];
+  // Uma chamada ao banco para todos os setores (antes: duas consultas por setor)
+  const breakdown = await fetchSurveyScoreBreakdown(supabase, surveyId);
 
-  for (const dept of departments) {
-    const { scores, isAnonymized } = await fetchSurveyDimensionScores(
-      supabase,
-      surveyId,
-      dept.id
-    );
-
-    // Count responses for this department
-    const { count } = await supabase
-      .from("survey_responses")
-      .select("*", { count: "exact", head: true })
-      .eq("survey_id", surveyId)
-      .eq("department_id", dept.id);
-
-    results.push({
+  return departments.map((dept) => {
+    const group = breakdown.departments.get(dept.id) ?? EMPTY_GROUP;
+    return {
       departmentId: dept.id,
       departmentName: dept.name,
-      responseCount: count ?? 0,
-      isAnonymous: isAnonymized,
-      dimensions: isAnonymized ? null : scores,
-    });
-  }
-
-  return results;
+      responseCount: group.responseCount,
+      isAnonymous: group.isAnonymized,
+      dimensions: group.isAnonymized ? null : group.scores,
+    };
+  });
 }
 
 /** Fetch historical trend data across multiple surveys */
@@ -397,23 +391,26 @@ export async function fetchHistoricalTrends(
     dimensionId: string;
     name: string;
     category: string;
+    scoringDirection: ScoringDirection;
     scores: { surveyId: string; displayScore: number }[];
   }[];
 }> {
-  // Get closed surveys ordered by closed_at
+  // As 10 pesquisas encerradas mais RECENTES (antes pegava as 10 mais antigas e a
+  // atual sumia do gráfico a partir da 11ª), exibidas da mais antiga para a mais nova.
   let closedSurveysQuery = supabase
     .from("surveys")
     .select("id, title, closed_at")
     .eq("company_id", companyId)
     .eq("status", "CLOSED")
-    .order("closed_at", { ascending: true })
+    .order("closed_at", { ascending: false })
     .limit(10);
 
   if (cycleId) {
     closedSurveysQuery = closedSurveysQuery.eq("cycle_id", cycleId);
   }
 
-  const { data: closedSurveys } = await closedSurveysQuery;
+  const { data: latestClosed } = await closedSurveysQuery;
+  const closedSurveys = latestClosed ? [...latestClosed].reverse() : null;
 
   if (!closedSurveys || closedSurveys.length < 2) {
     return { surveys: [], dimensions: [] };
@@ -428,7 +425,7 @@ export async function fetchHistoricalTrends(
   // Fetch scores for each survey
   const allScores = new Map<
     string,
-    { name: string; category: string; scores: { surveyId: string; displayScore: number }[] }
+    { name: string; category: string; scoringDirection: ScoringDirection; scores: { surveyId: string; displayScore: number }[] }
   >();
 
   for (const survey of surveys) {
@@ -444,6 +441,7 @@ export async function fetchHistoricalTrends(
         allScores.set(score.dimensionId, {
           name: score.name,
           category: score.category,
+          scoringDirection: score.scoringDirection,
           scores: [{ surveyId: survey.id, displayScore: score.displayScore }],
         });
       }
@@ -457,6 +455,7 @@ export async function fetchHistoricalTrends(
       dimensionId,
       name: d.name,
       category: d.category,
+      scoringDirection: d.scoringDirection,
       scores: d.scores,
     }));
 

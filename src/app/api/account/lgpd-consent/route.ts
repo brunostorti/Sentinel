@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-const CURRENT_VERSION = "2026-05-21";
+import { LGPD_CONSENT_VERSION } from "@/lib/lgpd";
 
 /**
  * POST /api/account/lgpd-consent
@@ -30,7 +29,7 @@ export async function POST(_req: NextRequest) {
     .from("users")
     .update({
       lgpd_consent_at: now,
-      lgpd_consent_version: CURRENT_VERSION,
+      lgpd_consent_version: LGPD_CONSENT_VERSION,
     })
     .eq("id", userData.id);
 
@@ -38,5 +37,5 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ status: "consented", at: now, version: CURRENT_VERSION });
+  return NextResponse.json({ status: "consented", at: now, version: LGPD_CONSENT_VERSION });
 }

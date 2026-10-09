@@ -1,12 +1,12 @@
 /**
  * Stage 3 — Consultant
  *
- * Recebe CuratedSelection + perfil + vendors-BR + casos setoriais e escreve o plano
- * final completo no shape AIRecommendation v2 (roadmap, vendors, RACI, KPIs leading, etc.).
+ * Recebe CuratedSelection + perfil + vendors-BR + referências verificadas e escreve o
+ * plano final completo no shape AIRecommendation v2 (roadmap, vendors, RACI, KPIs leading, etc.).
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor, type ResolvedAiConfig } from "../provider-factory";
 import type {
   AIRecommendation,
   CuratedSelection,
@@ -16,10 +16,9 @@ import type { CompanyProfile, CompanyActionTaken } from "../profile/schema";
 import { buildPerfilNarrativo } from "../profile/narrative";
 import { getInterventionById } from "../knowledge-base/catalog";
 import { getProvidersForIntervention } from "../knowledge-base/providers-br";
-import { getCasesByIntervention } from "../knowledge-base/cases";
 import { getReferencesForInterventions, type KbReferenceWithRelevance } from "../knowledge-base/references";
 import type { GroundedFacts } from "./grounding";
-import { extractJsonArray } from "./json-utils";
+import { describeUnparsedOutput, extractJsonArray } from "./json-utils";
 
 interface CompanyInfo {
   name: string;
@@ -64,14 +63,8 @@ function buildSelectionBlock(
 
       const fin = facts?.financials;
       const finBlock = fin
-        ? [
-            `Investimento (JÁ CALCULADO): ${fin.investment.value}  [${fin.investment.formula}]`,
-            `Custo de inação (JÁ CALCULADO): ${fin.inactionCost.value}  [fonte: ${fin.inactionCost.source}]`,
-            fin.isAdministrative
-              ? "Ação administrativa — sem ROI."
-              : `Retorno estimado: ${fin.expectedReturnConservative?.value} (conservador) a ${fin.expectedReturnOptimistic?.value} (otimista) / ano · payback ${fin.paybackPeriod}`,
-          ].join("\n")
-        : "(sem números financeiros para este item)";
+        ? `Investimento ESTIMADO (JÁ CALCULADO): ${fin.investment.value}  [${fin.investment.formula}; ${fin.investment.source}]`
+        : "(sem estimativa de investimento para este item)";
 
       return `### ${dimName}
 dimension_id="${c.dimension_id}"  (USE EXATAMENTE este uuid no output — NÃO invente)
@@ -100,26 +93,10 @@ function buildProvidersBlock(selection: CuratedSelection): string {
     const list = providers
       .map(
         (p) =>
-          `  - ${p.name}: ${p.modality} (${p.price_range}) — ${p.contact_url}\n    ${p.description}`
+          `  - ${p.name}: ${p.modality} — ${p.contact_url}\n    ${p.description}`
       )
       .join("\n");
     blocks.push(`### Para ${c.intervention_id}:\n${list}`);
-  }
-  return blocks.join("\n\n");
-}
-
-function buildCasesBlock(selection: CuratedSelection): string {
-  const blocks: string[] = [];
-  for (const c of selection.candidates) {
-    const cases = getCasesByIntervention(c.intervention_id);
-    if (cases.length === 0) continue;
-    const list = cases
-      .map(
-        (cs) =>
-          `  - ${cs.sector} (${cs.company_size_range}): ${cs.outcome_summary} — fonte: ${cs.source} ${cs.year}`
-      )
-      .join("\n");
-    blocks.push(`### ${c.intervention_id}:\n${list}`);
   }
   return blocks.join("\n\n");
 }
@@ -146,7 +123,7 @@ export async function runConsultant(args: {
   company: CompanyInfo;
   history?: CompanyActionTaken[];
   grounding: Map<string, GroundedFacts>;
-  aiConfig: { model: string; keys: Record<string, string> };
+  aiConfig: ResolvedAiConfig;
 }): Promise<ConsultantPlanItem[]> {
 
   const historyMapped = args.history?.map((h) => ({
@@ -167,7 +144,6 @@ export async function runConsultant(args: {
     args.grounding
   );
   const providersBlock = buildProvidersBlock(args.selection);
-  const casesBlock = buildCasesBlock(args.selection);
   const interventionIds = args.selection.candidates.map((c) => c.intervention_id);
   const refsByIntervention = await getReferencesForInterventions(interventionIds);
   const referencesBlock = buildReferencesBlock(refsByIntervention);
@@ -178,14 +154,11 @@ export async function runConsultant(args: {
 ${perfilNarrativo}
 
 ## Seleção do Curator (escreva um plano para CADA item)
-Cada item traz o SETOR-ALVO REAL, as PERGUNTAS REAIS da pesquisa e os NÚMEROS já calculados pelo sistema.
+Cada item traz o SETOR-ALVO REAL, as PERGUNTAS REAIS da pesquisa e a estimativa de investimento já calculada pelo sistema.
 ${selectionBlock}
 
 ## Fornecedores brasileiros disponíveis para essas intervenções
 ${providersBlock || "(nenhum fornecedor específico catalogado)"}
-
-## Casos setoriais relevantes (use para impact_metrics quando aplicável)
-${casesBlock || "(nenhum caso setorial específico)"}
 
 ## Referências científicas curadas (verificáveis)
 ${referencesBlock || "(nenhuma referência curada)"}
@@ -193,8 +166,9 @@ ${referencesBlock || "(nenhuma referência curada)"}
 ## REGRAS CRÍTICAS
 
 ### Você NÃO escreve números
-- NÃO produza investimento, ROI, retorno, % de impacto ou custos. Esses valores JÁ foram calculados pelo sistema (bloco "NÚMEROS JÁ CALCULADOS") e serão anexados automaticamente ao plano.
-- Se citar um valor no texto (ex.: em risk_if_not_acted), use EXATAMENTE o número fornecido — nunca invente outro.
+- NÃO produza investimento, ROI, retorno, payback, % de impacto, custos ou economia. A única cifra do plano é a estimativa de investimento, que o sistema anexa automaticamente.
+- NÃO prometa efeitos quantitativos (ex.: "reduz o turnover em 30%"). Para falar de eficácia, use SOMENTE as ALEGAÇÕES das referências curadas, respeitando o nível de certeza informado (ex.: certeza muito baixa = "evidência limitada").
+- Fornecedores: NÃO informe preço. Use sempre "Sob consulta" em price_range.
 
 ### Ancoragem nos dados reais (OBRIGATÓRIO)
 - No "rationale", CITE LITERALMENTE ao menos uma das "PERGUNTAS REAIS DA PESQUISA" do item e mencione o SETOR-ALVO REAL. É isso que torna o plano específico desta empresa.
@@ -212,12 +186,12 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 - **RESOLVER** — elimina a causa-raiz organizacional do risco (mudança em processo, carga, jornada, gestão, estrutura). Use quando a intervenção ataca a fonte e o risco é alto/crítico (RED) e endereçável internamente. É a estratégia preferencial sempre que viável (eliminação na fonte). Coerente com roadmap que muda processo/jornada.
 - **MITIGAR** — reduz a probabilidade ou o impacto sem eliminar a causa (treinamentos, apoio, ajustes parciais, controles administrativos). Use para riscos YELLOW, ou RED quando a causa-raiz não pode ser removida no ciclo atual. É o PADRÃO quando em dúvida entre MITIGAR e RESOLVER e a ação não elimina a fonte.
 - **TRANSFERIR** — delega a execução/responsabilidade clínica a terceiro especializado (EAP/PAE, clínica de saúde mental, consultoria externa, seguro). Use quando a competência exigida é externa à empresa (ex.: atendimento psicológico) — coerente com 'vendors' como núcleo da solução e 'internal_alternative' fraca/nula.
-- **ACEITAR** — risco residual baixo, sob monitoramento, sem ação corretiva imediata custo-efetiva. Uso RARO e SOMENTE para dimensões YELLOW de baixa severidade. NUNCA use ACEITAR para uma dimensão RED — sob a NR-1/Portaria MTE 1.419/2024 e a Lei 14.831 o empregador é LEGALMENTE OBRIGADO a agir sobre riscos identificados.
+- **ACEITAR** — risco residual baixo, sob monitoramento, sem ação corretiva imediata custo-efetiva. Uso RARO e SOMENTE para dimensões YELLOW de baixa severidade. NUNCA use ACEITAR para uma dimensão RED — pela NR-1 (Portaria MTE 1.419/2024), riscos classificados como prioritários exigem medidas de prevenção no plano de ação (item 1.5.5.2). A Lei 14.831/2024 é um certificado voluntário: nunca a trate como obrigação.
 
 ### Compliance & Riscos
-- nr1_compliance: "Atende NR-1, Portaria MTE 1.419/2024 — gestão de riscos psicossociais" ou null.
+- nr1_compliance: em uma frase, qual exigência da NR-1 este plano ajuda a cumprir (ex.: "Medida de prevenção para o plano de ação do PGR — NR-1, item 1.5.5.2") ou null. Nunca afirme que o plano, sozinho, garante conformidade com a NR-1.
 - compliance_extra: LGPD, NR-17, CLT quando aplicável.
-- risk_if_not_acted: consequências de não agir (pode referenciar o custo de inação já calculado).
+- risk_if_not_acted: consequências de não agir, ancoradas no que a pesquisa revelou e nas referências (sem valores monetários).
 - implementation_risks: 2-3 itens — o que dá errado AO EXECUTAR + mitigation.
 
 ## OUTPUT — JSON array, um item por candidato (não invente itens extras, NÃO inclua campos numéricos).
@@ -238,12 +212,12 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
       "time_to_first_value": "...",
       "internal_capacity_required": "...",
       "stakeholders": { "accountable": "cargo (1)", "responsible": ["..."], "consulted": ["..."], "informed": ["..."] },
-      "vendors": [ { "name": "...", "modality": "...", "price_range": "R$X-Y/colab/mês", "contact_url": "https://...", "why_fit": "por que cabe NESTE setor" } ],
+      "vendors": [ { "name": "...", "modality": "...", "price_range": "Sob consulta", "contact_url": "https://...", "why_fit": "por que cabe NESTE setor" } ],
       "internal_alternative": "variante sem fornecedor externo" ou null,
       "leading_indicators": [ { "metric": "...", "target": "...", "measurement": "..." } ],
       "monitoring_cadence": "...",
       "communication_plan": { "channels": ["..."], "key_message": "...", "timing": "..." },
-      "risk_if_not_acted": "consequências (pode citar o custo de inação calculado)",
+      "risk_if_not_acted": "consequências de não agir (sem valores monetários)",
       "implementation_risks": [ { "risk": "...", "mitigation": "..." } ],
       "nr1_compliance": "..." ou null,
       "compliance_extra": ["..."]
@@ -253,15 +227,17 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 
 Devolva APENAS o JSON array.`;
 
-  const model = createModel(args.aiConfig.model, args.aiConfig.keys);
+  const model = createModel(args.aiConfig);
   
-  const { text } = await generateText({
+  const { text, finishReason } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(args.aiConfig),
   });
 
   const plans = extractJsonArray<ConsultantPlanItem>(text);
   if (plans.length === 0) {
+    console.error(`[consultant] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
   }
   return plans;

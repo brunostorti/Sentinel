@@ -155,7 +155,7 @@ export default async function InicioPage() {
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
             Crie pesquisas por setor, acompanhe respostas anônimas, identifique
             riscos psicossociais e transforme diagnósticos em planos de ação
-            personalizados — em conformidade com a Lei 14.831.
+            personalizados — apoiando a gestão de riscos psicossociais exigida pela NR-1.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">

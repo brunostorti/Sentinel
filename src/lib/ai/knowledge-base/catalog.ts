@@ -4,13 +4,10 @@
  * Cada intervenção tem `intervention_id` estável (slug `{category}.{kebab-name}`)
  * usado para detectar tentativas repetidas no loop de aprendizado.
  *
- * Evidência baseada em (entre outros):
- * - OMS/OIT 2024: US$1 invested in mental health → US$4 productivity return
- * - Deloitte 2022: ROI médio de programas de saúde mental = 4.2:1
- * - ISMA-BR: Estresse custa 3.5% do PIB; absenteísmo mental ~15 dias/ano
- * - Gallup 2023: Alto engajamento = 21% mais produtividade, 59% menos turnover
- * - SHRM: Custo médio de turnover = 50-200% do salário anual
- * - Robert Half Brasil 2024: Dados de custo de substituição
+ * A evidência de cada intervenção NÃO fica aqui: está em `kb_references` +
+ * `kb_intervention_references` (banco), com fonte verificável e nível de certeza.
+ * A auditoria de 07/10/2026 removeu daqui os "impactos esperados" (% por métrica),
+ * o multiplicador de ROI e os custos de inação, por não terem fonte verificável.
  */
 
 export type UniversalCategoryCode =
@@ -34,12 +31,6 @@ export type HrCapability =
   | "occupational_health"
   | "compliance_officer";
 
-export interface ImpactMetric {
-  metric: string;
-  change_percent: number;
-  evidence_source: string;
-}
-
 export interface Intervention {
   /** Slug estável `{category}.{kebab-name}` — id de identidade no loop de aprendizado */
   intervention_id: string;
@@ -52,7 +43,11 @@ export interface Intervention {
   timeframe: Timeframe;
   target_role: string;
 
-  /** Custo por colaborador/ano em R$ */
+  /**
+   * Custo por colaborador/ano em R$. ESTIMATIVA INTERNA da equipe Sentinel,
+   * sem fonte verificável — usada só para filtrar por orçamento e dar ordem de
+   * grandeza do investimento; a UI deve sempre rotulá-la como estimativa.
+   */
   cost_per_employee: { min: number; max: number };
 
   /** Modalidade que essa intervenção exige */
@@ -61,52 +56,9 @@ export interface Intervention {
   /** Capacidades de RH/estrutura que a intervenção exige */
   required_hr_capabilities: HrCapability[];
 
-  /** Setores onde há mais evidência de funcionar */
+  /** Setores para os quais a equipe julga a intervenção adequada (não é evidência) */
   sector_fit: string[];
-
-  expected_impact: ImpactMetric[];
-
-  /** Multiplicador de ROI conservador-otimista */
-  roi_multiplier: { min: number; max: number };
 }
-
-/* ──────────────────────────────────────────────────────────────────────
- * INACTION_COSTS — custos de NÃO agir, usados para calcular risk_if_not_acted
- * ────────────────────────────────────────────────────────────────────── */
-
-export const INACTION_COSTS = {
-  turnover: {
-    cost_per_employee: 21000,
-    description:
-      "Custo médio de substituição de um colaborador (recrutamento + onboarding + produtividade perdida)",
-    source: "SHRM / Robert Half Brasil 2024",
-  },
-  absenteeism: {
-    cost_per_day: 200,
-    avg_days_per_year: 15,
-    description: "Custo por dia de ausência (média saúde mental: 15 dias/ano)",
-    source: "ISMA-BR / Previdência Social",
-  },
-  presenteeism: {
-    productivity_loss: 0.33,
-    annual_cost_per_employee: 14000,
-    description:
-      "Funcionário presente mas improdutivo por estresse/burnout (33% perda)",
-    source: "Harvard Business Review / OMS",
-  },
-  lawsuits: {
-    avg_cost: 45000,
-    description:
-      "Custo médio de processo trabalhista por risco psicossocial",
-    source: "TST / CNJ 2023",
-  },
-  nr1_penalty: {
-    min_fine: 2396,
-    max_fine: 6708,
-    description: "Multa por descumprimento NR-1 (por infração identificada)",
-    source: "Portaria MTE 1.419/2024",
-  },
-} as const;
 
 /* ──────────────────────────────────────────────────────────────────────
  * CATALOG — lista de intervenções tipadas
@@ -127,11 +79,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "produtividade", change_percent: 15, evidence_source: "Gallup 2023" },
-      { metric: "absenteísmo", change_percent: -20, evidence_source: "ISMA-BR" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "workload.structured-breaks",
@@ -146,11 +93,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "public"],
-    expected_impact: [
-      { metric: "produtividade", change_percent: 12, evidence_source: "Desktime 2023" },
-      { metric: "fadiga_cognitiva", change_percent: -25, evidence_source: "OMS" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "workload.deadline-realism-workshop",
@@ -165,11 +107,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "healthcare"],
-    expected_impact: [
-      { metric: "burnout", change_percent: -30, evidence_source: "Maslach & Leiter 2016" },
-      { metric: "turnover", change_percent: -15, evidence_source: "Gallup 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 4.5 },
   },
   {
     intervention_id: "workload.process-automation",
@@ -184,11 +121,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "retail"],
-    expected_impact: [
-      { metric: "produtividade", change_percent: 25, evidence_source: "McKinsey 2023" },
-      { metric: "carga_trabalho", change_percent: -20, evidence_source: "Deloitte 2022" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "workload.time-management-training",
@@ -203,11 +135,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["internal_training"],
     sector_fit: ["tech", "office"],
-    expected_impact: [
-      { metric: "produtividade", change_percent: 18, evidence_source: "ATD 2023" },
-      { metric: "estresse", change_percent: -15, evidence_source: "ISMA-BR" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ LEADERSHIP ============ */
@@ -224,11 +151,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "hibrido",
     required_hr_capabilities: ["dedicated_hr", "internal_training"],
     sector_fit: ["tech", "industrial", "retail", "healthcare"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 21, evidence_source: "Gallup 2023" },
-      { metric: "turnover", change_percent: -25, evidence_source: "Deloitte 2022" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "leadership.weekly-1on1",
@@ -243,11 +165,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "healthcare", "public"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 15, evidence_source: "Gallup 2023" },
-      { metric: "turnover", change_percent: -12, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "leadership.360-evaluation",
@@ -262,11 +179,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "healthcare"],
-    expected_impact: [
-      { metric: "qualidade_lideranca", change_percent: 20, evidence_source: "CCL 2023" },
-      { metric: "satisfacao", change_percent: 18, evidence_source: "Deloitte 2022" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "leadership.feedback-channel",
@@ -281,11 +193,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "confianca_lideranca", change_percent: 20, evidence_source: "Edelman 2023" },
-      { metric: "turnover", change_percent: -10, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ SOCIAL ============ */
@@ -302,11 +209,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "retail"],
-    expected_impact: [
-      { metric: "colaboracao", change_percent: 20, evidence_source: "Gallup 2023" },
-      { metric: "satisfacao", change_percent: 12, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "social.buddy-program",
@@ -321,11 +223,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare"],
-    expected_impact: [
-      { metric: "turnover_novos", change_percent: -35, evidence_source: "HCI 2023" },
-      { metric: "produtividade_novos", change_percent: 25, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "social.peer-recognition-platform",
@@ -340,11 +237,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 14, evidence_source: "Gallup 2023" },
-      { metric: "satisfacao", change_percent: 18, evidence_source: "Workhuman 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ RECOGNITION ============ */
@@ -361,11 +253,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "retail", "healthcare"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 21, evidence_source: "Gallup 2023" },
-      { metric: "turnover", change_percent: -31, evidence_source: "Bersin by Deloitte 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "recognition.salary-benchmark",
@@ -380,11 +267,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "healthcare"],
-    expected_impact: [
-      { metric: "turnover", change_percent: -20, evidence_source: "Robert Half 2024" },
-      { metric: "atracao_talentos", change_percent: 30, evidence_source: "Glassdoor 2023" },
-    ],
-    roi_multiplier: { min: 2.0, max: 4.0 },
   },
   {
     intervention_id: "recognition.career-path",
@@ -399,11 +281,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "healthcare", "public"],
-    expected_impact: [
-      { metric: "turnover", change_percent: -35, evidence_source: "LinkedIn 2023" },
-      { metric: "engajamento", change_percent: 25, evidence_source: "Gallup 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ AUTONOMY ============ */
@@ -420,11 +297,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "healthcare"],
-    expected_impact: [
-      { metric: "turnover", change_percent: -25, evidence_source: "Owl Labs 2023" },
-      { metric: "produtividade", change_percent: 13, evidence_source: "Stanford 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "autonomy.decision-empowerment",
@@ -439,11 +311,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "retail"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 18, evidence_source: "Gallup 2023" },
-      { metric: "agilidade", change_percent: 25, evidence_source: "McKinsey 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "autonomy.individual-development-plan",
@@ -458,11 +325,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["internal_training"],
     sector_fit: ["tech", "office", "healthcare"],
-    expected_impact: [
-      { metric: "turnover", change_percent: -30, evidence_source: "LinkedIn Learning 2023" },
-      { metric: "produtividade", change_percent: 20, evidence_source: "ATD 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ MEANING ============ */
@@ -479,11 +341,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "engajamento", change_percent: 20, evidence_source: "Gallup 2023" },
-      { metric: "produtividade", change_percent: 15, evidence_source: "HBR 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "meaning.pulse-surveys",
@@ -498,11 +355,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "retail"],
-    expected_impact: [
-      { metric: "tempo_resposta_rh", change_percent: -60, evidence_source: "Culture Amp 2023" },
-      { metric: "engajamento", change_percent: 10, evidence_source: "Qualtrics 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ BURNOUT ============ */
@@ -519,12 +371,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "healthcare"],
-    expected_impact: [
-      { metric: "absenteismo", change_percent: -30, evidence_source: "Deloitte 2022" },
-      { metric: "turnover", change_percent: -25, evidence_source: "OMS 2024" },
-      { metric: "presenteismo", change_percent: -20, evidence_source: "ISMA-BR" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "burnout.digital-disconnect-policy",
@@ -539,11 +385,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office"],
-    expected_impact: [
-      { metric: "burnout", change_percent: -28, evidence_source: "OMS 2024" },
-      { metric: "qualidade_sono", change_percent: 22, evidence_source: "Sleep Foundation 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "burnout.early-signal-monitoring",
@@ -558,11 +399,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "healthcare"],
-    expected_impact: [
-      { metric: "burnout", change_percent: -25, evidence_source: "Maslach & Leiter 2016" },
-      { metric: "absenteismo", change_percent: -20, evidence_source: "ISMA-BR" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "burnout.workplace-fitness-program",
@@ -577,11 +413,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "hibrido",
     required_hr_capabilities: ["occupational_health"],
     sector_fit: ["tech", "industrial", "office"],
-    expected_impact: [
-      { metric: "absenteismo", change_percent: -25, evidence_source: "OMS 2024" },
-      { metric: "produtividade", change_percent: 15, evidence_source: "ISMA-BR" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ COMMUNICATION ============ */
@@ -598,11 +429,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "confianca", change_percent: 25, evidence_source: "Edelman 2023" },
-      { metric: "alinhamento", change_percent: 20, evidence_source: "Gallup 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "communication.role-clarification-raci",
@@ -617,11 +443,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "industrial", "healthcare"],
-    expected_impact: [
-      { metric: "conflitos", change_percent: -30, evidence_source: "SHRM" },
-      { metric: "produtividade", change_percent: 18, evidence_source: "McKinsey 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "communication.bidirectional-feedback",
@@ -636,11 +457,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "healthcare"],
-    expected_impact: [
-      { metric: "confianca", change_percent: 18, evidence_source: "Edelman 2023" },
-      { metric: "engajamento", change_percent: 14, evidence_source: "Gallup 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ SECURITY ============ */
@@ -657,11 +473,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "ansiedade", change_percent: -30, evidence_source: "Edelman 2023" },
-      { metric: "turnover_voluntario", change_percent: -15, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "security.talent-retention-plan",
@@ -676,11 +487,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["dedicated_hr"],
     sector_fit: ["tech", "office", "healthcare"],
-    expected_impact: [
-      { metric: "turnover_talentos", change_percent: -40, evidence_source: "LinkedIn 2023" },
-      { metric: "engajamento", change_percent: 22, evidence_source: "Gallup 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "security.work-life-balance",
@@ -695,11 +501,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: [],
     sector_fit: ["tech", "office", "retail"],
-    expected_impact: [
-      { metric: "satisfacao", change_percent: 25, evidence_source: "GPTW 2023" },
-      { metric: "turnover", change_percent: -18, evidence_source: "Deloitte 2022" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 
   /* ============ OFFENSIVE ============ */
@@ -716,11 +517,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: ["compliance_officer"],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "processos_trabalhistas", change_percent: -40, evidence_source: "TST 2023" },
-      { metric: "turnover", change_percent: -15, evidence_source: "SHRM" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "offensive.mandatory-compliance-training",
@@ -735,11 +531,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "online",
     required_hr_capabilities: ["compliance_officer"],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "incidentes", change_percent: -35, evidence_source: "EEOC 2023" },
-      { metric: "clima_organizacional", change_percent: 18, evidence_source: "Deloitte 2022" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
   {
     intervention_id: "offensive.rapid-investigation-protocol",
@@ -754,11 +545,6 @@ export const CATALOG: Intervention[] = [
     required_modality: "any",
     required_hr_capabilities: ["compliance_officer"],
     sector_fit: ["tech", "industrial", "retail", "healthcare", "public"],
-    expected_impact: [
-      { metric: "confianca_canal", change_percent: 40, evidence_source: "Navex Global 2023" },
-      { metric: "processos_trabalhistas", change_percent: -30, evidence_source: "TST 2023" },
-    ],
-    roi_multiplier: { min: 2.5, max: 5.0 },
   },
 ];
 

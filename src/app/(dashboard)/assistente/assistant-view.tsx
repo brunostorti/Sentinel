@@ -21,7 +21,7 @@ const SUGGESTIONS = [
   "Monte um resumo executivo para a diretoria.",
 ];
 
-export function AssistantView({ userName, companyId }: { userName: string, companyId: string }) {
+export function AssistantView({ userName }: { userName: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -66,9 +66,10 @@ export function AssistantView({ userName, companyId }: { userName: string, compa
     const currentAttachments = [...attachments];
     setAttachments([]); // clear attachments early for UX
 
-    startTransition(() => {
+    // Async: a transição (isPending) dura até a resposta terminar de chegar.
+    startTransition(async () => {
       let assistantText = "";
-      sendChatStream(
+      await sendChatStream(
         { kind: "company", content, attachments: currentAttachments },
         {
           onDelta: (chunk) => {
@@ -233,7 +234,7 @@ export function AssistantView({ userName, companyId }: { userName: string, compa
               </div>
             </div>
           ))}
-          {isPending && (
+          {isPending && messages[messages.length - 1]?.role === "user" && (
             <div className="flex justify-start">
               <div className="rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
                 <span className="inline-flex gap-1">
@@ -316,7 +317,7 @@ export function AssistantView({ userName, companyId }: { userName: string, compa
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <ModelSelectorModal companyId={companyId} />
+          <ModelSelectorModal />
           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} title="Anexar Imagem">
             <Paperclip className="w-4 h-4 text-muted-foreground mr-2" />
             <span className="text-xs text-muted-foreground">Anexar Arquivo</span>

@@ -37,16 +37,10 @@ export default function SegurancaPage() {
             description="Banco PostgreSQL no Supabase com criptografia at-rest gerenciada pela infra (Amazon RDS / GCP Cloud SQL conforme provider). Chaves rotacionadas pela plataforma."
           />
           <Layer
-            icon="enhanced_encryption"
-            title="Em repouso (respostas em progresso)"
-            tech="AES-256-GCM com chave da aplicação"
-            description="Dados de pesquisa salvos antes da submissão final (survey_progress) são adicionalmente criptografados com chave específica do app (SURVEY_PROGRESS_ENCRYPTION_KEY), separada das credenciais do banco. Defesa em profundidade contra acesso indevido ao backup."
-          />
-          <Layer
             icon="key"
-            title="Hashing"
-            tech="SHA-256"
-            description="Tokens de pesquisa (survey_tokens) armazenados como hash. URLs de validação de certificado usam hash criptográfico único."
+            title="Identificadores de validação"
+            tech="UUID aleatório"
+            description="Os links de validação de certificado usam um identificador aleatório único (UUID v4), que não pode ser adivinhado a partir de outros certificados."
           />
         </div>
       </section>
@@ -128,8 +122,9 @@ export default function SegurancaPage() {
               session ID ou user_agent. Apenas{" "}
               <code className="font-mono">survey_id</code>,{" "}
               <code className="font-mono">department_id</code> e{" "}
-              <code className="font-mono">submitted_at</code>. O token de entrada
-              é descartado após uso.
+              <code className="font-mono">submitted_at</code>, guardado só com o
+              dia (sem horário), para não permitir cruzar a hora do envio com quem
+              respondeu.
             </p>
           </Card>
 
@@ -187,10 +182,9 @@ export default function SegurancaPage() {
             </thead>
             <tbody className="divide-y divide-border text-xs">
               <ControlRow camada="Trânsito" tecnica="TLS 1.3" onde="Vercel + Supabase (HSTS)" />
-              <ControlRow camada="Banco at-rest" tecnica="AES-256" onde="Supabase Pro" />
-              <ControlRow camada="Respostas em progresso" tecnica="AES-256-GCM" onde="SURVEY_PROGRESS_ENCRYPTION_KEY" />
-              <ControlRow camada="Tokens de pesquisa" tecnica="SHA-256 hash" onde="survey_tokens" />
-              <ControlRow camada="Multi-tenancy" tecnica="RLS por company_id" onde="19 tabelas no Postgres" />
+              <ControlRow camada="Banco at-rest" tecnica="AES-256" onde="Supabase" />
+              <ControlRow camada="Horário de envio" tecnica="Truncado ao dia" onde="Gatilho no banco (migração 020)" />
+              <ControlRow camada="Multi-tenancy" tecnica="RLS por company_id" onde="Todas as tabelas do Postgres" />
               <ControlRow camada="Anonimização" tecnica="Sem PII em survey_responses" onde="Migration 001" />
               <ControlRow camada="K-anonymity" tecnica="n≥5 por dimensão" onde="lib/copsoq/aggregation.ts" />
               <ControlRow camada="Auditoria" tecnica="Event sourcing" onde="profile_events + chat_messages" />

@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DimensionScore } from "@/lib/copsoq/types";
+import { toFavorability } from "@/lib/copsoq/scoring";
 
 interface DimensionsRadarProps {
   scores: DimensionScore[];
@@ -19,10 +20,12 @@ interface DimensionsRadarProps {
 export function DimensionsRadar({ scores }: DimensionsRadarProps) {
   if (scores.length === 0) return null;
 
+  // Uma categoria mistura dimensões em que alto = risco e alto = bom: a média é da
+  // favorabilidade (0-100, alto = sempre melhor), não da pontuação bruta.
   const categoryMap = new Map<string, { total: number; count: number }>();
   for (const s of scores) {
     const existing = categoryMap.get(s.category) ?? { total: 0, count: 0 };
-    existing.total += s.displayScore;
+    existing.total += toFavorability(s.meanScore, s.scoringDirection);
     existing.count++;
     categoryMap.set(s.category, existing);
   }
@@ -50,6 +53,7 @@ export function DimensionsRadar({ scores }: DimensionsRadarProps) {
         <CardTitle className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           Visão por Categoria
         </CardTitle>
+        <p className="text-xs text-muted-foreground">Favorabilidade de 0 a 100: quanto maior, melhor.</p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={320}>
@@ -75,7 +79,7 @@ export function DimensionsRadar({ scores }: DimensionsRadarProps) {
                 fontSize: "12px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               }}
-              formatter={(value) => [`${value}/100`, "Score"]}
+              formatter={(value) => [`${value}/100`, "Favorabilidade"]}
               labelFormatter={(label) => {
                 const item = radarData.find((r) => r.category === label);
                 return item?.fullName ?? String(label);

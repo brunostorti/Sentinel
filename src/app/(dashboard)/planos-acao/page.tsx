@@ -143,7 +143,6 @@ export default async function ActionPlansPage() {
         cards={cards}
         canManage={canManage}
         hasAnySurveys={surveyList.length > 0}
-        hasApiKey={!!process.env.ANTHROPIC_API_KEY}
       />
     </div>
   );

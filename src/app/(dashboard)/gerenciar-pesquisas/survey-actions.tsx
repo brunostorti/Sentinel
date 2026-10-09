@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
-import { activateSurvey, closeSurvey, sendReminders } from "./actions";
+import { activateSurvey, closeSurvey } from "./actions";
+import { ReminderButton } from "./reminder-button";
 
 interface SurveyActionsProps {
   surveyId: string;
@@ -14,14 +15,11 @@ interface SurveyActionsProps {
 export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [reminderLoading, setReminderLoading] = useState(false);
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   async function handleActivate() {
     setLoading(true);
     setError("");
-    setSuccessMsg("");
     const result = await activateSurvey(surveyId);
     if (result.error) {
       setError(result.error);
@@ -34,7 +32,6 @@ export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
   async function handleClose() {
     setLoading(true);
     setError("");
-    setSuccessMsg("");
     const result = await closeSurvey(surveyId);
     if (result.error) {
       setError(result.error);
@@ -42,21 +39,6 @@ export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
       return;
     }
     router.refresh();
-  }
-
-  async function handleReminder() {
-    setReminderLoading(true);
-    setError("");
-    setSuccessMsg("");
-    const result = await sendReminders(surveyId);
-    setReminderLoading(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    if (result.message) {
-      setSuccessMsg(result.message);
-    }
   }
 
   return (
@@ -75,16 +57,7 @@ export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
         )}
         {status === "ACTIVE" && (
           <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleReminder}
-              disabled={reminderLoading}
-              className="gap-1"
-            >
-              <Icon name="mail" size={16} />
-              {reminderLoading ? "Enviando..." : "Enviar Lembretes"}
-            </Button>
+            <ReminderButton surveyId={surveyId} size="sm" />
             <Button
               size="sm"
               variant="outline"
@@ -99,7 +72,6 @@ export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
         )}
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      {successMsg && <p className="text-xs text-green-600 dark:text-green-400">{successMsg}</p>}
     </div>
   );
 }

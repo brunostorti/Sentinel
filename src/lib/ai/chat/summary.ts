@@ -7,7 +7,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, resolveAiConfig, type CompanyAiSettings } from "../provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const TRIGGER_MESSAGE_COUNT = 100;
@@ -19,7 +19,7 @@ export async function maybeRollSummary(threadId: string): Promise<{ rolled: bool
   // Verifica se thread tem mensagens suficientes e ainda não tem summary recente
   const { data: thread } = await admin
     .from("chat_threads")
-    .select("id, message_count, summary, companies(ai_model, ai_api_keys)")
+    .select("id, message_count, summary, companies(ai_plan_model, ai_chat_model, ai_api_keys)")
     .eq("id", threadId)
     .single();
 
@@ -55,10 +55,8 @@ ${transcript}
 ## Sumário (em português brasileiro)`;
 
   try {
-    const company = thread.companies as any;
     const model = createModel(
-      company?.ai_model || "claude-3-5-sonnet-20240620",
-      company?.ai_api_keys || {}
+      resolveAiConfig(thread.companies as unknown as CompanyAiSettings | null, "chat")
     );
     
     const { text } = await generateText({

@@ -4,6 +4,7 @@ import {
   fetchDashboardKPIs,
   fetchAllSurveysWithResponses,
   fetchSurveyDimensionScores,
+  fetchSurveyScoreBreakdown,
   fetchDepartments,
   fetchDepartmentResponseCounts,
   fetchHistoricalTrends,
@@ -101,20 +102,17 @@ export default async function DashboardPage(props: {
   // Fetch scores for all surveys in parallel
   const surveyScoreResults = await Promise.all(
     surveysWithData.map(async (survey) => {
-      const [scores, deptResponseCounts] = await Promise.all([
-        fetchSurveyDimensionScores(supabase, survey.id),
+      // Uma chamada ao banco traz empresa e setores (antes: uma consulta por setor)
+      const [breakdown, deptResponseCounts] = await Promise.all([
+        fetchSurveyScoreBreakdown(supabase, survey.id),
         fetchDepartmentResponseCounts(supabase, survey.id),
       ]);
-
-      const deptScoreResults = await Promise.all(
-        departments.map((dept) =>
-          fetchSurveyDimensionScores(supabase, survey.id, dept.id)
-        )
-      );
+      const scores = { scores: breakdown.company.scores, isAnonymized: breakdown.company.isAnonymized };
 
       const departmentScores: Record<string, { scores: typeof scores.scores; isAnonymized: boolean }> = {};
-      for (let i = 0; i < departments.length; i++) {
-        departmentScores[departments[i].id] = deptScoreResults[i];
+      for (const dept of departments) {
+        const group = breakdown.departments.get(dept.id);
+        departmentScores[dept.id] = { scores: group?.scores ?? [], isAnonymized: group?.isAnonymized ?? false };
       }
 
       const deptFilters = departments.map((dept) => {

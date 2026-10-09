@@ -4,7 +4,7 @@
  * Usado por:
  *  - Stage 1 (Analyst): forma COMPACTA — sinais essenciais
  *  - Stage 2 (Curator): forma COMPLETA — todos os campos
- *  - Stage 3 (Consultant): forma COMPLETA + casos setoriais
+ *  - Stage 3 (Consultant): forma COMPLETA
  *  - Chat (system prompt): forma COMPLETA
  */
 
