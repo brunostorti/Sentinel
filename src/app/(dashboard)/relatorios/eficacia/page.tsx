@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { IMPLEMENTED_PLAN_STATUSES } from "@/lib/ai/learning/constants";
 
 const ATTRIBUTION_LABEL: Record<string, { label: string; class: string }> = {
   high: { label: "Alta", class: "text-green-600" },
@@ -37,9 +38,10 @@ export default async function EficaciaPage() {
       id, intervention_id, score_before, score_after, delta, outcome_status,
       hr_attribution, hr_notes, delta_computed_at, created_at,
       questionnaire_scales(name),
-      action_plans(ai_recommendation)
+      action_plans!inner(ai_recommendation, status)
     `)
     .eq("company_id", userData.company_id!)
+    .in("action_plans.status", [...IMPLEMENTED_PLAN_STATUSES])
     .order("delta_computed_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(100);

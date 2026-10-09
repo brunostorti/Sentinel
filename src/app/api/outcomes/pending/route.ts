@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { IMPLEMENTED_PLAN_STATUSES } from "@/lib/ai/learning/constants";
 
 /**
  * GET /api/outcomes/pending
@@ -26,10 +27,11 @@ export async function GET(_req: NextRequest) {
     .select(`
       id, dimension_id, intervention_id, score_before, score_after, delta,
       delta_computed_at, attribution_skip_count,
-      action_plans(id, ai_recommendation),
+      action_plans!inner(id, ai_recommendation, status),
       questionnaire_scales(name)
     `)
     .eq("company_id", userData.company_id!)
+    .in("action_plans.status", [...IMPLEMENTED_PLAN_STATUSES])
     .not("delta_computed_at", "is", null)
     .is("hr_attribution", null)
     .order("delta_computed_at", { ascending: false });

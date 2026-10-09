@@ -10,6 +10,7 @@
 
 import {
   CATALOG,
+  getInterventionById,
   type Intervention,
   type UniversalCategoryCode,
 } from "./catalog";
@@ -102,10 +103,12 @@ function sameCategoryWorkedHere(
   outcomes: ActionOutcome[]
 ): boolean {
   return outcomes.some((o) => {
-    if (!o.universal_category_id) return false;
-    // Comparamos via universal_category_id (preenchido no orchestrator).
-    // Note: aqui comparamos só por categoria, não por intervenção exata.
+    // Mesma categoria da intervenção avaliada (pela intervenção que gerou o resultado).
+    // Antes a categoria não era comparada: um único resultado bom marcava o catálogo
+    // inteiro como "preferido".
+    const category = getInterventionById(o.intervention_id)?.universal_category_code;
     return (
+      category === iv.universal_category_code &&
       o.delta_computed_at !== null &&
       o.delta != null &&
       o.delta > 5 &&

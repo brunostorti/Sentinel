@@ -6,6 +6,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { IMPLEMENTED_PLAN_STATUSES } from "./constants";
 import { fetchSurveyDimensionScores } from "@/lib/copsoq/dashboard";
 import { fetchDepartmentDimensionScores, fetchDepartments } from "@/lib/copsoq/dashboard";
 
@@ -30,12 +31,13 @@ export async function computeOutcomes(
 ): Promise<OutcomeComputeResult> {
   const admin = createAdminClient();
 
-  // Outcomes em aberto desta empresa
+  // Outcomes em aberto desta empresa, só de planos implantados (aprovados/concluídos)
   const { data: openOutcomes } = await admin
     .from("action_outcomes")
-    .select("id, dimension_id, survey_id_before, action_plan_id")
+    .select("id, dimension_id, survey_id_before, action_plan_id, action_plans!inner(status)")
     .eq("company_id", companyId)
-    .is("survey_id_after", null);
+    .is("survey_id_after", null)
+    .in("action_plans.status", [...IMPLEMENTED_PLAN_STATUSES]);
 
   if (!openOutcomes || openOutcomes.length === 0) {
     return { computed: 0, unmeasurable: 0, anonymity_blocked: 0 };
@@ -149,3 +151,4 @@ export async function computeOutcomes(
 
   return { computed, unmeasurable, anonymity_blocked: anonymityBlocked };
 }
+

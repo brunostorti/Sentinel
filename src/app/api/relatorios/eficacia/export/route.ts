@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { IMPLEMENTED_PLAN_STATUSES } from "@/lib/ai/learning/constants";
 
 /**
  * GET /api/relatorios/eficacia/export?format=pdf|csv
@@ -50,9 +51,10 @@ export async function GET(req: NextRequest) {
       id, intervention_id, score_before, score_after, delta, outcome_status,
       hr_attribution, hr_notes, delta_computed_at, created_at,
       questionnaire_scales(name),
-      action_plans(ai_recommendation)
+      action_plans!inner(ai_recommendation, status)
     `)
     .eq("company_id", userData.company_id!)
+    .in("action_plans.status", [...IMPLEMENTED_PLAN_STATUSES])
     .order("delta_computed_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 

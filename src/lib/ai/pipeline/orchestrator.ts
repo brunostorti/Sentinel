@@ -19,6 +19,7 @@ import { runCurator } from "./curator";
 import { runConsultant } from "./consultant";
 import { buildGroundedFacts, timeframeLabel, type GroundedFacts } from "./grounding";
 import { computeOutcomes } from "../learning/outcomes";
+import { IMPLEMENTED_PLAN_STATUSES } from "../learning/constants";
 import { CATALOG, getInterventionById } from "../knowledge-base/catalog";
 import { filterAndAnnotate, filterByCategories } from "../knowledge-base/filters";
 import {
@@ -225,10 +226,12 @@ export async function runPipeline(
       .limit(20);
     const history = (historyRows ?? []) as CompanyActionTaken[];
 
+    // Aprendizado: só resultados de planos implantados (aprovados/concluídos).
     const { data: outcomesRows } = await admin
       .from("action_outcomes")
-      .select("*")
-      .eq("company_id", companyId);
+      .select("*, action_plans!inner(status)")
+      .eq("company_id", companyId)
+      .in("action_plans.status", [...IMPLEMENTED_PLAN_STATUSES]);
     const outcomes = (outcomesRows ?? []) as ActionOutcome[];
 
     const context: PipelineContext = {
@@ -393,6 +396,7 @@ export async function runPipeline(
       timeframe: string;
       target_department: string;
       universal_category_id: string | null;
+      intervention_id: string;
     };
 
     const planRows: PlanRow[] = [];
@@ -485,6 +489,7 @@ export async function runPipeline(
         timeframe: intervention ? timeframeLabel(intervention.timeframe) : "3-6 meses",
         target_department: facts?.department ?? "all",
         universal_category_id: uc_id,
+        intervention_id: item.intervention_id,
       });
 
       outcomeRows.push({
@@ -517,42 +522,42 @@ export async function runPipeline(
       return { status: "completed", plans_created: 0, outcomes_created: 0, run_id };
     }
 
-    // Limpa planos PENDING anteriores deste survey + run novo
-    await admin
+    // Limpa planos PENDING anteriores deste survey (e os resultados ligados a eles,
+    // que ficariam órfãos) antes de gravar o run novo.
+    const { data: stalePlans } = await admin
       .from("action_plans")
-      .delete()
+      .select("id")
       .eq("survey_id", surveyId)
       .eq("status", "PENDING_REVIEW");
+    const staleIds = (stalePlans ?? []).map((p) => p.id as string);
+    if (staleIds.length) {
+      await admin.from("action_outcomes").delete().in("action_plan_id", staleIds);
+      await admin.from("action_plans").delete().in("id", staleIds);
+    }
 
     const { data: insertedPlans, error: insertErr } = await admin
       .from("action_plans")
       .insert(planRows)
-      .select("id, dimension_id, ai_recommendation");
+      .select("id, dimension_id, intervention_id");
     if (insertErr) throw insertErr;
     console.log(`[pipeline ${run_id}] INSERT OK — ${insertedPlans?.length ?? 0} planos salvos no banco.`);
 
-    // Map plan_id → outcome
-    const planIdByDim = new Map<string, string>();
+    // Liga cada resultado ao SEU plano: dimensão + intervenção (só a dimensão não basta
+    // quando há dois planos para a mesma dimensão).
+    const planIdByKey = new Map<string, string>();
     for (const p of insertedPlans ?? []) {
-      planIdByDim.set(p.dimension_id, p.id);
+      planIdByKey.set(`${p.dimension_id}::${p.intervention_id}`, p.id);
     }
 
-    const finalOutcomeRows: OutcomeRow[] = outcomeRows.map((o) => ({
+    const outcomesToInsert = outcomeRows.map((o) => ({
       company_id: o.company_id,
-      action_plan_id: (planIdByDim.get(o._dimension_id) ?? null) as null,
+      action_plan_id: planIdByKey.get(`${o._dimension_id}::${o._intervention_id}`) ?? null,
       intervention_id: o.intervention_id,
       universal_category_id: o.universal_category_id,
       dimension_id: o.dimension_id,
       survey_id_before: o.survey_id_before,
       score_before: o.score_before,
       outcome_status: o.outcome_status,
-    }));
-
-    // Fix: action_plan_id em outcomes precisa do plan_id real (não null)
-    const outcomesToInsert = finalOutcomeRows.map((o, idx) => ({
-      ...o,
-      action_plan_id: (planIdByDim.get(outcomeRows[idx]._dimension_id) ??
-        null) as unknown as string | null,
     }));
 
     if (outcomesToInsert.length > 0) {

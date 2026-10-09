@@ -117,10 +117,8 @@ export async function buildDossier(admin: SupabaseClient, surveyId: string): Pro
   const planRows = (plans ?? []) as unknown as PlanRow[];
   const measuresByDimension = new Map<string, MeasureInput[]>();
   for (const p of planRows) {
-    const direction = p.questionnaire_scales?.scoring_direction ?? "HIGH_IS_RISK";
-    const improved = p.action_outcomes.some(
-      (o) => o.outcome_status === "computed" && o.delta !== null && (direction === "HIGH_IS_RISK" ? o.delta < 0 : o.delta > 0)
-    );
+    // action_outcomes.delta já é normalizado: positivo = melhora (learning/outcomes.ts).
+    const improved = p.action_outcomes.some((o) => o.outcome_status === "computed" && o.delta !== null && o.delta > 0);
     const list = measuresByDimension.get(p.dimension_id) ?? [];
     list.push({ title: p.ai_recommendation?.title ?? "(sem título)", status: p.status, effective: p.status === "COMPLETED" && improved });
     measuresByDimension.set(p.dimension_id, list);
