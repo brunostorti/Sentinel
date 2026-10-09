@@ -67,6 +67,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
       { label: "Meu perfil", href: ROUTES.DASHBOARD.ACCOUNT, icon: "person" },
       { label: "Configurações", href: ROUTES.DASHBOARD.SETTINGS, icon: "settings" },
       { label: "Assistente", href: ROUTES.DASHBOARD.ASSISTANT, icon: "chat" },
+      { label: "Base de conhecimento", href: ROUTES.DASHBOARD.KNOWLEDGE, icon: "library_books" },
     ],
   },
   {

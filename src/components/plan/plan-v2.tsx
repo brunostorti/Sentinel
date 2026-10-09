@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { modelLabel } from "@/lib/ai/models";
+import { MessageSources } from "@/components/chat/message-sources";
 
 interface PlanV2Props {
   recommendation: AIRecommendation;
@@ -318,6 +319,16 @@ function TabWhy({ r, references }: { r: AIRecommendation; references: KbReferenc
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {r.sources && r.sources.length > 0 && (
+        <div>
+          <SectionLabel>Documentos consultados</SectionLabel>
+          <p className="mb-1 text-xs text-muted-foreground">
+            Trechos de normas, guias oficiais e documentos da empresa que a IA usou para escrever este plano.
+          </p>
+          <MessageSources sources={r.sources} title="Trechos usados" />
         </div>
       )}
     </div>

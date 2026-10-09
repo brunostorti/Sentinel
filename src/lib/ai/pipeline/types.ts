@@ -6,6 +6,7 @@
 import type { DimensionScore } from "@/lib/copsoq/types";
 import type { GroundedFacts } from "./grounding";
 import type { ResolvedAiConfig } from "../provider-factory";
+import type { StoredSource } from "@/lib/rag/prompt";
 
 /* ──────────────────────────────────────────────────────────────────────
  * Contexto compartilhado por todos os estágios
@@ -172,6 +173,15 @@ export interface AIRecommendation {
    * dados reais da pesquisa + benchmarks com fonte. O LLM NÃO produz isto.
    */
   facts?: GroundedFacts;
+
+  /** Trechos que o Consultant diz ter usado ("F1", "F2"…). Trocado por `sources` no código. */
+  source_ids?: string[];
+
+  /**
+   * Trechos da base de conhecimento (RAG) usados no plano. INJETADO PELO CÓDIGO: só
+   * entram identificadores que foram de fato fornecidos ao modelo.
+   */
+  sources?: StoredSource[];
 
   /** Qual modelo gerou o plano (auditoria). INJETADO PELO CÓDIGO. */
   generated_by?: {

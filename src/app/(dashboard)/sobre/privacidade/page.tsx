@@ -202,10 +202,12 @@ export default function PrivacidadePage() {
             <li className="flex items-start gap-2">
               <Badge variant="outline">OpenAI (embeddings)</Badge>
               <span className="text-muted-foreground">
-                Busca nos documentos da empresa e na base de referências
-                (recurso em implantação): os trechos de texto são convertidos em
-                vetores pela OpenAI (modelo text-embedding-3-large), qualquer que
-                seja o modelo escolhido para planos e chat.
+                Busca nos documentos enviados pela empresa e na base de
+                referências: o texto desses documentos e cada pergunta feita ao
+                assistente são convertidos em vetores pela OpenAI (modelo
+                text-embedding-3-large), qualquer que seja o modelo escolhido
+                para planos e chat. Respostas individuais da pesquisa não passam
+                por essa busca.
               </span>
             </li>
             <li className="flex items-start gap-2">

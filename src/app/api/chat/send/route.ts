@@ -13,6 +13,14 @@ import {
 import { buildChatSystemPrompt } from "@/lib/ai/chat/context-builder";
 import { extractAndPersistFacts } from "@/lib/ai/chat/fact-extractor";
 import { maybeRollSummary } from "@/lib/ai/chat/summary";
+import { searchKnowledge } from "@/lib/rag/search";
+import { countWords } from "@/lib/rag/chunking";
+import {
+  CHAT_SOURCES_RULES,
+  citedChatRefs,
+  formatSourcesBlock,
+  keepCitedSources,
+} from "@/lib/rag/prompt";
 
 /**
  * POST /api/chat/send
@@ -91,6 +99,29 @@ export async function POST(req: NextRequest) {
     systemPrompt += `\n\n## Sumário das mensagens anteriores desta thread\n${rollingSummary}`;
   }
 
+  // RAG: trechos de normas, guias e documentos da empresa sobre a última mensagem.
+  // Pergunta curta ("e o prazo?") leva junto a anterior, para a busca ter contexto.
+  const previousUserMessage = history.filter((m) => m.role === "user").at(-2)?.content;
+  const searchQuery =
+    countWords(body.content) < 8 && previousUserMessage
+      ? `${previousUserMessage}\n${body.content}`
+      : body.content;
+  const retrieved = await searchKnowledge(createAdminClient(), {
+    companyId: userData.company_id,
+    query: searchQuery,
+    matchCount: 6,
+  });
+  const { block: sourcesBlock, sources } = formatSourcesBlock(retrieved);
+  systemPrompt += retrieved.length
+    ? `\n\n${CHAT_SOURCES_RULES}\n\n${sourcesBlock}`
+    : "\n\n## Documentos de consulta\nA busca na base de conhecimento não encontrou trechos sobre a última mensagem. Não cite documentos nem números de trecho.";
+  // Só vão para a tela (e para o histórico) as fontes que a resposta citou.
+  const citedSources = (text: string) => keepCitedSources(sources, citedChatRefs(text));
+  const sourcesMetadata = (text: string) => {
+    const cited = citedSources(text);
+    return cited.length ? { sources: cited } : undefined;
+  };
+
   const messagesForLLM: any[] = history.map((m) => ({
     role: m.role === "assistant" ? "assistant" : "user",
     content: m.content,
@@ -149,6 +180,7 @@ export async function POST(req: NextRequest) {
           threadId: thread.id,
           role: "assistant",
           content: text,
+          metadata: sourcesMetadata(text),
         });
         await touchThread(supabase, thread.id);
 
@@ -175,10 +207,15 @@ export async function POST(req: NextRequest) {
           }
         };
         try {
+          let full = "";
           for await (const part of result.fullStream) {
-            if (part.type === "text-delta") send({ delta: part.text });
-            else if (part.type === "error") throw part.error;
+            if (part.type === "text-delta") {
+              full += part.text;
+              send({ delta: part.text });
+            } else if (part.type === "error") throw part.error;
           }
+          const cited = citedSources(full);
+          if (cited.length) send({ sources: cited });
           send({ done: true });
         } catch (err) {
           console.error("chat: falha no streaming:", err);
@@ -216,12 +253,13 @@ export async function POST(req: NextRequest) {
       threadId: thread.id,
       role: "assistant",
       content: reply,
+      metadata: sourcesMetadata(reply),
     });
     await touchThread(supabase, thread.id);
 
     void backgroundJobs(reply);
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply, sources: citedSources(reply) });
   } catch (err: unknown) {
     const message = describeAiError(err, aiConfig);
     return NextResponse.json({ error: message }, { status: 500 });

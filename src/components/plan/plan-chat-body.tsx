@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Mic, MicOff, Paperclip, Bot as BotIcon, X } from "lucide-react";
 import { sendChatStream } from "@/lib/chat-stream";
 import { ModelSelectorModal } from "@/components/chat/model-selector-modal";
+import { MessageSources } from "@/components/chat/message-sources";
+import type { StoredSource } from "@/lib/rag/prompt";
 
 /**
  * Corpo do chat do plano (histórico + sugestões + composer), sem header.
@@ -18,6 +20,7 @@ interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   created_at: string;
+  metadata?: { sources?: StoredSource[] } | null;
 }
 
 const SUGGESTIONS = [
@@ -97,6 +100,11 @@ export function PlanChatBody({ planId }: { planId: string }) {
                 },
               ];
             });
+          },
+          onSources: (sources) => {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === `tmp-ast-${tempId}` ? { ...m, metadata: { sources } } : m))
+            );
           },
           onDone: () => {},
           onError: (err) => {
@@ -234,20 +242,23 @@ export function PlanChatBody({ planId }: { planId: string }) {
               key={m.id}
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`max-w-[90%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-                  m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                {m.content || (
-                  <span className="inline-flex gap-1 text-muted-foreground">
-                    <span className="animate-bounce">·</span>
-                    <span className="animate-bounce [animation-delay:0.15s]">·</span>
-                    <span className="animate-bounce [animation-delay:0.3s]">·</span>
-                  </span>
-                )}
+              <div className="max-w-[90%]">
+                <div
+                  className={`whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
+                >
+                  {m.content || (
+                    <span className="inline-flex gap-1 text-muted-foreground">
+                      <span className="animate-bounce">·</span>
+                      <span className="animate-bounce [animation-delay:0.15s]">·</span>
+                      <span className="animate-bounce [animation-delay:0.3s]">·</span>
+                    </span>
+                  )}
+                </div>
+                {m.role === "assistant" && <MessageSources sources={m.metadata?.sources} />}
               </div>
             </div>
           ))}

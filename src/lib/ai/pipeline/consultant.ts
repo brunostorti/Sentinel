@@ -19,6 +19,9 @@ import { getProvidersForIntervention } from "../knowledge-base/providers-br";
 import { getReferencesForInterventions, type KbReferenceWithRelevance } from "../knowledge-base/references";
 import type { GroundedFacts } from "./grounding";
 import { describeUnparsedOutput, extractJsonArray } from "./json-utils";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { searchKnowledge, type RetrievedChunk } from "@/lib/rag/search";
+import { PLAN_SOURCES_RULES, formatSourcesBlock, keepCitedSources, type StoredSource } from "@/lib/rag/prompt";
 
 interface CompanyInfo {
   name: string;
@@ -34,10 +37,57 @@ export interface ConsultantPlanItem {
   recommendation: AIRecommendation;
 }
 
+/**
+ * RAG: trechos de normas, guias e documentos da empresa para cada item (dimensão +
+ * intervenção + pergunta da pesquisa que mais pesou), mais um conjunto sobre plano de
+ * ação na NR-1. Trechos repetidos entre itens aparecem uma vez só.
+ */
+async function retrieveSources(
+  selection: CuratedSelection,
+  prioritizedNames: Map<string, string>,
+  grounding: Map<string, GroundedFacts>,
+  companyId: string
+): Promise<{ block: string; sources: StoredSource[]; refsByCandidate: Map<string, string[]> }> {
+  const admin = createAdminClient();
+  const queries = selection.candidates.map((c) => {
+    const iv = getInterventionById(c.intervention_id);
+    const topQuestion = grounding.get(`${c.dimension_id}::${c.intervention_id}`)?.surveyEvidence[0]?.questionText;
+    return [prioritizedNames.get(c.dimension_id), iv?.title, topQuestion].filter(Boolean).join(". ");
+  });
+  const [general, ...perCandidate] = await Promise.all([
+    searchKnowledge(admin, {
+      companyId,
+      query: "plano de ação com medidas de prevenção para riscos psicossociais: cronograma, responsáveis, acompanhamento e aferição de resultados",
+      matchCount: 3,
+      sourceTypes: ["norma", "manual_tecnico", "guia_oficial"],
+    }),
+    ...queries.map((query) => searchKnowledge(admin, { companyId, query, matchCount: 3 })),
+  ]);
+
+  const ordered: RetrievedChunk[] = [];
+  const seen = new Set<string>();
+  for (const chunk of [...perCandidate.flat(), ...general]) {
+    if (!seen.has(chunk.chunkId)) {
+      seen.add(chunk.chunkId);
+      ordered.push(chunk);
+    }
+  }
+  const { block, sources } = formatSourcesBlock(ordered, "F");
+  const refOf = new Map(sources.map((s) => [s.chunkId, s.ref]));
+  const refsByCandidate = new Map(
+    selection.candidates.map((c, i) => [
+      `${c.dimension_id}::${c.intervention_id}`,
+      perCandidate[i].map((chunk) => refOf.get(chunk.chunkId)!),
+    ])
+  );
+  return { block, sources, refsByCandidate };
+}
+
 function buildSelectionBlock(
   selection: CuratedSelection,
   prioritizedNames: Map<string, string>,
-  grounding: Map<string, GroundedFacts>
+  grounding: Map<string, GroundedFacts>,
+  refsByCandidate: Map<string, string[]>
 ): string {
   return selection.candidates
     .map((c) => {
@@ -65,6 +115,10 @@ function buildSelectionBlock(
       const finBlock = fin
         ? `Investimento ESTIMADO (JÁ CALCULADO): ${fin.investment.value}  [${fin.investment.formula}; ${fin.investment.source}]`
         : "(sem estimativa de investimento para este item)";
+      const refs = refsByCandidate.get(`${c.dimension_id}::${c.intervention_id}`) ?? [];
+      const refsLine = refs.length
+        ? `TRECHOS DE DOCUMENTOS PARA ESTE ITEM: ${refs.join(", ")} (texto na seção "Trechos de documentos de referência")`
+        : "TRECHOS DE DOCUMENTOS PARA ESTE ITEM: nenhum relevante encontrado";
 
       return `### ${dimName}
 dimension_id="${c.dimension_id}"  (USE EXATAMENTE este uuid no output — NÃO invente)
@@ -80,7 +134,9 @@ PERGUNTAS REAIS DA PESQUISA QUE PUXARAM O SCORE (cite ao menos uma, literal, no 
 ${evidenceLines}
 
 NÚMEROS JÁ CALCULADOS PELO SISTEMA (NÃO recalcule, NÃO invente — apenas referencie em texto quando útil):
-${finBlock}`;
+${finBlock}
+
+${refsLine}`;
     })
     .join("\n\n");
 }
@@ -124,6 +180,7 @@ export async function runConsultant(args: {
   history?: CompanyActionTaken[];
   grounding: Map<string, GroundedFacts>;
   aiConfig: ResolvedAiConfig;
+  companyId: string;
 }): Promise<ConsultantPlanItem[]> {
 
   const historyMapped = args.history?.map((h) => ({
@@ -138,10 +195,12 @@ export async function runConsultant(args: {
     args.report.prioritized_dimensions.map((d) => [d.dimension_id, d.dimension_name])
   );
 
+  const rag = await retrieveSources(args.selection, prioritizedNames, args.grounding, args.companyId);
   const selectionBlock = buildSelectionBlock(
     args.selection,
     prioritizedNames,
-    args.grounding
+    args.grounding,
+    rag.refsByCandidate
   );
   const providersBlock = buildProvidersBlock(args.selection);
   const interventionIds = args.selection.candidates.map((c) => c.intervention_id);
@@ -162,7 +221,7 @@ ${providersBlock || "(nenhum fornecedor específico catalogado)"}
 
 ## Referências científicas curadas (verificáveis)
 ${referencesBlock || "(nenhuma referência curada)"}
-
+${rag.block ? `\n${PLAN_SOURCES_RULES}\n\n${rag.block}\n` : ""}
 ## REGRAS CRÍTICAS
 
 ### Você NÃO escreve números
@@ -220,7 +279,8 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
       "risk_if_not_acted": "consequências de não agir (sem valores monetários)",
       "implementation_risks": [ { "risk": "...", "mitigation": "..." } ],
       "nr1_compliance": "..." ou null,
-      "compliance_extra": ["..."]
+      "compliance_extra": ["..."],
+      "source_ids": ["F1", "F3"]
     }
   }
 ]
@@ -239,6 +299,15 @@ Devolva APENAS o JSON array.`;
   if (plans.length === 0) {
     console.error(`[consultant] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
+  }
+
+  // Fontes: só os identificadores que foram fornecidos viram fontes do plano.
+  for (const plan of plans) {
+    if (!plan.recommendation) continue;
+    const ids = Array.isArray(plan.recommendation.source_ids) ? plan.recommendation.source_ids : [];
+    // Renumera 1, 2, 3… para a tela (os ids F* só existem dentro do prompt).
+    plan.recommendation.sources = keepCitedSources(rag.sources, ids).map((s, i) => ({ ...s, ref: String(i + 1) }));
+    delete plan.recommendation.source_ids;
   }
   return plans;
 }

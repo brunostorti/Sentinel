@@ -89,6 +89,7 @@ export const ROUTES = {
     SETTINGS: "/configuracoes/perfil",
     CERTIFICATES: "/certificados",
     ASSISTANT: "/assistente",
+    KNOWLEDGE: "/base-de-conhecimento",
     METHODOLOGY: "/sobre/metodologia",
     ACCOUNT: "/conta/dados",
   },

@@ -357,6 +357,7 @@ export async function runPipeline(
       history,
       grounding: groundingByKey,
       aiConfig: context.aiConfig,
+      companyId,
     });
     console.log(`[pipeline ${run_id}] Stage 3 OK — ${plans.length} planos gerados pelo LLM`);
 

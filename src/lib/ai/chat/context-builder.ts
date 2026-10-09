@@ -7,6 +7,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildPerfilNarrativo } from "../profile/narrative";
+import { buildSurveyScoresBlock } from "./survey-context";
 import type { CompanyProfile } from "../profile/schema";
 
 interface CompanyInfo {
@@ -20,14 +21,14 @@ const GUARDRAILS = `Você é o assistente de saúde ocupacional da empresa.
 
 DIRETRIZES:
 - Sempre em português brasileiro.
-- Cite dados do contexto quando responder. Não invente números.
+- Cite dados do contexto quando responder. Não invente números: resultados da pesquisa só da seção "Resultados da pesquisa mais recente".
 - Se o HR perguntar algo fora do contexto, peça a informação ou diga que não sabe.
 - Não dê diagnósticos médicos individuais.
 - Não emita parecer jurídico definitivo — sugira consultar advogado quando aplicável.
 - Se o HR mencionar fato novo sobre a empresa (orçamento, estrutura, restrição),
   reconheça e responda — o sistema captura para revisão posterior.
 - Tom: consultor sênior pragmático. Direto, sem floreio. Honesto sobre limitações.
-- Quando citar uma intervenção do catálogo, mencione o fornecedor e o custo aproximado.`;
+- Quando citar uma intervenção do catálogo, não informe preço de fornecedor (é sob consulta).`;
 
 export async function buildChatSystemPrompt(
   companyId: string,
@@ -80,6 +81,8 @@ export async function buildChatSystemPrompt(
       )
     : "Perfil da empresa ainda não foi preenchido.";
 
+  const scoresBlock = await buildSurveyScoresBlock(admin, companyId);
+
   if (kind === "plan" && resourceId) {
     const { data: plan } = await admin
       .from("action_plans")
@@ -102,6 +105,8 @@ export async function buildChatSystemPrompt(
 
 ## Perfil narrativo da empresa "${company.name}"
 ${perfilNarrativo}
+
+${scoresBlock}
 
 ## Plano sob discussão
 ${planSummary}
@@ -166,6 +171,8 @@ Tom: pragmático, direto, defenda decisões com base no perfil, mas concorde qua
 
 ## Perfil narrativo da empresa "${company.name}"
 ${perfilNarrativo}
+
+${scoresBlock}
 
 ## Planos ativos da empresa
 ${plansSummary}

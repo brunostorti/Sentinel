@@ -1,3 +1,5 @@
+import type { StoredSource } from "@/lib/rag/prompt";
+
 /**
  * Cliente helper para consumir SSE de /api/chat/send com fallback síncrono.
  *
@@ -19,6 +21,8 @@ export interface ChatStreamCallbacks {
   onDelta: (chunk: string) => void;
   onDone: (full: string) => void;
   onError: (msg: string) => void;
+  /** Fontes da base de conhecimento citadas na resposta (chegam logo antes do fim). */
+  onSources?: (sources: StoredSource[]) => void;
 }
 
 export async function sendChatStream(
@@ -61,6 +65,7 @@ export async function sendChatStream(
             delta?: string;
             done?: boolean;
             error?: string;
+            sources?: StoredSource[];
           };
           if (parsed.error) {
             cbs.onError(parsed.error);
@@ -70,6 +75,7 @@ export async function sendChatStream(
             full += parsed.delta;
             cbs.onDelta(parsed.delta);
           }
+          if (parsed.sources) cbs.onSources?.(parsed.sources);
           if (parsed.done) {
             cbs.onDone(full);
             return;
