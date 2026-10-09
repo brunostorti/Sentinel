@@ -92,69 +92,39 @@ export async function buildSurveyEvidence(
   scoringDirection: ScoringDirection,
   departmentId?: string
 ): Promise<{ items: SurveyEvidenceItem[]; respondents: number }> {
-  let respQuery = admin
-    .from("survey_responses")
-    .select("id")
-    .eq("survey_id", surveyId);
-  if (departmentId) respQuery = respQuery.eq("department_id", departmentId);
+  // Estatísticas por pergunta calculadas no banco (survey_item_stats, migração 025),
+  // já com inversão e regra de 5 (inclusive a supressão complementar): resultado vazio
+  // significa grupo oculto ou sem respostas.
+  const { data, error } = await admin.rpc("survey_item_stats", {
+    p_survey_id: surveyId,
+    p_dimension_id: dimensionId,
+    p_department_id: departmentId ?? null,
+  });
+  if (error) {
+    console.error("survey_item_stats:", error.message);
+    return { items: [], respondents: 0 };
+  }
 
-  const { data: responses } = await respQuery;
-  const respondents = responses?.length ?? 0;
-
-  // Regra de 5: não expõe nada abaixo do limiar de anonimato.
+  const rows = (data ?? []) as {
+    question_text: string;
+    respondents: number;
+    mean_score: number | string;
+    high_count: number;
+    low_count: number;
+  }[];
+  const respondents = rows.reduce((max, r) => Math.max(max, r.respondents), 0);
   if (respondents < ANONYMITY_THRESHOLD) return { items: [], respondents };
 
-  const responseIds = responses!.map((r) => r.id);
-
-  const { data: answers } = await admin
-    .from("survey_answers")
-    .select(
-      `
-      score,
-      question_id,
-      questionnaire_items ( text, dimension_id, is_inverted )
-    `
-    )
-    .in("survey_response_id", responseIds);
-
-  if (!answers?.length) return { items: [], respondents };
-
-  // Agrupa por pergunta, aplicando inversão (alinha "alto = pior").
-  const byQuestion = new Map<string, { text: string; adjusted: number[] }>();
-  for (const a of answers) {
-    const qi = a.questionnaire_items as unknown as {
-      text: string;
-      dimension_id: string;
-      is_inverted: boolean;
-    } | null;
-    if (!qi || qi.dimension_id !== dimensionId) continue;
-
-    const raw = a.score as number;
-    const adjusted = qi.is_inverted ? 100 - raw : raw;
-    const entry = byQuestion.get(a.question_id as string) ?? {
-      text: qi.text,
-      adjusted: [],
-    };
-    entry.adjusted.push(adjusted);
-    byQuestion.set(a.question_id as string, entry);
-  }
-
-  const items: SurveyEvidenceItem[] = [];
-  for (const q of byQuestion.values()) {
-    const n = q.adjusted.length;
-    if (n === 0) continue;
-    const mean = q.adjusted.reduce((s, v) => s + v, 0) / n;
+  const items: SurveyEvidenceItem[] = rows.map((r) => {
     // Nível crítico: depende da direção da pontuação.
-    const criticalCount = q.adjusted.filter((v) =>
-      scoringDirection === "HIGH_IS_RISK" ? v >= 75 : v <= 25
-    ).length;
-    items.push({
-      questionText: q.text,
-      meanScore: Math.round(mean),
-      criticalPercent: Math.round((criticalCount / n) * 100),
-      respondents: n,
-    });
-  }
+    const critical = scoringDirection === "HIGH_IS_RISK" ? r.high_count : r.low_count;
+    return {
+      questionText: r.question_text,
+      meanScore: Math.round(Number(r.mean_score)),
+      criticalPercent: Math.round((critical / r.respondents) * 100),
+      respondents: r.respondents,
+    };
+  });
 
   // Pior primeiro.
   items.sort((a, b) =>
