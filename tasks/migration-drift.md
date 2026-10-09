@@ -58,3 +58,11 @@ Usar isso para reconstruir os arquivos (em vez de engenharia reversa via pg_poli
   - dados: kb_references (25) e kb_intervention_references (78) idênticos linha a linha; universal_categories e response_formats idênticos; questionnaire_instruments difere como esperado (só copsoq_ii vem de migração; copsoq_iii/jss/olbi vêm dos scripts de seed)
   - obs.: o hash agregado de kb_references diferia só pela ordenação (collation C no PGlite × en_US em produção)
 - [ ] Commit desta branch (aguardando o usuário)
+
+## Nota da sessão do RAG/diagnóstico (2026-10-08)
+
+Aplicadas no banco com aprovação do usuário (arquivos no checkout principal, ainda sem commit):
+- `020_security_hotfix` — trava role/company_id em users (escalada para SUPER_ADMIN), neutraliza horários das respostas (anonimato), survey_answers sem acesso direto, denúncias só RH/Admin.
+- `021_reports_bucket_private` — bucket `reports` privado, sem policies públicas no storage, limite 10 MB e PDF/JPG/PNG.
+Considerar ao renomear/numerar as migrações.
+- `022_protect_ai_api_keys` (2026-10-08) — privilégios por coluna em companies: authenticated sem SELECT/UPDATE em ai_api_keys (acesso só via service role na rota /api/company/ai-settings).
