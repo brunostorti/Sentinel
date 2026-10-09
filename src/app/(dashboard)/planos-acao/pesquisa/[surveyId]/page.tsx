@@ -87,7 +87,6 @@ export default async function SurveyPlansPage({
         surveysWithoutPlans={surveysWithoutPlans}
         canManage={canManage}
         hasAnySurveys
-        hasApiKey={!!process.env.ANTHROPIC_API_KEY}
       />
     </div>
   );

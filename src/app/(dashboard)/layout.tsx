@@ -7,6 +7,12 @@ import { PageTransition } from "@/components/page-transition";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { LgpdConsentModal } from "@/components/lgpd-consent-modal";
 
+/**
+ * A geração de planos (3 chamadas de IA, com modelos que raciocinam como o Opus 5.5)
+ * pode passar de 2 minutos: ampliamos o tempo máximo das funções na Vercel.
+ */
+export const maxDuration = 300;
+
 /** Rotas que precisam ocupar a área principal SEM padding e SEM max-w-7xl. */
 const FULL_BLEED_PATTERNS: RegExp[] = [
   /^\/planos-acao\/[^/]+$/, // detalhe do plano

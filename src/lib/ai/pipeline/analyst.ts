@@ -7,11 +7,11 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor } from "../provider-factory";
 import type { AnalystReport, PipelineContext } from "./types";
 import type { CompanyProfile } from "../profile/schema";
 import { buildPerfilCompacto } from "../profile/narrative";
-import { extractJsonObject } from "./json-utils";
+import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
 
 interface CompanyInfo {
   name: string;
@@ -150,15 +150,17 @@ Hipóteses do que está CAUSANDO (não sintoma). Ex: "estrutura organizacional s
 
 Devolva APENAS o JSON.`;
 
-  const model = createModel(context.aiConfig.model, context.aiConfig.keys);
+  const model = createModel(context.aiConfig);
   
-  const { text } = await generateText({
+  const { text, finishReason } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(context.aiConfig),
   });
 
   const report = extractJsonObject<AnalystReport>(text);
   if (!report) {
+    console.error(`[analyst] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 1 (Analyst): JSON inválido.");
   }
   return report;

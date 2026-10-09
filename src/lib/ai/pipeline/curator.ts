@@ -7,7 +7,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor, type ResolvedAiConfig } from "../provider-factory";
 import type { AnalystReport, CuratedSelection } from "./types";
 import type {
   CompanyProfile,
@@ -16,7 +16,7 @@ import type {
 } from "../profile/schema";
 import { buildPerfilNarrativo } from "../profile/narrative";
 import type { AnnotatedIntervention } from "../knowledge-base/filters";
-import { extractJsonObject } from "./json-utils";
+import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
 
 interface CompanyInfo {
   name: string;
@@ -66,7 +66,7 @@ export async function runCurator(args: {
   history: CompanyActionTaken[];
   outcomes: ActionOutcome[];
   annotated: AnnotatedIntervention[];
-  aiConfig: { model: string; keys: Record<string, string> };
+  aiConfig: ResolvedAiConfig;
 }): Promise<CuratedSelection> {
 
   const perfilNarrativo = buildPerfilNarrativo(
@@ -145,15 +145,17 @@ ${catalogBlock}
 
 Devolva APENAS o JSON.`;
 
-  const model = createModel(args.aiConfig.model, args.aiConfig.keys);
+  const model = createModel(args.aiConfig);
   
-  const { text } = await generateText({
+  const { text, finishReason } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(args.aiConfig),
   });
 
   const selection = extractJsonObject<CuratedSelection>(text);
   if (!selection) {
+    console.error(`[curator] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 2 (Curator): JSON inválido.");
   }
   return selection;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { suggestProfileValues } from "@/lib/ai/profile/pre-fill";
+import { describeAiError, resolveAiConfig } from "@/lib/ai/provider-factory";
 
 /**
  * POST /api/profile/suggest-values
@@ -29,7 +30,7 @@ export async function POST(_req: NextRequest) {
   // As chaves de IA não são legíveis pela sessão do usuário (migração 022).
   const { data: company } = await createAdminClient()
     .from("companies")
-    .select("industry, employee_count, work_regime, ai_model, ai_api_keys")
+    .select("industry, employee_count, work_regime, ai_plan_model, ai_chat_model, ai_api_keys")
     .eq("id", userData.company_id!)
     .single();
 
@@ -50,14 +51,11 @@ export async function POST(_req: NextRequest) {
       work_regime: company?.work_regime ?? null,
       department_count: deptCount ?? 0,
       past_survey_count: surveyCount ?? 0,
-    }, {
-      model: company?.ai_model || "claude-3-5-sonnet-20240620",
-      keys: company?.ai_api_keys || {},
-    });
+    }, resolveAiConfig(company, "chat"));
 
     return NextResponse.json({ suggestion });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Erro ao consultar IA.";
+    const message = describeAiError(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

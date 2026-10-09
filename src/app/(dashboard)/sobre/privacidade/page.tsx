@@ -185,11 +185,18 @@ export default function PrivacidadePage() {
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <Badge variant="outline">Anthropic (Claude AI)</Badge>
+              <Badge variant="outline">Provedores de IA</Badge>
               <span className="text-muted-foreground">
-                Geração de planos e chat. Não envia PII direta; apenas perfis
-                organizacionais agregados e dimensões em risco. Anthropic não
-                usa dados via API para treinamento.
+                Geração de planos e chat, pelo modelo que a empresa escolhe em{" "}
+                <Link href="/sobre/modelos-ia" className="text-primary underline">
+                  Modelos de IA
+                </Link>
+                : IA da Mauá (Barô, operada pelo Instituto Mauá de Tecnologia;
+                usada só no chat), Anthropic (Claude), OpenAI (GPT) ou Google
+                (Gemini). Enviamos perfis organizacionais agregados, dimensões
+                em risco e o texto digitado no chat — nunca respostas
+                individuais da pesquisa. Anthropic, OpenAI e Google não usam
+                dados recebidos pela API paga para treinar modelos.
               </span>
             </li>
             <li className="flex items-start gap-2">

@@ -27,7 +27,6 @@ interface ActionPlansListProps {
   surveysWithoutPlans: { id: string; title: string }[];
   canManage: boolean;
   hasAnySurveys: boolean;
-  hasApiKey: boolean;
 }
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -56,7 +55,6 @@ export function ActionPlansList({
   surveysWithoutPlans,
   canManage,
   hasAnySurveys,
-  hasApiKey,
 }: ActionPlansListProps) {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortBy>("priority");
@@ -142,20 +140,16 @@ export function ActionPlansList({
   if (allPlans.length === 0 && surveysWithoutPlans.length === 0) {
     return (
       <EmptyState
-        icon={!hasAnySurveys ? "assignment" : !hasApiKey ? "psychology" : "hourglass_empty"}
+        icon={!hasAnySurveys ? "assignment" : "hourglass_empty"}
         title={
           !hasAnySurveys
             ? "Nenhuma pesquisa encerrada"
-            : !hasApiKey
-              ? "IA não configurada"
-              : "Nenhum plano gerado ainda"
+            : "Nenhum plano gerado ainda"
         }
         subtitle={
           !hasAnySurveys
             ? "Os planos de ação são gerados ao encerrar uma pesquisa."
-            : !hasApiKey
-              ? "Configure ANTHROPIC_API_KEY no servidor."
-              : "Encerre uma pesquisa com respostas para gerar planos."
+            : "Encerre uma pesquisa com respostas para gerar planos."
         }
       />
     );

@@ -6,7 +6,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor, type ResolvedAiConfig } from "../provider-factory";
 import type {
   AIRecommendation,
   CuratedSelection,
@@ -18,7 +18,7 @@ import { getInterventionById } from "../knowledge-base/catalog";
 import { getProvidersForIntervention } from "../knowledge-base/providers-br";
 import { getReferencesForInterventions, type KbReferenceWithRelevance } from "../knowledge-base/references";
 import type { GroundedFacts } from "./grounding";
-import { extractJsonArray } from "./json-utils";
+import { describeUnparsedOutput, extractJsonArray } from "./json-utils";
 
 interface CompanyInfo {
   name: string;
@@ -123,7 +123,7 @@ export async function runConsultant(args: {
   company: CompanyInfo;
   history?: CompanyActionTaken[];
   grounding: Map<string, GroundedFacts>;
-  aiConfig: { model: string; keys: Record<string, string> };
+  aiConfig: ResolvedAiConfig;
 }): Promise<ConsultantPlanItem[]> {
 
   const historyMapped = args.history?.map((h) => ({
@@ -227,15 +227,17 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 
 Devolva APENAS o JSON array.`;
 
-  const model = createModel(args.aiConfig.model, args.aiConfig.keys);
+  const model = createModel(args.aiConfig);
   
-  const { text } = await generateText({
+  const { text, finishReason } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(args.aiConfig),
   });
 
   const plans = extractJsonArray<ConsultantPlanItem>(text);
   if (plans.length === 0) {
+    console.error(`[consultant] ${describeUnparsedOutput(text, finishReason)}`);
     throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
   }
   return plans;

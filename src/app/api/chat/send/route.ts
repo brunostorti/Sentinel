@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { streamText, generateText } from "ai";
-import { createModel } from "@/lib/ai/provider-factory";
+import { createModel, describeAiError, resolveAiConfig } from "@/lib/ai/provider-factory";
 import {
   getOrCreateThread,
   loadHistory,
@@ -52,14 +52,12 @@ export async function POST(req: NextRequest) {
   // As chaves de IA não são legíveis pela sessão do usuário (migração 022).
   const { data: company } = await createAdminClient()
     .from("companies")
-    .select("ai_model, ai_api_keys")
+    .select("ai_plan_model, ai_chat_model, ai_api_keys")
     .eq("id", userData.company_id)
     .single();
 
-  const aiConfig = {
-    model: company?.ai_model || "claude-3-5-sonnet-20240620",
-    keys: company?.ai_api_keys || {},
-  };
+  const aiConfig = resolveAiConfig(company, "chat");
+  const isMaua = aiConfig.provider === "maua";
 
   const thread = await getOrCreateThread(supabase, {
     companyId: userData.company_id,
@@ -111,57 +109,103 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const model = createModel(aiConfig.model, aiConfig.keys);
+  const model = createModel(aiConfig);
   const companyId = userData.company_id;
   const userContent = body.content;
 
+  // Em sequência (não em paralelo): a IA da Mauá aceita só 2 pedidos simultâneos
+  // por chave, e a resposta principal ao usuário tem prioridade.
   async function backgroundJobs(fullReply: string) {
-    await Promise.allSettled([
-      extractAndPersistFacts({
+    try {
+      await extractAndPersistFacts({
         companyId,
         userMessage: userContent,
         assistantReply: fullReply,
-      }),
-      maybeRollSummary(thread.id),
-    ]);
+      });
+    } catch (e) {
+      console.error("chat: extração de fatos falhou:", e);
+    }
+    try {
+      await maybeRollSummary(thread.id);
+    } catch (e) {
+      console.error("chat: resumo da conversa falhou:", e);
+    }
   }
 
-  // ── Streaming via Vercel AI SDK ────────────────────────────────────────────
+  // ── Streaming (SSE no formato que src/lib/chat-stream.ts lê) ───────────
+  // Eventos: { delta } a cada trecho, { done: true } no fim, { error } se a IA
+  // falhar no meio — assim a tela mostra a mensagem amigável (ex.: limite da Mauá).
   if (body.stream) {
-    try {
-      const result = streamText({
-        model,
-        temperature: aiConfig.model === "maua" ? 0.2 : undefined,
-        maxOutputTokens: aiConfig.model === "maua" ? 1500 : undefined,
-        system: systemPrompt,
-        messages: messagesForLLM,
-        onFinish: async ({ text }) => {
-          // Salva mensagem completa
-          await saveMessage(supabase, {
-            threadId: thread.id,
-            role: "assistant",
-            content: text,
-          });
-          await touchThread(supabase, thread.id);
+    const result = streamText({
+      model,
+      temperature: isMaua ? 0.2 : undefined,
+      maxOutputTokens: isMaua ? 1500 : undefined,
+      system: systemPrompt,
+      messages: messagesForLLM,
+      onError: () => {}, // tratado no laço abaixo
+      onFinish: async ({ text }) => {
+        // Salva mensagem completa
+        await saveMessage(supabase, {
+          threadId: thread.id,
+          role: "assistant",
+          content: text,
+        });
+        await touchThread(supabase, thread.id);
 
-          // Background: facts + summary
-          void backgroundJobs(text);
-        },
-      });
+        // Background: facts + summary
+        void backgroundJobs(text);
+      },
+    });
 
-      return result.toTextStreamResponse();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro stream";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
+    const encoder = new TextEncoder();
+    const event = (payload: object) =>
+      encoder.encode(`data: ${JSON.stringify(payload)}\n\n`);
+
+    // Se a tela sair no meio, seguimos lendo a resposta até o fim para que o
+    // onFinish a salve no histórico; só paramos de enviar.
+    let clientConnected = true;
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (payload: object) => {
+          if (!clientConnected) return;
+          try {
+            controller.enqueue(event(payload));
+          } catch {
+            clientConnected = false;
+          }
+        };
+        try {
+          for await (const part of result.fullStream) {
+            if (part.type === "text-delta") send({ delta: part.text });
+            else if (part.type === "error") throw part.error;
+          }
+          send({ done: true });
+        } catch (err) {
+          console.error("chat: falha no streaming:", err);
+          send({ error: describeAiError(err, aiConfig) });
+        } finally {
+          if (clientConnected) controller.close();
+        }
+      },
+      cancel() {
+        clientConnected = false;
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "content-type": "text/event-stream; charset=utf-8",
+        "cache-control": "no-cache, no-transform",
+      },
+    });
   }
 
   // ── Síncrono (fallback / clientes que não querem stream) ─────────
   try {
     const { text } = await generateText({
       model,
-      temperature: aiConfig.model === "maua" ? 0.2 : undefined,
-      maxOutputTokens: aiConfig.model === "maua" ? 1500 : undefined,
+      temperature: isMaua ? 0.2 : undefined,
+      maxOutputTokens: isMaua ? 1500 : undefined,
       system: systemPrompt,
       messages: messagesForLLM,
     });
@@ -179,7 +223,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Erro ao chamar IA.";
+    const message = describeAiError(err, aiConfig);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

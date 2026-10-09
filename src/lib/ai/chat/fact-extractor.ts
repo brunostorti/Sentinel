@@ -12,7 +12,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, resolveAiConfig, type CompanyAiSettings } from "../provider-factory";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractJsonObject } from "../pipeline/json-utils";
 import type { CompanyProfile } from "../profile/schema";
@@ -69,7 +69,7 @@ export async function extractAndPersistFacts(args: {
 
   const { data: profileRow } = await admin
     .from("company_profiles")
-    .select("*, companies(ai_model, ai_api_keys)")
+    .select("*, companies(ai_plan_model, ai_chat_model, ai_api_keys)")
     .eq("company_id", args.companyId)
     .single();
 
@@ -115,11 +115,7 @@ Se nenhum fato relevante: { "candidate_facts": [] }`;
 
   let result: { candidate_facts?: CandidateFact[] } | null = null;
   try {
-    const companyInfo = companies as any;
-    const model = createModel(
-      companyInfo?.ai_model || "claude-3-5-sonnet-20240620",
-      companyInfo?.ai_api_keys || {}
-    );
+    const model = createModel(resolveAiConfig(companies as CompanyAiSettings | null, "chat"));
     
     const { text } = await generateText({
       model: model,

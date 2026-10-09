@@ -66,9 +66,10 @@ export function AssistantView({ userName }: { userName: string }) {
     const currentAttachments = [...attachments];
     setAttachments([]); // clear attachments early for UX
 
-    startTransition(() => {
+    // Async: a transição (isPending) dura até a resposta terminar de chegar.
+    startTransition(async () => {
       let assistantText = "";
-      sendChatStream(
+      await sendChatStream(
         { kind: "company", content, attachments: currentAttachments },
         {
           onDelta: (chunk) => {
@@ -233,7 +234,7 @@ export function AssistantView({ userName }: { userName: string }) {
               </div>
             </div>
           ))}
-          {isPending && (
+          {isPending && messages[messages.length - 1]?.role === "user" && (
             <div className="flex justify-start">
               <div className="rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
                 <span className="inline-flex gap-1">

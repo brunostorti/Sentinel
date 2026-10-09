@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runPipeline } from "@/lib/ai/pipeline/orchestrator";
 
+/**
+ * A geração de planos (3 chamadas de IA, com modelos que raciocinam como o Opus 5.5)
+ * pode passar de 2 minutos: ampliamos o tempo máximo das funções na Vercel.
+ */
+export const maxDuration = 300;
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();

@@ -6,7 +6,7 @@
  */
 
 import { generateText } from "ai";
-import { createModel } from "../provider-factory";
+import { createModel, maxOutputTokensFor, type ResolvedAiConfig } from "../provider-factory";
 import { extractJsonObject } from "../pipeline/json-utils";
 
 export interface PreFillSeed {
@@ -39,7 +39,7 @@ export interface PreFillSuggestion {
 
 export async function suggestProfileValues(
   seed: PreFillSeed,
-  aiConfig: { model: string; keys: Record<string, string> }
+  aiConfig: ResolvedAiConfig
 ): Promise<PreFillSuggestion | null> {
 
   const prompt = `Você é um consultor que estima o perfil organizacional de uma empresa brasileira a partir de sinais limitados, para PRÉ-PREENCHER um formulário. O HR vai revisar antes de salvar — então é OK errar para o lado conservador.
@@ -80,11 +80,12 @@ Sempre inclua "rationale" (1-2 frases explicando suas inferências).
 
 Apenas o JSON. Nenhum texto antes ou depois.`;
 
-  const model = createModel(aiConfig.model, aiConfig.keys);
+  const model = createModel(aiConfig);
   
   const { text } = await generateText({
     model: model,
     prompt: prompt,
+    maxOutputTokens: maxOutputTokensFor(aiConfig),
   });
 
   return extractJsonObject<PreFillSuggestion>(text);

@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
@@ -418,9 +419,13 @@ export async function closeSurvey(surveyId: string) {
 
   if (error) return { error: "Erro ao encerrar pesquisa." };
 
-  // Trigger AI action plan generation in background
-  triggerActionPlanGeneration(surveyId, survey.company_id).catch(
-    (err) => console.error("AI plan generation failed:", err)
+  // Gera os planos depois de responder ao usuário. Com after(), a plataforma mantém a
+  // função viva até o fim (sem ele, a Vercel pode congelar a geração no meio).
+  const companyId = survey.company_id;
+  after(() =>
+    triggerActionPlanGeneration(surveyId, companyId).catch((err) =>
+      console.error("AI plan generation failed:", err)
+    )
   );
 
   return { success: true };

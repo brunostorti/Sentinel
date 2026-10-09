@@ -20,6 +20,7 @@ import type { KbReferenceWithRelevance } from "@/lib/ai/knowledge-base/reference
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
+import { modelLabel } from "@/lib/ai/models";
 
 interface PlanV2Props {
   recommendation: AIRecommendation;
@@ -106,6 +107,15 @@ export function PlanV2({ recommendation: r, targetDepartment, timeframe, referen
             </div>
           )}
         </div>
+      )}
+
+      {/* ═══ Qual IA gerou o plano (auditoria) ═══ */}
+      {r.generated_by && (
+        <p className="flex flex-wrap items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+          <Icon name="smart_toy" size={13} />
+          Gerado por {modelLabel(r.generated_by.model)} em{" "}
+          {new Date(r.generated_by.generated_at).toLocaleDateString("pt-BR")}
+        </p>
       )}
 
       {/* ═══ Card da matriz 5W2H ═══ */}

@@ -7,6 +7,12 @@ function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+/**
+ * A geração de planos (3 chamadas de IA, com modelos que raciocinam como o Opus 5.5)
+ * pode passar de 2 minutos: ampliamos o tempo máximo das funções na Vercel.
+ */
+export const maxDuration = 300;
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -64,10 +70,19 @@ export async function POST(req: NextRequest) {
     .eq("id", surveyId)
     .eq("company_id", companyId);
 
+  // Se a tela sair (aba fechada, navegação), só paramos de enviar progresso:
+  // a geração continua e salva os planos — nunca abortamos por causa do cliente.
+  let clientConnected = true;
+
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: Record<string, unknown>) => {
-        controller.enqueue(new TextEncoder().encode(sseEvent(data)));
+        if (!clientConnected) return;
+        try {
+          controller.enqueue(new TextEncoder().encode(sseEvent(data)));
+        } catch {
+          clientConnected = false;
+        }
       };
 
       try {
@@ -88,8 +103,11 @@ export async function POST(req: NextRequest) {
         const message = err instanceof Error ? err.message : "Erro interno.";
         send({ error: message });
       } finally {
-        controller.close();
+        if (clientConnected) controller.close();
       }
+    },
+    cancel() {
+      clientConnected = false;
     },
   });
 

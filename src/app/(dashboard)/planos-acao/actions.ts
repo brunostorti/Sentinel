@@ -195,10 +195,6 @@ export async function generatePlansForSurvey(surveyId: string) {
     return { error: "Apenas pesquisas encerradas podem gerar planos." };
   }
 
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY.includes("placeholder")) {
-    return { error: "Chave da API de IA não configurada no .env.local (ANTHROPIC_API_KEY)." };
-  }
-
   // Delete existing plans for this survey before regenerating
   await supabase
     .from("action_plans")
