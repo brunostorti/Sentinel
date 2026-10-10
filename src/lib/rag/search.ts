@@ -9,6 +9,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EMBEDDING_MODEL_ID, type KbSourceType } from "./config";
 import { embedQuery, isEmbeddingConfigured } from "./embeddings";
+import { recordUsage } from "@/lib/ai/usage";
 
 export interface RetrievedChunk {
   chunkId: string;
@@ -48,8 +49,10 @@ export async function searchKnowledge(
   }
 ): Promise<RetrievedChunk[]> {
   const query = args.query.trim().slice(0, 2000);
-  if (!query || !isEmbeddingConfigured()) return [];
+  // RAG_DISABLED=1 desliga a busca (experimentos com e sem documentos; chave de emergência).
+  if (!query || !isEmbeddingConfigured() || process.env.RAG_DISABLED === "1") return [];
 
+  const startedAt = Date.now();
   try {
     const embedding = await embedQuery(query);
     const { data, error } = await admin.rpc("kb_search", {
@@ -62,6 +65,7 @@ export async function searchKnowledge(
     });
     if (error) throw new Error(error.message);
 
+    recordUsage("rag-search", "kb_search", startedAt);
     const min = args.minSimilarity ?? MIN_SIMILARITY;
     return ((data ?? []) as Record<string, unknown>[])
       .map(

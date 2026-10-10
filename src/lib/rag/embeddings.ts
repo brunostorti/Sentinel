@@ -9,6 +9,7 @@
 import { embed, embedMany } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { EMBEDDING_DIMENSIONS, EMBEDDING_MODEL } from "./config";
+import { recordUsage } from "@/lib/ai/usage";
 
 export function isEmbeddingConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
@@ -24,16 +25,20 @@ const providerOptions = { openai: { dimensions: EMBEDDING_DIMENSIONS } };
 
 export async function embedTexts(values: string[]): Promise<number[][]> {
   if (values.length === 0) return [];
-  const { embeddings } = await embedMany({
+  const startedAt = Date.now();
+  const { embeddings, usage } = await embedMany({
     model: embeddingModel(),
     values,
     maxParallelCalls: 2,
     providerOptions,
   });
+  recordUsage("embedding", EMBEDDING_MODEL, startedAt, usage);
   return embeddings;
 }
 
 export async function embedQuery(text: string): Promise<number[]> {
-  const { embedding } = await embed({ model: embeddingModel(), value: text, providerOptions });
+  const startedAt = Date.now();
+  const { embedding, usage } = await embed({ model: embeddingModel(), value: text, providerOptions });
+  recordUsage("embedding", EMBEDDING_MODEL, startedAt, usage);
   return embedding;
 }

@@ -13,6 +13,7 @@ import type { CompanyProfile } from "../profile/schema";
 import { buildPerfilCompacto } from "../profile/narrative";
 import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
 import { toFavorability } from "@/lib/copsoq/scoring";
+import { recordUsage } from "../usage";
 
 interface CompanyInfo {
   name: string;
@@ -154,11 +155,13 @@ Devolva APENAS o JSON.`;
 
   const model = createModel(context.aiConfig);
   
-  const { text, finishReason } = await generateText({
+  const startedAt = Date.now();
+  const { text, finishReason, usage } = await generateText({
     model: model,
     prompt: prompt,
     maxOutputTokens: maxOutputTokensFor(context.aiConfig),
   });
+  recordUsage("analyst", context.aiConfig.model, startedAt, usage);
 
   const report = extractJsonObject<AnalystReport>(text);
   if (!report) {

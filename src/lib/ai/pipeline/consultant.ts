@@ -22,6 +22,7 @@ import { describeUnparsedOutput, extractJsonArray } from "./json-utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { searchKnowledge, type RetrievedChunk } from "@/lib/rag/search";
 import { PLAN_SOURCES_RULES, formatSourcesBlock, keepCitedSources, type StoredSource } from "@/lib/rag/prompt";
+import { recordUsage } from "../usage";
 
 interface CompanyInfo {
   name: string;
@@ -299,11 +300,13 @@ Devolva APENAS o JSON array.`;
 
   const model = createModel(args.aiConfig);
   
-  const { text, finishReason } = await generateText({
+  const startedAt = Date.now();
+  const { text, finishReason, usage } = await generateText({
     model: model,
     prompt: prompt,
     maxOutputTokens: maxOutputTokensFor(args.aiConfig),
   });
+  recordUsage("consultant", args.aiConfig.model, startedAt, usage);
 
   const plans = extractJsonArray<ConsultantPlanItem>(text);
   if (plans.length === 0) {

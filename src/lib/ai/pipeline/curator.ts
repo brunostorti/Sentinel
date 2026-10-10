@@ -17,6 +17,7 @@ import type {
 import { buildPerfilNarrativo } from "../profile/narrative";
 import type { AnnotatedIntervention } from "../knowledge-base/filters";
 import { describeUnparsedOutput, extractJsonObject } from "./json-utils";
+import { recordUsage } from "../usage";
 
 interface CompanyInfo {
   name: string;
@@ -147,11 +148,13 @@ Devolva APENAS o JSON.`;
 
   const model = createModel(args.aiConfig);
   
-  const { text, finishReason } = await generateText({
+  const startedAt = Date.now();
+  const { text, finishReason, usage } = await generateText({
     model: model,
     prompt: prompt,
     maxOutputTokens: maxOutputTokensFor(args.aiConfig),
   });
+  recordUsage("curator", args.aiConfig.model, startedAt, usage);
 
   const selection = extractJsonObject<CuratedSelection>(text);
   if (!selection) {
