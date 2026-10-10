@@ -179,9 +179,9 @@ export default function SurveyForm({
             style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
           />
         </div>
+        {/* Só a posição: o nome do bloco ou da dimensão induziria a resposta. */}
         <p className="text-xs text-muted-foreground text-center">
-          Seção {currentSection + 1} de {totalSections} —{" "}
-          <span className="font-medium">{section.category}</span>
+          Parte {currentSection + 1} de {totalSections}
         </p>
       </div>
 
@@ -193,9 +193,6 @@ export default function SurveyForm({
               <CardTitle className="text-sm font-medium leading-snug">
                 {idx + 1}. {q.text}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {q.dimensionName}
-              </p>
             </CardHeader>
             <CardContent>
               <div className="grid gap-1.5">
