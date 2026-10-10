@@ -31,6 +31,8 @@ interface CompanyInfo {
   work_regime: string | null;
 }
 
+type Candidate = CuratedSelection["candidates"][number];
+
 export interface ConsultantPlanItem {
   dimension_id: string;
   intervention_id: string;
@@ -38,21 +40,30 @@ export interface ConsultantPlanItem {
   recommendation: AIRecommendation;
 }
 
+interface CandidateSources {
+  block: string;
+  sources: StoredSource[];
+  /** Ids (F1, F2…) dos trechos buscados para o item, sem os gerais de plano de ação. */
+  refs: string[];
+}
+
+const candidateKey = (c: { dimension_id: string; intervention_id: string }) => `${c.dimension_id}::${c.intervention_id}`;
+
 /**
  * RAG: trechos de normas, guias e documentos da empresa para cada item (dimensão +
  * intervenção + pergunta da pesquisa que mais pesou), mais um conjunto sobre plano de
- * ação na NR-1. Trechos repetidos entre itens aparecem uma vez só.
+ * ação na NR-1, comum a todos. Cada item recebe o seu bloco, numerado F1, F2…
  */
 async function retrieveSources(
   selection: CuratedSelection,
   prioritizedNames: Map<string, string>,
   grounding: Map<string, GroundedFacts>,
   companyId: string
-): Promise<{ block: string; sources: StoredSource[]; refsByCandidate: Map<string, string[]> }> {
+): Promise<Map<string, CandidateSources>> {
   const admin = createAdminClient();
   const queries = selection.candidates.map((c) => {
     const iv = getInterventionById(c.intervention_id);
-    const topQuestion = grounding.get(`${c.dimension_id}::${c.intervention_id}`)?.surveyEvidence[0]?.questionText;
+    const topQuestion = grounding.get(candidateKey(c))?.surveyEvidence[0]?.questionText;
     return [prioritizedNames.get(c.dimension_id), iv?.title, topQuestion].filter(Boolean).join(". ");
   });
   const [general, ...perCandidate] = await Promise.all([
@@ -75,23 +86,22 @@ async function retrieveSources(
     ]),
   ]);
 
-  const ordered: RetrievedChunk[] = [];
-  const seen = new Set<string>();
-  for (const chunk of [...perCandidate.flat(), ...general]) {
-    if (!seen.has(chunk.chunkId)) {
-      seen.add(chunk.chunkId);
-      ordered.push(chunk);
-    }
-  }
-  const { block, sources } = formatSourcesBlock(ordered, "F");
-  const refOf = new Map(sources.map((s) => [s.chunkId, s.ref]));
-  const refsByCandidate = new Map(
-    selection.candidates.map((c, i) => [
-      `${c.dimension_id}::${c.intervention_id}`,
-      perCandidate[i].map((chunk) => refOf.get(chunk.chunkId)!),
-    ])
+  return new Map(
+    selection.candidates.map((c, i) => {
+      const ordered: RetrievedChunk[] = [];
+      const seen = new Set<string>();
+      for (const chunk of [...perCandidate[i], ...general]) {
+        if (!seen.has(chunk.chunkId)) {
+          seen.add(chunk.chunkId);
+          ordered.push(chunk);
+        }
+      }
+      const { block, sources } = formatSourcesBlock(ordered, "F");
+      const refOf = new Map(sources.map((s) => [s.chunkId, s.ref]));
+      const refs = [...new Set(perCandidate[i].map((chunk) => refOf.get(chunk.chunkId)!))];
+      return [candidateKey(c), { block, sources, refs }];
+    })
   );
-  return { block, sources, refsByCandidate };
 }
 
 function buildSelectionBlock(
@@ -105,7 +115,7 @@ function buildSelectionBlock(
       const iv = getInterventionById(c.intervention_id);
       if (!iv) return `- [INTERVENÇÃO DESCONHECIDA: ${c.intervention_id}]`;
       const dimName = prioritizedNames.get(c.dimension_id) ?? c.dimension_id;
-      const facts = grounding.get(`${c.dimension_id}::${c.intervention_id}`);
+      const facts = grounding.get(candidateKey(c));
 
       const setorAlvo =
         facts?.department && facts.department !== "all"
@@ -126,7 +136,7 @@ function buildSelectionBlock(
       const finBlock = fin
         ? `Investimento ESTIMADO (JÁ CALCULADO): ${fin.investment.value}  [${fin.investment.formula}; ${fin.investment.source}]`
         : "(sem estimativa de investimento para este item)";
-      const refs = refsByCandidate.get(`${c.dimension_id}::${c.intervention_id}`) ?? [];
+      const refs = refsByCandidate.get(candidateKey(c)) ?? [];
       const refsLine = refs.length
         ? `TRECHOS DE DOCUMENTOS PARA ESTE ITEM: ${refs.join(", ")} (texto na seção "Trechos de documentos de referência")`
         : "TRECHOS DE DOCUMENTOS PARA ESTE ITEM: nenhum relevante encontrado";
@@ -206,28 +216,43 @@ export async function runConsultant(args: {
     args.report.prioritized_dimensions.map((d) => [d.dimension_id, d.dimension_name])
   );
 
-  const rag = await retrieveSources(args.selection, prioritizedNames, args.grounding, args.companyId);
-  const selectionBlock = buildSelectionBlock(
-    args.selection,
-    prioritizedNames,
-    args.grounding,
-    rag.refsByCandidate
+  const ragByCandidate = await retrieveSources(args.selection, prioritizedNames, args.grounding, args.companyId);
+  const refsByIntervention = await getReferencesForInterventions(
+    args.selection.candidates.map((c) => c.intervention_id)
   );
-  const providersBlock = buildProvidersBlock(args.selection);
-  const interventionIds = args.selection.candidates.map((c) => c.intervention_id);
-  const refsByIntervention = await getReferencesForInterventions(interventionIds);
-  const referencesBlock = buildReferencesBlock(refsByIntervention);
 
-  const prompt = `Você é o consultor sênior que escreve o PLANO FINAL para o RH executar. Cada plano deve ser PRAGMÁTICO, ESPECÍFICO e ANCORADO NOS DADOS REAIS fornecidos.
+  // Um plano por chamada, todas em paralelo: a etapa leva o tempo do plano mais longo, não
+  // a soma de todos (numa chamada única, ~18 mil tokens de saída levavam ~150 s), e um JSON
+  // inválido afeta só aquele item. Cada chamada vê os outros itens para não repetir ações.
+  // Sozinho, cada plano tendia a dobrar de tamanho (e de custo): a seção "Tamanho" do prompt
+  // mantém o tamanho de quando os planos dividiam uma chamada (~600 palavras).
+  const promptFor = (c: Candidate): { prompt: string; sources: StoredSource[] } => {
+    const rag = ragByCandidate.get(candidateKey(c))!;
+    const single = { ...args.selection, candidates: [c] };
+    const selectionBlock = buildSelectionBlock(single, prioritizedNames, args.grounding, new Map([[candidateKey(c), rag.refs]]));
+    const providersBlock = buildProvidersBlock(single);
+    const referencesBlock = buildReferencesBlock(
+      new Map([[c.intervention_id, refsByIntervention.get(c.intervention_id) ?? []]])
+    );
+    const otherItems = args.selection.candidates
+      .filter((o) => o !== c)
+      .map((o) => `- ${prioritizedNames.get(o.dimension_id) ?? o.dimension_id}: ${getInterventionById(o.intervention_id)?.title ?? o.intervention_id}`)
+      .join("\n");
+
+    const prompt = `Você é o consultor sênior que escreve UM dos planos do plano de ação para o RH executar. O plano deve ser PRAGMÁTICO, ESPECÍFICO e ANCORADO NOS DADOS REAIS fornecidos.
 
 ## Perfil narrativo da empresa
 ${perfilNarrativo}
 
-## Seleção do Curator (escreva um plano para CADA item)
-Cada item traz o SETOR-ALVO REAL, as PERGUNTAS REAIS da pesquisa e a estimativa de investimento já calculada pelo sistema.
+## Item deste plano (selecionado pelo Curator)
+O item traz o SETOR-ALVO REAL, as PERGUNTAS REAIS da pesquisa e a estimativa de investimento já calculada pelo sistema.
 ${selectionBlock}
 
-## Fornecedores brasileiros disponíveis para essas intervenções
+## Outros itens do plano de ação
+São escritos à parte. NÃO repita as ações deles; se houver sobreposição, concentre-se no que é próprio deste item.
+${otherItems || "(nenhum)"}
+
+## Fornecedores brasileiros disponíveis para esta intervenção
 ${providersBlock || "(nenhum fornecedor específico catalogado)"}
 
 ## Referências científicas curadas (verificáveis)
@@ -264,7 +289,13 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 - risk_if_not_acted: consequências de não agir, ancoradas no que a pesquisa revelou e nas referências (sem valores monetários).
 - implementation_risks: 2-3 itens — o que dá errado AO EXECUTAR + mitigation.
 
-## OUTPUT — JSON array, um item por candidato (não invente itens extras, NÃO inclua campos numéricos).
+### Tamanho (OBRIGATÓRIO)
+O RH lê vários planos de uma vez: seja direto. O plano inteiro, somando todos os campos, tem no máximo ~600 palavras.
+- description: 3-4 frases curtas. rationale: até 4 frases. quick_action: 1-2 frases.
+- Cada etapa do roadmap, cada pré-requisito, cada KPI e cada risco de implementação: 1 frase.
+- risk_if_not_acted, internal_alternative, internal_capacity_required e key_message: até 2 frases cada.
+
+## OUTPUT — JSON array com UM item, o deste plano (NÃO inclua campos numéricos).
 
 [
   {
@@ -297,30 +328,49 @@ Escolha UMA estratégia por plano, aplicando a hierarquia de controle de riscos 
 ]
 
 Devolva APENAS o JSON array.`;
+    return { prompt, sources: rag.sources };
+  };
 
   const model = createModel(args.aiConfig);
-  
-  const startedAt = Date.now();
-  const { text, finishReason, usage } = await generateText({
-    model: model,
-    prompt: prompt,
-    maxOutputTokens: maxOutputTokensFor(args.aiConfig),
-  });
-  recordUsage("consultant", args.aiConfig.model, startedAt, usage);
 
-  const plans = extractJsonArray<ConsultantPlanItem>(text);
-  if (plans.length === 0) {
-    console.error(`[consultant] ${describeUnparsedOutput(text, finishReason)}`);
-    throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
-  }
+  // Até 2 tentativas por item quando o JSON vem inválido; erros da API sobem como antes.
+  const writePlan = async (c: Candidate): Promise<ConsultantPlanItem | null> => {
+    const { prompt, sources } = promptFor(c);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const startedAt = Date.now();
+      const { text, finishReason, usage } = await generateText({
+        model,
+        prompt,
+        maxOutputTokens: maxOutputTokensFor(args.aiConfig),
+      });
+      recordUsage("consultant", args.aiConfig.model, startedAt, usage);
 
-  // Fontes: só os identificadores que foram fornecidos viram fontes do plano.
-  for (const plan of plans) {
-    if (!plan.recommendation) continue;
-    const ids = Array.isArray(plan.recommendation.source_ids) ? plan.recommendation.source_ids : [];
-    // Renumera 1, 2, 3… para a tela (os ids F* só existem dentro do prompt).
-    plan.recommendation.sources = keepCitedSources(rag.sources, ids).map((s, i) => ({ ...s, ref: String(i + 1) }));
-    delete plan.recommendation.source_ids;
+      const plan = extractJsonArray<ConsultantPlanItem>(text).find((p) => p?.recommendation);
+      if (plan) {
+        // Fontes: só os identificadores que foram fornecidos viram fontes do plano,
+        // renumerados 1, 2, 3… para a tela (os ids F* só existem dentro do prompt).
+        const ids = Array.isArray(plan.recommendation.source_ids) ? plan.recommendation.source_ids : [];
+        plan.recommendation.sources = keepCitedSources(sources, ids).map((s, i) => ({ ...s, ref: String(i + 1) }));
+        delete plan.recommendation.source_ids;
+        // Os ids vêm do sistema, não da IA.
+        return {
+          ...plan,
+          dimension_id: c.dimension_id,
+          intervention_id: c.intervention_id,
+          universal_category_code: getInterventionById(c.intervention_id)?.universal_category_code ?? plan.universal_category_code,
+        };
+      }
+      console.error(`[consultant] ${c.intervention_id}, tentativa ${attempt}: ${describeUnparsedOutput(text, finishReason)}`);
+    }
+    return null;
+  };
+
+  const plans = (await Promise.all(args.selection.candidates.map(writePlan))).filter(
+    (p): p is ConsultantPlanItem => p !== null
+  );
+  if (plans.length === 0) throw new Error("Stage 3 (Consultant): JSON inválido ou vazio.");
+  if (plans.length < args.selection.candidates.length) {
+    console.error(`[consultant] ${args.selection.candidates.length - plans.length} item(ns) sem plano após 2 tentativas.`);
   }
   return plans;
 }

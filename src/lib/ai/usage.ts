@@ -12,6 +12,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export interface UsageEntry {
   stage: string;
   model: string;
+  /** Início da chamada (epoch ms): com chamadas em paralelo, o tempo da etapa não é a soma. */
+  startedAt: number;
   ms: number;
   inputTokens: number;
   outputTokens: number;
@@ -36,15 +38,43 @@ export function recordUsage(
   entries.push({
     stage,
     model,
+    startedAt,
     ms: Date.now() - startedAt,
     inputTokens: usage?.inputTokens ?? usage?.tokens ?? 0,
     outputTokens: usage?.outputTokens ?? 0,
   });
 }
 
+export interface StageUsage {
+  stage: string;
+  model: string;
+  calls: number;
+  /** Do início da primeira chamada ao fim da última. */
+  wallMs: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** Agrupa as chamadas por etapa (na ordem em que cada etapa apareceu). */
+export function usageByStage(entries: UsageEntry[]): StageUsage[] {
+  const stages = new Map<string, UsageEntry[]>();
+  for (const e of entries) stages.set(e.stage, [...(stages.get(e.stage) ?? []), e]);
+  return [...stages.entries()].map(([stage, list]) => ({
+    stage,
+    model: list[0].model,
+    calls: list.length,
+    wallMs: Math.max(...list.map((e) => e.startedAt + e.ms)) - Math.min(...list.map((e) => e.startedAt)),
+    inputTokens: list.reduce((a, e) => a + e.inputTokens, 0),
+    outputTokens: list.reduce((a, e) => a + e.outputTokens, 0),
+  }));
+}
+
 /** Resumo por etapa, para log. */
 export function summarizeUsage(entries: UsageEntry[]): string {
-  return entries
-    .map((e) => `${e.stage} ${(e.ms / 1000).toFixed(1)}s ${e.inputTokens}→${e.outputTokens} tok (${e.model})`)
+  return usageByStage(entries)
+    .map(
+      (s) =>
+        `${s.stage} ${(s.wallMs / 1000).toFixed(1)}s${s.calls > 1 ? ` (${s.calls} chamadas)` : ""} ${s.inputTokens}→${s.outputTokens} tok (${s.model})`
+    )
     .join(" | ");
 }

@@ -116,7 +116,7 @@ REGRAS PARA USAR OS TRECHOS:
 ${DATA_NOT_INSTRUCTIONS}`;
 
 export const PLAN_SOURCES_RULES = `## Trechos de documentos de referência
-Entre <documentos> e </documentos> estão trechos de normas, guias oficiais e documentos da empresa recuperados para cada item, com identificadores F1, F2…
+Entre <documentos> e </documentos> estão trechos de normas, guias oficiais e documentos da empresa recuperados para este plano, com identificadores F1, F2…
 
 REGRAS:
 - Use os trechos para fundamentar o rationale, o nr1_compliance e o roadmap quando forem pertinentes, e informe em "source_ids" os identificadores dos trechos que você usou (ex.: ["F1", "F3"]). Lista vazia se nenhum foi usado.
