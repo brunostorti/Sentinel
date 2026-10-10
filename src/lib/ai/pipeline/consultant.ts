@@ -73,17 +73,24 @@ async function retrieveSources(
       matchCount: 3,
       sourceTypes: ["norma", "manual_tecnico", "guia_oficial"],
     }),
-    // Por item: 3 trechos de normas/guias/documentos + até 2 planos de exemplo de outras
-    // empresas (anonimizados), buscados à parte para não competirem com as normas.
-    ...queries.map(async (query) => [
-      ...(await searchKnowledge(admin, {
-        companyId,
-        query,
-        matchCount: 3,
-        sourceTypes: ["norma", "lei", "guia_oficial", "manual_tecnico", "instrumento", "referencia_cientifica", "documento_empresa"],
-      })),
-      ...(await searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["plano_exemplo"] })),
-    ]),
+    // Por item, três buscas à parte para um tipo não tomar o lugar do outro: até 2 trechos
+    // dos documentos da própria empresa (o que ela já tem, já tentou ou já decidiu), 3 de
+    // normas/guias/referências e até 2 planos de exemplo de outras empresas (anonimizados).
+    // O questionário (instrumento) fica de fora: a consulta leva a pergunta da pesquisa, e
+    // o texto do questionário — que a IA já recebe — ocupava as 3 vagas (medido em 10/10).
+    ...queries.map(async (query) => {
+      const [company, references, examples] = await Promise.all([
+        searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["documento_empresa"] }),
+        searchKnowledge(admin, {
+          companyId,
+          query,
+          matchCount: 3,
+          sourceTypes: ["norma", "lei", "guia_oficial", "manual_tecnico", "referencia_cientifica"],
+        }),
+        searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["plano_exemplo"] }),
+      ]);
+      return [...company, ...references, ...examples];
+    }),
   ]);
 
   return new Map(
@@ -268,6 +275,7 @@ ${rag.block ? `\n${PLAN_SOURCES_RULES}\n\n${rag.block}\n` : ""}
 ### Ancoragem nos dados reais (OBRIGATÓRIO)
 - No "rationale", CITE LITERALMENTE ao menos uma das "PERGUNTAS REAIS DA PESQUISA" do item e mencione o SETOR-ALVO REAL. É isso que torna o plano específico desta empresa.
 - Não escreva nada que serviria para qualquer empresa — conecte tudo ao que a pesquisa revelou.
+- Se houver trechos com confiabilidade "documento da empresa", use-os para encaixar o plano no que a empresa já tem, já tentou ou já decidiu (ex.: pedidos da CIPA, políticas internas, contratos vigentes, restrições de orçamento) e informe-os em source_ids.
 
 ### Aplicabilidade
 - roadmap: 3-5 etapas com fase (semana/mês), entregável claro e owner_role.
