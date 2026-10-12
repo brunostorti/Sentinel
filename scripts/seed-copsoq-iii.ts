@@ -1,4 +1,8 @@
 /**
+ * ⚠️ LEGADO — DESATIVADO EM 2026-10-12. NÃO RODE.
+ * Gravava um COPSOQ III de origem desconhecida (não validado). A versão validada vem da migração
+ * supabase/migrations/20261012174401_instrumentos_validados.sql. Mantido só como histórico.
+ *
  * Seed script: populates questionnaire_instruments, questionnaire_scales,
  * and questionnaire_items with the COPSOQ III (Middle version) question bank.
  *
@@ -19,6 +23,12 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+
+console.error(
+  "scripts/seed-copsoq-iii.ts é legado e foi desativado: gravava um COPSOQ III de origem desconhecida (não validado). " +
+    "A versão validada vem da migração 20261012174401_instrumentos_validados.sql."
+);
+process.exit(1);
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;

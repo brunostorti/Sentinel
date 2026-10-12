@@ -39,11 +39,11 @@ const INSTRUMENTS_CARDS = [
   },
   {
     id: "jss",
-    title: "JSS — Job Satisfaction Survey",
+    title: "JSS — Job Satisfaction Survey (versão brasileira)",
     subtitle: "36 questões • ~10 minutos",
     icon: "emoji_events",
     color: "bg-purple-100 text-purple-600",
-    desc: "Job Satisfaction Survey de Paul Spector (1985). Tradução e validação brasileira pela UNICAMP (2013). Avalia a satisfação no trabalho em 9 facetas com 36 itens.",
+    desc: "Job Satisfaction Survey de Paul Spector. Versão brasileira de Souza, Milani e Alexandre (2015), validada por Souza et al. (2017). Satisfação no trabalho em 9 facetas, escala de 6 pontos. Semáforo pelas faixas do autor: média por item até 3 = insatisfeito, a partir de 4 = satisfeito. Uso gratuito só para pesquisa e ensino; uso comercial requer licença do autor.",
     objetivo: "Organizações focadas em clima, satisfação interna de equipes, retenção de talentos e relacionamento de liderança.",
     metricas: [
       "Satisfação com supervisão e colegas",
@@ -56,11 +56,11 @@ const INSTRUMENTS_CARDS = [
   },
   {
     id: "olbi",
-    title: "OLBI — Oldenburg Burnout Inventory",
-    subtitle: "16 questões • ~5 minutos",
+    title: "OLBI — Inventário de Burnout de Oldenburg (versão brasileira)",
+    subtitle: "13 questões • ~5 minutos",
     icon: "warning",
     color: "bg-green-100 text-green-600",
-    desc: "Inventário de Burnout de Oldenburg (Demerouti et al., 2003). Avalia duas dimensões centrais do burnout: exaustão e desengajamento. 16 itens com escala Likert de 4 pontos (concordância).",
+    desc: "Inventário de Burnout de Oldenburg (Demerouti e Bakker). Versão brasileira validada de 13 itens (Schuster e Dias, 2018), escala de 4 pontos. Mede exaustão e desengajamento; vermelho a partir dos pontos de corte de burnout de Peterson et al. (2008). Mede efeitos à saúde, não fatores de risco: use junto com o COPSOQ.",
     objetivo: "Equipes de alta performance, startups, setores de atendimento ao cliente ou áreas de alto risco de esgotamento profissional.",
     metricas: [
       "Exaustão física e fadiga cognitiva",
@@ -73,11 +73,11 @@ const INSTRUMENTS_CARDS = [
   },
   {
     id: "copsoq-iii",
-    title: "COPSOQ III — Versão Média",
-    subtitle: "70 questões • ~20 minutos",
+    title: "COPSOQ III — Versão Portuguesa (média)",
+    subtitle: "85 questões • ~20 minutos",
     icon: "science",
     color: "bg-orange-100 text-orange-600",
-    desc: "Copenhagen Psychosocial Questionnaire, 3a edição (Burr et al., 2019). Versão Média com 70 itens em 26 escalas. Avalia fatores psicossociais no trabalho com escores de 0-100. Escala Work Engagement (UWES) excluída por exigir licença comercial.",
+    desc: "Copenhagen Psychosocial Questionnaire, 3ª versão: versão média portuguesa (Cotrim et al., 2022), 85 itens em 31 dimensões, com validação preliminar em Portugal (N = 659). Ainda sem valores de referência nacionais; semáforo pelos tercis do manual COPSOQ.",
     objetivo: "Empresas modernas focadas em engajamento, novas dinâmicas laborais e mapeamento de riscos psicossociais atualizado.",
     metricas: [
       "Demandas emocionais e ritmo de trabalho",
@@ -86,7 +86,7 @@ const INSTRUMENTS_CARDS = [
       "Sintomas de estresse, burnout e depressão"
     ],
     versions: [
-      { name: "Core Version", data: typedQuestionsData["copsoq-iii"] }
+      { name: "Média", data: typedQuestionsData["copsoq-iii"] }
     ]
   }
 ];

@@ -34,9 +34,11 @@ versão anterior, não oficial, ficou arquivada no banco (`copsoq_ii_legado`, in
 `scripts/seed-copsoq.ts` que a gravava foi desativado (ele também apagava as perguntas de
 todos os instrumentos).
 
-Os demais bancos de questões ainda vêm dos scripts em `scripts/` (`seed-copsoq-iii.ts`,
-`seed-jss.ts`, `seed-olbi.ts`), que gravam em `questionnaire_scales` /
-`questionnaire_items` via service role.
+**COPSOQ III, JSS e OLBI:** as versões validadas (COPSOQ III português, JSS e OLBI
+brasileiros) vêm da migração `20261012174401_instrumentos_validados.sql`, que também grava os
+cortes de semáforo por escala. As versões anteriores ficaram arquivadas (`copsoq_iii_legado`,
+`olbi_legado`) e os scripts `seed-copsoq-iii.ts`, `seed-jss.ts` e `seed-olbi.ts` foram
+desativados. Fontes e decisões em `docs/instrumentos/2026-10-12-instrumentos.md`.
 O antigo `003_copsoq_seed.sql` (nunca aplicado em produção, escrito para as tabelas
 `copsoq_*` anteriores à renomeação) foi removido em 2026-10-08; ele continua no histórico
 do git (commit a11ea42).
