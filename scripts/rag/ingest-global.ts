@@ -26,7 +26,8 @@ interface SourceEntry {
   year: number | null;
   url: string;
   file: string;
-  format: "pdf" | "html";
+  /** "md": documento do próprio repositório (ex.: metodologia dos questionários). */
+  format: "pdf" | "html" | "md";
   kb_reference?: string;
   citation: string;
 }
@@ -75,6 +76,7 @@ function decodeHtml(buf: Buffer): string {
 async function pagesFor(src: SourceEntry): Promise<string[]> {
   const buf = await ensureFile(src);
   if (src.format === "html") return [htmlToText(decodeHtml(buf))];
+  if (src.format === "md") return [buf.toString("utf8")];
   return extractPdfPages(new Uint8Array(buf));
 }
 

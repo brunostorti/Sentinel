@@ -70,6 +70,50 @@
       "format": "pdf",
       "kb_reference": "Silva2013_COPSOQ2_PT",
       "citation": "SILVA, C. F. et al. Copenhagen Psychosocial Questionnaire (COPSOQ): Portugal e países africanos de língua oficial portuguesa. Aveiro: Universidade de Aveiro, 2013."
+    },
+    {
+      "slug": "copsoq-iii-portugal-cotrim-2022",
+      "title": "COPSOQ III — versão média portuguesa: estudos de validação preliminar (Cotrim et al., 2022)",
+      "source_type": "instrumento",
+      "publisher": "International Journal of Environmental Research and Public Health",
+      "year": 2022,
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8834667/",
+      "file": "docs/referencias/cotrim-2022-copsoq-iii-pt.html",
+      "format": "html",
+      "citation": "COTRIM, T. P. et al. The Portuguese Third Version of the Copenhagen Psychosocial Questionnaire: Preliminary Validation Studies of the Middle Version among Municipal and Healthcare Workers. International Journal of Environmental Research and Public Health, v. 19, n. 3, 1167, 2022. DOI: 10.3390/ijerph19031167."
+    },
+    {
+      "slug": "olbi-brasil-schuster-dias-2018",
+      "title": "Oldenburg Burnout Inventory — validação brasileira (Schuster e Dias, 2018)",
+      "source_type": "instrumento",
+      "publisher": "Ciência & Saúde Coletiva",
+      "year": 2018,
+      "url": "https://www.scielo.br/j/csc/a/DsJjWhKtqPxtsspbgSBz3jk/?format=pdf&lang=pt",
+      "file": "docs/referencias/schuster-dias-2018-olbi-br.pdf",
+      "format": "pdf",
+      "citation": "SCHUSTER, M. S.; DIAS, V. V. Oldenburg Burnout Inventory - validação de uma nova forma de mensurar Burnout no Brasil. Ciência & Saúde Coletiva, v. 23, n. 2, p. 553-562, 2018. DOI: 10.1590/1413-81232018232.27952015."
+    },
+    {
+      "slug": "jss-brasil-souza-2015",
+      "title": "Job Satisfaction Survey — adaptação cultural para o Brasil (Souza, Milani e Alexandre, 2015)",
+      "source_type": "instrumento",
+      "publisher": "Revista Brasileira de Saúde Ocupacional",
+      "year": 2015,
+      "url": "https://www.scielo.br/j/rbso/a/xhGXGBXdwTj9XmpFzcVTwKP/?format=pdf&lang=pt",
+      "file": "docs/referencias/souza-2015-jss-br.pdf",
+      "format": "pdf",
+      "citation": "SOUZA, A. C.; MILANI, D.; ALEXANDRE, N. M. C. Adaptação cultural de um instrumento para avaliar a satisfação no trabalho. Revista Brasileira de Saúde Ocupacional, v. 40, n. 132, p. 219-227, 2015. DOI: 10.1590/0303-7657000113715."
+    },
+    {
+      "slug": "sentinel-metodologia-questionarios",
+      "title": "Questionários do Sentinel — versões, pontuação e uso na NR-1",
+      "source_type": "manual_tecnico",
+      "publisher": "Sentinel",
+      "year": 2026,
+      "url": "https://github.com/brunostorti/Sentinel/blob/main/docs/instrumentos/2026-10-12-instrumentos.md",
+      "file": "docs/instrumentos/2026-10-12-instrumentos.md",
+      "format": "md",
+      "citation": "SENTINEL. Questionários do Sentinel: versões, pontuação e uso na NR-1. Documento de metodologia, 12 out. 2026."
     }
   ]
 }
