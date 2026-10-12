@@ -3,6 +3,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/**
+ * Endereço público do app para o link do convite. VERCEL_URL não serve: é o endereço
+ * daquele deploy específico, que fica atrás do login da Vercel (proteção de deploys).
+ */
+function appUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
+}
+
 interface CreateUserPayload {
   name: string;
   email: string;
@@ -37,11 +47,7 @@ export async function createUser(payload: CreateUserPayload) {
   const { data: authUser, error: authError } =
     await admin.auth.admin.inviteUserByEmail(payload.email, {
       data: { name: payload.name, role: payload.role },
-      redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL ? "" : ""}${
-        process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:3000"
-      }/api/auth/callback`,
+      redirectTo: `${appUrl()}/api/auth/callback`,
     });
 
   if (authError) {
