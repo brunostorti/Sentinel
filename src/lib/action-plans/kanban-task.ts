@@ -4,7 +4,7 @@
  * em lote (planos-acao/actions.ts).
  */
 
-import { toFavorability } from "@/lib/copsoq/scoring";
+import { cutsFromColumns, greenFavorability, toFavorability } from "@/lib/copsoq/scoring";
 import { classify, LEVEL_INFO, suggestedDueDate } from "@/lib/nr1/criteria";
 import type { AIRecommendation } from "@/lib/ai/pipeline/types";
 
@@ -14,12 +14,16 @@ export interface PlanForTask {
   dimension_id: string;
   risk_level: "RED" | "YELLOW";
   ai_recommendation: unknown;
-  questionnaire_scales: { scoring_direction: "HIGH_IS_RISK" | "HIGH_IS_FAVORABLE" } | null;
+  questionnaire_scales: {
+    scoring_direction: "HIGH_IS_RISK" | "HIGH_IS_FAVORABLE";
+    cut_low: number | null;
+    cut_high: number | null;
+  } | null;
   action_outcomes: { score_before: number | null }[];
 }
 
 export const PLAN_FOR_TASK_FIELDS =
-  "id, company_id, status, survey_id, dimension_id, risk_level, ai_recommendation, questionnaire_scales(scoring_direction), action_outcomes(score_before)";
+  "id, company_id, status, survey_id, dimension_id, risk_level, ai_recommendation, questionnaire_scales(scoring_direction, cut_low, cut_high), action_outcomes(score_before)";
 
 /**
  * Tarefa do Kanban para um plano aprovado. O prazo inicial segue o critério do Dossiê
@@ -29,11 +33,16 @@ export const PLAN_FOR_TASK_FIELDS =
 export function kanbanTaskFor(plan: PlanForTask, companyId: string, columnId: string) {
   const rec = (plan.ai_recommendation ?? {}) as Partial<AIRecommendation>;
   const before = plan.action_outcomes?.[0]?.score_before;
-  const direction = plan.questionnaire_scales?.scoring_direction;
-  // Sem o escore, usa a cor do plano: Risco ≈ favorabilidade 20, Intermédio ≈ 50.
+  const scale = plan.questionnaire_scales;
+  const direction = scale?.scoring_direction;
+  const greenAt = greenFavorability(direction ?? "HIGH_IS_FAVORABLE", cutsFromColumns(scale?.cut_low, scale?.cut_high));
+  // Sem o escore, usa a cor do plano: Risco ≈ 30% do limite verde, Intermédio ≈ 75%
+  // (nos tercis do COPSOQ: favorabilidade 20 e 50).
   const favorability =
-    before != null && direction ? toFavorability(Number(before), direction) : plan.risk_level === "RED" ? 20 : 50;
-  const level = classify(favorability, { healthEvidence: false, effectiveMeasure: false })?.level ?? "BAIXO";
+    before != null && direction
+      ? toFavorability(Number(before), direction)
+      : greenAt * (plan.risk_level === "RED" ? 0.3 : 0.75);
+  const level = classify(favorability, { healthEvidence: false, effectiveMeasure: false }, greenAt)?.level ?? "BAIXO";
   const description = [
     rec.quick_action ? `Primeiros 30 dias: ${rec.quick_action}` : null,
     rec.rationale ?? null,
@@ -52,6 +61,6 @@ export function kanbanTaskFor(plan: PlanForTask, companyId: string, columnId: st
     dimension_id: plan.dimension_id,
     source_survey_id: plan.survey_id,
     action_plan_id: plan.id,
-    due_date: suggestedDueDate(favorability),
+    due_date: suggestedDueDate(favorability, new Date(), greenAt),
   };
 }

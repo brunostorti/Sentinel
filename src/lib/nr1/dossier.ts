@@ -201,11 +201,16 @@ export async function buildDossier(admin: SupabaseClient, surveyId: string): Pro
     "O questionário, sozinho, não basta para caracterizar o gerenciamento dos riscos psicossociais (MTE, Perguntas e Respostas GRO/PGR, item 10): complemente com observação do trabalho, escuta dos trabalhadores e da CIPA e com a Avaliação Ergonômica Preliminar (NR-17).",
   ];
   const measuresHazards = breakdown.company.scores.some(
-    (s) => dimensionRole(s.name, s.universalCategory).role === "hazard"
+    (s) => dimensionRole(s.name, s.universalCategory, s.instrumentCode).role === "hazard"
   );
   if (breakdown.company.scores.length && !measuresHazards) {
     warnings.push(
-      "O questionário aplicado mede efeitos à saúde (ex.: burnout), não fatores de risco do trabalho: ele não basta para montar o inventário. Para identificar perigos, aplique o COPSOQ II."
+      "O questionário aplicado mede efeitos à saúde (ex.: burnout), não fatores de risco do trabalho: ele não basta para montar o inventário. Para identificar perigos, aplique o COPSOQ II ou o COPSOQ III."
+    );
+  }
+  if (breakdown.company.scores.some((s) => s.instrumentCode === "jss")) {
+    warnings.push(
+      "O JSS mede satisfação no trabalho, não exposição a perigos: as facetas com insatisfação (ex.: supervisão, recompensas, comunicação) entram no inventário como indício do perigo e precisam ser confirmadas por observação do trabalho e escuta dos trabalhadores. Para identificar perigos, prefira o COPSOQ."
     );
   }
   const hidden = groups.filter((g) => !g.visible && g.responses > 0);

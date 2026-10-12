@@ -4,7 +4,7 @@ import {
   TRAFFIC_LIGHTS,
   toDisplayScore,
 } from "@/lib/constants";
-import type { DimensionMeta, DimensionScore, RawAnswer } from "./types";
+import type { DimensionMeta, DimensionScore, RawAnswer, TrafficCuts } from "./types";
 
 /**
  * Pontos de corte dos tercis no 0-100. O manual do COPSOQ II PT divide a amplitude 1-5
@@ -38,11 +38,32 @@ export function toFavorability(mean: number, direction: ScoringDirection): numbe
   return direction === "HIGH_IS_RISK" ? 100 - mean : mean;
 }
 
-/** Map a 0-100 mean score to a traffic light based on scoring direction */
+/** Cortes gravados na escala (questionnaire_scales.cut_low/cut_high); nulos = tercis. */
+export function cutsFromColumns(low: unknown, high: unknown): TrafficCuts | null {
+  if (low === null || low === undefined || high === null || high === undefined) return null;
+  return { low: Number(low), high: Number(high) };
+}
+
+/**
+ * Semáforo de uma média 0-100. Com cortes do autor do instrumento, a faixa pior inclui o
+ * corte (JSS: média por item ≤ 3 é insatisfação; OLBI: ≥ 2,25 é burnout). Sem cortes,
+ * tercis do manual COPSOQ.
+ */
 export function toTrafficLight(
   mean: number,
-  direction: ScoringDirection
+  direction: ScoringDirection,
+  cuts?: TrafficCuts | null
 ): TrafficLight {
+  if (cuts) {
+    if (direction === "HIGH_IS_RISK") {
+      if (mean >= cuts.high) return TRAFFIC_LIGHTS.RED;
+      if (mean < cuts.low) return TRAFFIC_LIGHTS.GREEN;
+      return TRAFFIC_LIGHTS.YELLOW;
+    }
+    if (mean >= cuts.high) return TRAFFIC_LIGHTS.GREEN;
+    if (mean <= cuts.low) return TRAFFIC_LIGHTS.RED;
+    return TRAFFIC_LIGHTS.YELLOW;
+  }
   if (direction === "HIGH_IS_RISK") {
     if (mean < TERCILE_LOW) return TRAFFIC_LIGHTS.GREEN;
     if (mean >= TERCILE_HIGH) return TRAFFIC_LIGHTS.RED;
@@ -52,6 +73,15 @@ export function toTrafficLight(
   if (mean >= TERCILE_HIGH) return TRAFFIC_LIGHTS.GREEN;
   if (mean < TERCILE_LOW) return TRAFFIC_LIGHTS.RED;
   return TRAFFIC_LIGHTS.YELLOW;
+}
+
+/**
+ * Favorabilidade (0-100) a partir da qual a dimensão fica verde: 200/3 nos tercis; com
+ * cortes próprios, o corte equivalente (alto = risco: 100 − cut_low; alto = bom: cut_high).
+ */
+export function greenFavorability(direction: ScoringDirection, cuts?: TrafficCuts | null): number {
+  if (!cuts) return TERCILE_HIGH;
+  return direction === "HIGH_IS_RISK" ? 100 - cuts.low : cuts.high;
 }
 
 /** Compute full dimension scores from raw answers + dimension metadata */
@@ -79,9 +109,10 @@ export function computeDimensionScores(
         name: dim.name,
         category: dim.category,
         scoringDirection: dim.scoringDirection,
+        cuts: dim.cuts ?? null,
         meanScore,
         displayScore: toDisplayScore(meanScore),
-        trafficLight: toTrafficLight(meanScore, dim.scoringDirection),
+        trafficLight: toTrafficLight(meanScore, dim.scoringDirection, dim.cuts),
         questionCount: dimAnswers.length,
       };
     });

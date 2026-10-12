@@ -4,7 +4,7 @@
  * (grupos ocultos não entram). Testada em tests/nr1/inventory.test.ts.
  */
 
-import { toFavorability } from "@/lib/copsoq/scoring";
+import { greenFavorability, toFavorability } from "@/lib/copsoq/scoring";
 import type { DimensionScore } from "@/lib/copsoq/types";
 import { classify, LEVEL_ORDER, type RiskLevel } from "./criteria";
 import { HAZARDS, dimensionRole, type Hazard, type HazardKey } from "./hazards";
@@ -30,6 +30,8 @@ export interface InventoryDimension {
   name: string;
   score: number;
   favorability: number;
+  /** Favorabilidade a partir da qual a dimensão fica verde (tercis ou cortes do instrumento). */
+  greenAt: number;
   highIsRisk: boolean;
 }
 
@@ -53,35 +55,42 @@ function toInventoryDimension(d: DimensionScore): InventoryDimension {
     name: d.name,
     score: d.displayScore,
     favorability: Math.round(toFavorability(d.meanScore, d.scoringDirection) * 10) / 10,
+    greenAt: greenFavorability(d.scoringDirection, d.cuts),
     highIsRisk: d.scoringDirection === "HIGH_IS_RISK",
   };
 }
 
+const roleOf = (d: DimensionScore) => dimensionRole(d.name, d.universalCategory, d.instrumentCode);
+
 function rowsForGroup(group: GroupInput, measuresByDimension: Map<string, MeasureInput[]>): InventoryRow[] {
   const health = group.scores
-    .filter((d) => dimensionRole(d.name, d.universalCategory).role === "health" && d.trafficLight === "RED")
+    .filter((d) => roleOf(d).role === "health" && d.trafficLight === "RED")
     .map(toInventoryDimension);
 
   const byHazard = new Map<HazardKey, DimensionScore[]>();
   for (const d of group.scores) {
-    const role = dimensionRole(d.name, d.universalCategory);
+    const role = roleOf(d);
     if (role.role !== "hazard") continue;
     byHazard.set(role.hazard, [...(byHazard.get(role.hazard) ?? []), d]);
   }
 
   const rows: InventoryRow[] = [];
   for (const [key, dims] of byHazard) {
-    const dimensions = dims.map(toInventoryDimension).sort((a, b) => a.favorability - b.favorability);
+    // A pior dimensão é a mais distante do seu limite verde (proporcionalmente).
+    const dimensions = dims
+      .map(toInventoryDimension)
+      .sort((a, b) => a.favorability / a.greenAt - b.favorability / b.greenAt);
     const measures = dims.flatMap((d) => measuresByDimension.get(d.dimensionId) ?? []);
-    const result = classify(dimensions[0].favorability, {
-      healthEvidence: health.length > 0,
-      effectiveMeasure: measures.some((m) => m.effective),
-    });
-    if (!result) continue; // todas as dimensões no terço favorável: sem exposição relevante
+    const result = classify(
+      dimensions[0].favorability,
+      { healthEvidence: health.length > 0, effectiveMeasure: measures.some((m) => m.effective) },
+      dimensions[0].greenAt
+    );
+    if (!result) continue; // todas as dimensões na faixa favorável: sem exposição relevante
     rows.push({
       hazard: HAZARDS[key],
       group: { id: group.id, name: group.name, headcount: group.headcount, responses: group.responses },
-      dimensions: dimensions.filter((d) => d.favorability < 200 / 3),
+      dimensions: dimensions.filter((d) => d.favorability < d.greenAt),
       healthEvidence: health,
       measures,
       ...result,
@@ -116,6 +125,6 @@ export function buildInventory(
     (a, b) =>
       rank(a.level) - rank(b.level) ||
       b.group.headcount - a.group.headcount ||
-      a.dimensions[0].favorability - b.dimensions[0].favorability
+      a.dimensions[0].favorability / a.dimensions[0].greenAt - b.dimensions[0].favorability / b.dimensions[0].greenAt
   );
 }

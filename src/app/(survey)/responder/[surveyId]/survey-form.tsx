@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { SurveyResultCard } from "@/components/survey-result-card";
 import { invertScore, toTrafficLight } from "@/lib/copsoq/scoring";
 import type { ScoringDirection, TrafficLight } from "@/lib/constants";
+import type { TrafficCuts } from "@/lib/copsoq/types";
 import { submitSurveyResponse } from "./actions";
 
 interface ResponseOption {
@@ -21,6 +22,7 @@ interface Question {
   dimensionName: string;
   category: string;
   scoringDirection: ScoringDirection;
+  cuts: TrafficCuts | null;
   isInverted: boolean;
   orderIndex: number;
   responseOptions: ResponseOption[] | null;
@@ -128,6 +130,7 @@ export default function SurveyForm({
     // scoring direction from the DB, instead of hardcoded thresholds).
     const dimensionMap = new Map<string, number[]>();
     const directionMap = new Map<string, ScoringDirection>();
+    const cutsMap = new Map<string, TrafficCuts | null>();
     for (const q of questions) {
       const raw = answers[q.id];
       const adjusted = q.isInverted ? invertScore(raw) : raw;
@@ -135,6 +138,7 @@ export default function SurveyForm({
       scores.push(adjusted);
       dimensionMap.set(q.dimensionName, scores);
       directionMap.set(q.dimensionName, q.scoringDirection);
+      cutsMap.set(q.dimensionName, q.cuts);
     }
 
     const calculatedResults: DimensionScore[] = Array.from(
@@ -145,7 +149,7 @@ export default function SurveyForm({
       return {
         name,
         score: avg,
-        riskLevel: LIGHT_TO_LABEL[toTrafficLight(avg, direction)],
+        riskLevel: LIGHT_TO_LABEL[toTrafficLight(avg, direction, cutsMap.get(name))],
       };
     });
 

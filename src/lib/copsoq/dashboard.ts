@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { toDisplayScore, UNIVERSAL_CATEGORY_LABELS, type ScoringDirection } from "@/lib/constants";
 import type { DimensionScore, DepartmentResult } from "./types";
-import { toFavorability, toTrafficLight } from "./scoring";
+import { cutsFromColumns, toFavorability, toTrafficLight } from "./scoring";
 
 /** Fetch dashboard KPIs for a company */
 export async function fetchDashboardKPIs(
@@ -109,16 +109,17 @@ export async function fetchSurveyScoreBreakdown(
 ): Promise<SurveyScoreBreakdown> {
   const { data: survey } = await supabase
     .from("surveys")
-    .select("version, instrument_id")
+    .select("version, instrument_id, questionnaire_instruments(code)")
     .eq("id", surveyId)
     .single();
 
   if (!survey) return { company: EMPTY_GROUP, departments: new Map() };
+  const instrumentCode = (survey.questionnaire_instruments as unknown as { code: string } | null)?.code;
 
   // Dimensões do instrumento — e, nos instrumentos com versões (COPSOQ), só as da versão aplicada
   let scaleQuery = supabase
     .from("questionnaire_scales")
-    .select("id, name, category, scoring_direction, universal_categories(code)");
+    .select("id, name, category, scoring_direction, cut_low, cut_high, universal_categories(code)");
   if (survey.instrument_id) scaleQuery = scaleQuery.eq("instrument_id", survey.instrument_id);
   if (survey.version) {
     const versionColumn =
@@ -144,6 +145,7 @@ export async function fetchSurveyScoreBreakdown(
         name: d.name as string,
         category: d.category as string,
         scoringDirection: d.scoring_direction as ScoringDirection,
+        cuts: cutsFromColumns(d.cut_low, d.cut_high),
         universalCategory: (d.universal_categories as unknown as { code: string } | null)?.code,
         order: rawDimensions.indexOf(d),
       },
@@ -166,10 +168,12 @@ export async function fetchSurveyScoreBreakdown(
         name: dim.name,
         category: dim.category,
         universalCategory: dim.universalCategory,
+        instrumentCode,
         scoringDirection: dim.scoringDirection,
+        cuts: dim.cuts,
         meanScore: mean,
         displayScore: toDisplayScore(mean),
-        trafficLight: toTrafficLight(mean, dim.scoringDirection),
+        trafficLight: toTrafficLight(mean, dim.scoringDirection, dim.cuts),
         questionCount: row.respondents,
       });
     }

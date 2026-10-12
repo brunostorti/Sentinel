@@ -54,9 +54,10 @@ export function aggregateResponseScores(
         name: dim.name,
         category: dim.category,
         scoringDirection: dim.scoringDirection,
+        cuts: dim.cuts ?? null,
         meanScore: overallMean,
         displayScore: toDisplayScore(overallMean),
-        trafficLight: toTrafficLight(overallMean, dim.scoringDirection),
+        trafficLight: toTrafficLight(overallMean, dim.scoringDirection, dim.cuts),
         questionCount: means.length,
       };
     });

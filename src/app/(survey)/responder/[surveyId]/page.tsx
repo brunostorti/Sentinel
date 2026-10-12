@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { cutsFromColumns } from "@/lib/copsoq/scoring";
 import SurveyForm from "./survey-form";
 
 interface Props {
@@ -62,7 +63,9 @@ export default async function SurveyResponsePage({ params }: Props) {
         id,
         name,
         category,
-        scoring_direction
+        scoring_direction,
+        cut_low,
+        cut_high
       ),
       response_formats (
         code,
@@ -103,6 +106,8 @@ export default async function SurveyResponsePage({ params }: Props) {
           name: string;
           category: string;
           scoring_direction: "HIGH_IS_RISK" | "HIGH_IS_FAVORABLE";
+          cut_low: number | null;
+          cut_high: number | null;
         };
         const fmt = q.response_formats as unknown as {
           code: string;
@@ -114,6 +119,7 @@ export default async function SurveyResponsePage({ params }: Props) {
           dimensionName: dim.name,
           category: dim.category,
           scoringDirection: dim.scoring_direction,
+          cuts: cutsFromColumns(dim.cut_low, dim.cut_high),
           isInverted: q.is_inverted,
           orderIndex: q.order_index,
           responseOptions: fmt?.options ?? null,
