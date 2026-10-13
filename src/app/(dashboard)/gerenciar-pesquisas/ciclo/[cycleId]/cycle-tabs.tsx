@@ -18,8 +18,18 @@ interface CycleTab {
  * "Entrar nesta pesquisa" acima SAO links de verdade, entao as duas coisas
  * precisam parecer visualmente diferentes uma da outra.
  */
-export function CycleTabs({ tabs }: { tabs: CycleTab[] }) {
-  const [active, setActive] = useState(tabs[0]?.id ?? "");
+export function CycleTabs({
+  tabs,
+  initialActive,
+}: {
+  tabs: CycleTab[];
+  initialActive?: string;
+}) {
+  const [active, setActive] = useState(
+    initialActive && tabs.some((t) => t.id === initialActive)
+      ? initialActive
+      : tabs[0]?.id ?? ""
+  );
 
   return (
     <div className="space-y-5">

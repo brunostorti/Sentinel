@@ -24,29 +24,12 @@ const SUPER_ADMIN_NAV: NavItem[] = [
   { label: "Usuários", href: ROUTES.SUPER_ADMIN.USERS, icon: "group" },
 ];
 
-/**
- * Módulos que só existem dentro de um ciclo/pesquisa.
- *
- * Ficam aninhados sob "Ciclos" em vez de soltos no primeiro nível: abrir o
- * Kanban ou os Planos direto pela sidebar é um atalho, não um lugar próprio —
- * o contexto (qual pesquisa do ciclo) sempre vem do ciclo.
- */
-const CYCLE_MODULES: NavItem[] = [
-  { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
-  {
-    label: "Planos de Ação",
-    href: ROUTES.DASHBOARD.ACTION_PLANS,
-    icon: "lightbulb",
-  },
-  { label: "Kanban", href: ROUTES.DASHBOARD.KANBAN, icon: "view_kanban" },
-];
-
 const GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: "Diagnóstico & Análise",
     items: [
       { label: "Início", href: ROUTES.DASHBOARD.HOME, icon: "home" },
-      // Os módulos internos são renderizados logo abaixo deste item.
+      { label: "Painel", href: ROUTES.DASHBOARD.OVERVIEW, icon: "dashboard" },
       { label: "Ciclos", href: ROUTES.DASHBOARD.SURVEYS, icon: "account_tree" },
       {
         label: "Relatórios",
@@ -58,6 +41,17 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
         href: ROUTES.DASHBOARD.CERTIFICATES,
         icon: "verified",
       },
+    ],
+  },
+  {
+    title: "Planos & Execução",
+    items: [
+      {
+        label: "Planos de Ação",
+        href: ROUTES.DASHBOARD.ACTION_PLANS,
+        icon: "lightbulb",
+      },
+      { label: "Kanban", href: ROUTES.DASHBOARD.KANBAN, icon: "view_kanban" },
     ],
   },
   {
@@ -117,42 +111,6 @@ function NavLink({
   );
 }
 
-/**
- * Subnível dos módulos de ciclo.
- *
- * Visual deliberadamente mais leve que o primeiro nível (texto menor, ícone
- * menor, ativo em fundo suave em vez de sólido): o peso visual precisa dizer
- * "isto está dentro daquilo acima", não competir com ele.
- */
-function SubNavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  return (
-    <Link
-      href={item.href}
-      className={cn(
-        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-all duration-200",
-        isActive
-          ? "bg-primary/10 font-semibold text-primary"
-          : "font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-      )}
-    >
-      <span
-        className={cn(
-          "absolute -left-3 h-1.5 w-1.5 rounded-full transition-colors",
-          isActive ? "bg-primary" : "bg-transparent"
-        )}
-        aria-hidden
-      />
-      <Icon
-        name={item.icon}
-        size={17}
-        filled={isActive}
-        className="shrink-0 transition-transform duration-200 group-hover:scale-110"
-      />
-      <span className="animate-fade-in">{item.label}</span>
-    </Link>
-  );
-}
-
 interface SidebarProps {
   role: Role;
   companyName?: string;
@@ -162,7 +120,6 @@ interface SidebarProps {
 export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [cycleModulesOpen, setCycleModulesOpen] = useState(true);
 
   return (
     <aside
@@ -233,105 +190,18 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
                 )}
                 <nav className="space-y-1">
                   {filteredItems.map((item) => {
-                    const isActive = pathname.startsWith(item.href);
-                    const isCycles = item.href === ROUTES.DASHBOARD.SURVEYS;
-
-                    // Sidebar recolhida não comporta hierarquia: os módulos do
-                    // ciclo viram ícones soltos para não sumirem da navegação.
-                    if (isCycles && collapsed) {
-                      return (
-                        <div key={item.href} className="space-y-1">
-                          <NavLink item={item} isActive={isActive} collapsed />
-                          {CYCLE_MODULES.map((sub) => (
-                            <NavLink
-                              key={sub.href}
-                              item={sub}
-                              isActive={pathname.startsWith(sub.href)}
-                              collapsed
-                            />
-                          ))}
-                        </div>
-                      );
-                    }
-
-                    if (!isCycles) {
-                      return (
-                        <NavLink
-                          key={item.href}
-                          item={item}
-                          isActive={isActive}
-                          collapsed={collapsed}
-                        />
-                      );
-                    }
+                    const isActive =
+                      item.href === ROUTES.DASHBOARD.HOME
+                        ? pathname === ROUTES.DASHBOARD.HOME
+                        : pathname.startsWith(item.href);
 
                     return (
-                      <div key={item.href}>
-                        <div
-                          className={cn(
-                            "group relative flex items-center rounded-xl transition-all duration-200",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                          )}
-                        >
-                          <Link
-                            href={item.href}
-                            className="flex flex-1 items-center gap-3 px-3 py-2.5 text-sm font-medium"
-                          >
-                            <Icon
-                              name={item.icon}
-                              size={20}
-                              filled={isActive}
-                              className={cn(
-                                "shrink-0 transition-transform duration-200",
-                                !isActive && "group-hover:scale-110"
-                              )}
-                            />
-                            <span className="animate-fade-in">{item.label}</span>
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => setCycleModulesOpen((v) => !v)}
-                            aria-expanded={cycleModulesOpen}
-                            aria-label={
-                              cycleModulesOpen
-                                ? "Recolher módulos do ciclo"
-                                : "Expandir módulos do ciclo"
-                            }
-                            className={cn(
-                              "mr-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
-                              isActive
-                                ? "hover:bg-primary-foreground/15"
-                                : "hover:bg-foreground/10"
-                            )}
-                          >
-                            <Icon
-                              name="expand_more"
-                              size={18}
-                              className={cn(
-                                "transition-transform duration-200",
-                                cycleModulesOpen ? "rotate-0" : "-rotate-90"
-                              )}
-                            />
-                          </button>
-                        </div>
-
-                        {cycleModulesOpen && (
-                          <div className="animate-fade-in ml-[22px] mt-1 space-y-0.5 border-l border-border pl-3">
-                            <p className="px-2.5 pb-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                              Dentro de um ciclo
-                            </p>
-                            {CYCLE_MODULES.map((sub) => (
-                              <SubNavLink
-                                key={sub.href}
-                                item={sub}
-                                isActive={pathname.startsWith(sub.href)}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <NavLink
+                        key={item.href}
+                        item={item}
+                        isActive={isActive}
+                        collapsed={collapsed}
+                      />
                     );
                   })}
                 </nav>

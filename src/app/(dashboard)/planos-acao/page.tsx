@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Icon } from "@/components/icon";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchSurveyDimensionScores } from "@/lib/copsoq/dashboard";
@@ -11,7 +13,12 @@ type PlanCountRow = {
   surveys: { id: string; title: string; status: string } | null;
 };
 
-export default async function ActionPlansPage() {
+export default async function ActionPlansPage(props: {
+  searchParams?: Promise<{ cycleId?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const cycleId = searchParams?.cycleId ?? null;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +36,18 @@ export default async function ActionPlansPage() {
   const companyId = userData.company_id;
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
 
+  // Contexto do ciclo se filtrado
+  let cycleInfo: { id: string; title: string } | null = null;
+  if (cycleId) {
+    const { data: c } = await supabase
+      .from("survey_cycles")
+      .select("id, title")
+      .eq("id", cycleId)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    cycleInfo = c;
+  }
+
   // Planos (leves — só o necessário para contagem por status)
   const { data: planRows } = await supabase
     .from("action_plans")
@@ -36,19 +55,27 @@ export default async function ActionPlansPage() {
     .eq("company_id", companyId);
   const plans = (planRows ?? []) as unknown as PlanCountRow[];
 
-  // Pesquisas que viram card: CLOSED + ACTIVE (não filtrar CLOSED-only,
-  // senão pesquisas ACTIVE com planos sumiriam).
-  const { data: surveyRows } = await supabase
+  // Pesquisas que viram card: CLOSED + ACTIVE
+  let surveyQuery = supabase
     .from("surveys")
-    .select("id, title, status, created_at, instrument_id, questionnaire_instruments (name)")
+    .select("id, title, status, created_at, instrument_id, cycle_id, questionnaire_instruments (name)")
     .eq("company_id", companyId)
     .in("status", ["CLOSED", "ACTIVE"]);
+
+  if (cycleId) {
+    surveyQuery = surveyQuery.eq("cycle_id", cycleId);
+  }
+
+  const { data: surveyRows } = await surveyQuery;
 
   // Mapa de pesquisas-card: começa pelas CLOSED/ACTIVE e garante que
   // qualquer pesquisa referenciada por um plano também apareça.
   const surveyMap = new Map<string, { id: string; title: string; status: string; created_at?: string; instrument_id?: string; instrument_name?: string }>();
   for (const s of surveyRows ?? []) {
-    const instName = (s.questionnaire_instruments as any)?.name || "";
+    const inst = Array.isArray(s.questionnaire_instruments)
+      ? s.questionnaire_instruments[0]
+      : (s.questionnaire_instruments as { name?: string } | null);
+    const instName = inst?.name || "";
     surveyMap.set(s.id, { id: s.id, title: s.title, status: s.status, created_at: s.created_at, instrument_id: s.instrument_id, instrument_name: instName });
   }
   for (const p of plans) {
@@ -132,10 +159,31 @@ export default async function ActionPlansPage() {
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-black tracking-tight">Planos de Ação IA</h1>
+        {cycleInfo && (
+          <div className="mb-2 flex items-center gap-2">
+            <Link
+              href={`/gerenciar-pesquisas/ciclo/${cycleInfo.id}`}
+              className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Icon name="arrow_back" size={14} />
+              {cycleInfo.title}
+            </Link>
+            <span className="text-muted-foreground/40">•</span>
+            <Link
+              href="/planos-acao"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              Ver todas as pesquisas
+            </Link>
+          </div>
+        )}
+        <h1 className="text-3xl font-black tracking-tight">
+          {cycleInfo ? `Planos de Ação — ${cycleInfo.title}` : "Planos de Ação IA"}
+        </h1>
         <p className="mt-1 text-muted-foreground">
-          Escolha uma pesquisa para revisar os planos gerados por inteligência
-          artificial a partir dos seus resultados psicossociais.
+          {cycleInfo
+            ? `Pesquisas e planos de intervenção correspondentes ao ciclo ${cycleInfo.title}.`
+            : "Escolha uma pesquisa para revisar os planos gerados por inteligência artificial a partir dos seus resultados psicossociais."}
         </p>
       </div>
 

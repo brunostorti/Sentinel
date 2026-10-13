@@ -506,8 +506,9 @@ function CompactPlanRow({ plan }: { plan: PlanView }) {
         </h3>
 
         {rec.quick_action && (
-          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-            ⚡ {rec.quick_action}
+          <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Icon name="bolt" size={13} className="shrink-0 text-amber-500" />
+            <span>{rec.quick_action}</span>
           </p>
         )}
 

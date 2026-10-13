@@ -28,6 +28,7 @@ DIRETRIZES:
 - Se o HR mencionar fato novo sobre a empresa (orçamento, estrutura, restrição),
   reconheça e responda — o sistema captura para revisão posterior.
 - Tom: consultor sênior pragmático. Direto, sem floreio. Honesto sobre limitações.
+- Nunca use emojis nas mensagens para manter um tom executivo e profissional.
 - Quando citar uma intervenção do catálogo, não informe preço de fornecedor (é sob consulta).`;
 
 export async function buildChatSystemPrompt(

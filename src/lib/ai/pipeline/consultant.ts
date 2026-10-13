@@ -272,6 +272,9 @@ ${rag.block ? `\n${PLAN_SOURCES_RULES}\n\n${rag.block}\n` : ""}
 - NÃO prometa efeitos quantitativos (ex.: "reduz o turnover em 30%"). Para falar de eficácia, use SOMENTE as ALEGAÇÕES das referências curadas, respeitando o nível de certeza informado (ex.: certeza muito baixa = "evidência limitada").
 - Fornecedores: NÃO informe preço. Use sempre "Sob consulta" em price_range.
 
+### Tom e Estilo Profissional
+- NÃO use emojis em nenhum campo (título, descrição, quick_action, roadmap, etc.). Mantenha sobriedade técnica e profissional corporativa.
+
 ### Ancoragem nos dados reais (OBRIGATÓRIO)
 - No "rationale", CITE LITERALMENTE ao menos uma das "PERGUNTAS REAIS DA PESQUISA" do item e mencione o SETOR-ALVO REAL. É isso que torna o plano específico desta empresa.
 - Não escreva nada que serviria para qualquer empresa — conecte tudo ao que a pesquisa revelou.

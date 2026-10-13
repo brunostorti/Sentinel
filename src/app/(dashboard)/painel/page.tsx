@@ -18,10 +18,11 @@ import { SurveyContextNav } from "@/components/survey-context-nav";
 import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 
 export default async function DashboardPage(props: {
-  searchParams?: Promise<{ surveyId?: string }>;
+  searchParams?: Promise<{ surveyId?: string; cycleId?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const initialSurveyId = searchParams?.surveyId ?? null;
+  let initialSurveyId = searchParams?.surveyId ?? null;
+  const cycleId = searchParams?.cycleId ?? null;
 
   const supabase = await createClient();
   const {
@@ -38,11 +39,24 @@ export default async function DashboardPage(props: {
   if (!userData) redirect("/entrar");
   const companyId = userData.company_id;
 
+  if (cycleId && !initialSurveyId) {
+    const { data: cycleSurveys } = await supabase
+      .from("surveys")
+      .select("id")
+      .eq("cycle_id", cycleId)
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+
+    if (cycleSurveys && cycleSurveys.length > 0) {
+      initialSurveyId = cycleSurveys[0].id;
+    }
+  }
+
   const [kpis, allSurveys, departments, trendData] = await Promise.all([
     fetchDashboardKPIs(supabase, companyId),
     fetchAllSurveysWithResponses(supabase, companyId),
     fetchDepartments(supabase, companyId),
-    fetchHistoricalTrends(supabase, companyId),
+    fetchHistoricalTrends(supabase, companyId, cycleId ?? undefined),
   ]);
 
   // Only process surveys that have responses

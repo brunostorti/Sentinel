@@ -19,6 +19,10 @@ import {
 import type { CycleSurvey, ConformityStage } from "@/lib/surveys/cycle";
 import { CreateFollowUpButton } from "./create-follow-up-button";
 import { CycleTabs } from "./cycle-tabs";
+import { ActionPlansList } from "../../../planos-acao/action-plans-list";
+import { KanbanBoard } from "../../../kanban/kanban-board";
+import { toPlanView, type RawPlanRow } from "../../../planos-acao/_lib/format-plan";
+import type { PlanView } from "../../../planos-acao/types";
 
 const STATUS_CONFIG: Record<
   string,
@@ -221,10 +225,15 @@ function ConformityTimeline({ stages }: { stages: ConformityStage[] }) {
 
 export default async function CycleHubPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ cycleId: string }>;
+  searchParams?: Promise<{ tab?: string }>;
 }) {
   const { cycleId } = await params;
+  const sParams = await searchParams;
+  const activeTabParam = sParams?.tab;
+
   const supabase = await createClient();
 
   const {
@@ -247,29 +256,67 @@ export default async function CycleHubPage({
   const latestStatus = STATUS_CONFIG[latest.status] ?? STATUS_CONFIG.DRAFT;
   const surveyIds = cycle.surveys.map((s) => s.id);
 
-  const [{ data: planRows }, { data: taskRows }, { data: certRows }] =
-    await Promise.all([
-      supabase
-        .from("action_plans")
-        .select("id, status, survey_id")
-        .eq("company_id", userData.company_id)
-        .in("survey_id", surveyIds),
-      supabase
-        .from("kanban_tasks")
-        .select("id, source_survey_id")
-        .eq("company_id", userData.company_id)
-        .in("source_survey_id", surveyIds),
-      supabase
-        .from("certificates")
-        .select("id, issued_at, tier")
-        .eq("company_id", userData.company_id)
-        .eq("cycle_id", cycleId)
-        .order("issued_at", { ascending: false }),
-    ]);
+  const [
+    { data: planRows },
+    { data: taskRows },
+    { data: certRows },
+    { data: detailedPlanRows },
+    { data: detailedTaskRows },
+    { data: companyUsersRows },
+    { data: kanbanColumnsRows },
+  ] = await Promise.all([
+    supabase
+      .from("action_plans")
+      .select("id, status, survey_id")
+      .eq("company_id", userData.company_id)
+      .in("survey_id", surveyIds),
+    supabase
+      .from("kanban_tasks")
+      .select("id, source_survey_id")
+      .eq("company_id", userData.company_id)
+      .in("source_survey_id", surveyIds),
+    supabase
+      .from("certificates")
+      .select("id, issued_at, tier")
+      .eq("company_id", userData.company_id)
+      .eq("cycle_id", cycleId)
+      .order("issued_at", { ascending: false }),
+    supabase
+      .from("action_plans")
+      .select(
+        `id, risk_level, ai_recommendation, status, priority, effort, timeframe, created_at, surveys(id, title), questionnaire_scales(name), company_actions_taken(outcome, outcome_notes)`
+      )
+      .eq("company_id", userData.company_id)
+      .in("survey_id", surveyIds)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("kanban_tasks")
+      .select(
+        `id, title, description, column_id, due_date, assigned_to, dimension_id, source_survey_id, questionnaire_scales(name), surveys(id, title), users!kanban_tasks_assigned_to_fkey(name)`
+      )
+      .eq("company_id", userData.company_id)
+      .in("source_survey_id", surveyIds),
+    supabase
+      .from("users")
+      .select("id, name")
+      .eq("company_id", userData.company_id)
+      .order("name"),
+    supabase
+      .from("kanban_columns")
+      .select("id, name, order_index")
+      .eq("company_id", userData.company_id)
+      .order("order_index"),
+  ]);
 
   const plans = planRows ?? [];
   const tasks = taskRows ?? [];
   const certificates = certRows ?? [];
+  const companyUsers = companyUsersRows ?? [];
+  const kanbanColumns = kanbanColumnsRows ?? [];
+
+  const detailedPlans: PlanView[] = (
+    (detailedPlanRows ?? []) as unknown as RawPlanRow[]
+  ).map(toPlanView);
 
   const approvedPlans = plans.filter((p) =>
     ["APPROVED", "COMPLETED"].includes(p.status)
@@ -647,6 +694,55 @@ export default async function CycleHubPage({
     </Card>
   );
 
+  const planosConteudo = (
+    <div className="space-y-4">
+      {detailedPlans.length === 0 ? (
+        <Card className="p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+            <Icon name="lightbulb" size={24} />
+          </div>
+          <h3 className="mt-3 text-base font-bold">Nenhum plano gerado ainda neste ciclo</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quando as pesquisas deste ciclo forem concluídas ou tiverem diagnósticos, os planos de ação recomendados pela IA aparecerão aqui.
+          </p>
+        </Card>
+      ) : (
+        <ActionPlansList
+          plans={detailedPlans}
+          surveysWithoutPlans={[]}
+          canManage={canManage}
+          hasAnySurveys={true}
+        />
+      )}
+    </div>
+  );
+
+  const kanbanConteudo = (
+    <div className="space-y-4">
+      <KanbanBoard
+        columns={kanbanColumns}
+        tasks={detailedTaskRows ? (detailedTaskRows as unknown as Array<Record<string, unknown>>).map((t) => ({
+          id: String(t.id),
+          title: String(t.title || "Tarefa"),
+          description: (t.description as string | null) ?? null,
+          columnId: String(t.column_id),
+          dueDate: (t.due_date as string | null) ?? null,
+          dimensionName:
+            (t.questionnaire_scales as unknown as { name: string })?.name ?? null,
+          surveyTitle:
+            (t.surveys as unknown as { title: string } | null)?.title ?? null,
+          sourceSurveyId: (t.source_survey_id as string | null) ?? null,
+          assigneeName:
+            (t.users as unknown as { name: string })?.name ?? null,
+          assignedTo: (t.assigned_to as string | null) ?? null,
+        })) : []}
+        companyUsers={companyUsers}
+        canManage={canManage}
+        sourceSurveyId={null}
+      />
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho do ciclo */}
@@ -682,6 +778,53 @@ export default async function CycleHubPage({
                 Acompanha o mesmo grupo ao longo do tempo: diagnóstico, ações e
                 reavaliação para comprovar se os riscos diminuíram.
               </p>
+
+              {/* Ações/Módulos deste ciclo */}
+              <div className="mt-4 flex flex-wrap items-center gap-2.5 pt-1">
+                <Link
+                  href={`/gerenciar-pesquisas/ciclo/${cycle.id}?tab=painel`}
+                  className="group inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:shadow-primary/20"
+                >
+                  <Icon
+                    name="monitoring"
+                    size={16}
+                    className="transition-transform duration-200 group-hover:scale-110"
+                  />
+                  Painel do Ciclo
+                </Link>
+                <Link
+                  href={`/gerenciar-pesquisas/ciclo/${cycle.id}?tab=planos`}
+                  className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-bold text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-accent hover:text-primary hover:shadow-sm"
+                >
+                  <Icon
+                    name="lightbulb"
+                    size={16}
+                    className="text-amber-500 transition-transform duration-200 group-hover:scale-110"
+                  />
+                  Planos de Ação
+                  {plans.length > 0 && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                      {plans.length}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href={`/gerenciar-pesquisas/ciclo/${cycle.id}?tab=kanban`}
+                  className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-bold text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-accent hover:text-primary hover:shadow-sm"
+                >
+                  <Icon
+                    name="view_kanban"
+                    size={16}
+                    className="text-blue-500 transition-transform duration-200 group-hover:scale-110"
+                  />
+                  Kanban
+                  {tasks.length > 0 && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                      {tasks.length}
+                    </span>
+                  )}
+                </Link>
+              </div>
             </div>
 
             {/* O indice da medicao mais recente e a resposta curta de "como
@@ -738,13 +881,34 @@ export default async function CycleHubPage({
       </Card>
 
       <CycleTabs
+        initialActive={
+          activeTabParam === "planos"
+            ? "planos"
+            : activeTabParam === "kanban"
+            ? "kanban"
+            : "visao-geral"
+        }
         tabs={[
           {
             id: "visao-geral",
-            label: "Visão geral",
+            label: "Painel do Ciclo",
             hint: "Números e evolução",
             icon: "dashboard",
             content: visaoGeral,
+          },
+          {
+            id: "planos",
+            label: `Planos de Ação (${detailedPlans.length})`,
+            hint: "Recomendações de intervenção",
+            icon: "lightbulb",
+            content: planosConteudo,
+          },
+          {
+            id: "kanban",
+            label: `Kanban (${(detailedTaskRows ?? []).length})`,
+            hint: "Quadro de tarefas",
+            icon: "view_kanban",
+            content: kanbanConteudo,
           },
           {
             id: "comparacao",

@@ -174,22 +174,47 @@ export function KnowledgeView() {
           {data.documents.map((doc) => (
             <div key={doc.id} className="py-3">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold">{doc.title}</p>
+                <a
+                  href={`/api/knowledge/documents/${doc.id}`}
+                  download={doc.file_name}
+                  className="font-semibold text-foreground hover:text-primary hover:underline"
+                  title="Clique para baixar o arquivo original"
+                >
+                  {doc.title}
+                </a>
                 <Badge variant="outline" className={STATUS[doc.status].className}>
                   {STATUS[doc.status].label}
                 </Badge>
                 {doc.status === "ready" && (
                   <span className="text-xs text-muted-foreground">{trechos(doc.chunk_count)}</span>
                 )}
-                {data.canEdit && (
-                  <Button variant="ghost" size="sm" className="ml-auto text-muted-foreground" onClick={() => remove(doc)}>
-                    <Icon name="delete" size={16} />
-                    Excluir
-                  </Button>
-                )}
+                <div className="ml-auto flex items-center gap-1">
+                  <a
+                    href={`/api/knowledge/documents/${doc.id}`}
+                    download={doc.file_name}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    title="Baixar arquivo"
+                  >
+                    <Icon name="download" size={15} />
+                    Baixar
+                  </a>
+                  {data.canEdit && (
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => remove(doc)}>
+                      <Icon name="delete" size={16} />
+                      Excluir
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                {doc.file_name} · enviado em {new Date(doc.created_at).toLocaleDateString("pt-BR")}
+                <a
+                  href={`/api/knowledge/documents/${doc.id}`}
+                  download={doc.file_name}
+                  className="hover:underline hover:text-foreground"
+                >
+                  {doc.file_name}
+                </a>
+                {" "}· enviado em {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                 {doc.uploaded_by ? ` por ${doc.uploaded_by}` : ""}
               </p>
               {doc.status === "error" && doc.error_message && (
