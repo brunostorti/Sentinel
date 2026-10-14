@@ -59,6 +59,9 @@ interface DashboardContentProps {
   };
   initialSurveyId?: string | null;
   contextualMode?: boolean;
+  companyCycles?: { id: string; title: string }[];
+  currentCycleId?: string | null;
+  currentCycleTitle?: string | null;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -74,6 +77,9 @@ export function DashboardContent({
   trendData,
   initialSurveyId,
   contextualMode = false,
+  companyCycles = [],
+  currentCycleId = null,
+  currentCycleTitle = null,
 }: DashboardContentProps) {
   const initialSelection =
     initialSurveyId && surveys.some((survey) => survey.id === initialSurveyId)
@@ -100,45 +106,92 @@ export function DashboardContent({
       ? "Visão Geral"
       : selectedSurvey?.title ?? "";
 
+  const pageTitle = isContextual
+    ? "Dashboard da pesquisa"
+    : currentCycleTitle
+      ? `Painel Geral — ${currentCycleTitle}`
+      : "Painel Geral";
+
+  const pageSubtitle = isContextual
+    ? "Indicadores e riscos calculados para esta pesquisa dentro do fluxo."
+    : currentCycleTitle
+      ? `Visão da saúde psicossocial correspondente ao ciclo ${currentCycleTitle}.`
+      : "Visão geral da saúde psicossocial de toda a empresa.";
+
   return (
     <div className="space-y-8 pb-14">
-      {/* Header */}
-      <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">
-            {isContextual ? "Dashboard da pesquisa" : "Painel"}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isContextual
-              ? "Indicadores e riscos calculados para esta pesquisa dentro do fluxo."
-              : "Visão geral da saúde psicossocial da empresa."}
-          </p>
-        </div>
-
-        {/* Survey selector */}
-        {hasSurveys && !isContextual && (
-          <div className="relative w-full sm:w-auto sm:max-w-xs">
-            <select
-              value={selectedSurveyId}
-              onChange={(e) => setSelectedSurveyId(e.target.value)}
-              className="appearance-none w-full truncate rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      {/* Header com Ciclos e Filtros */}
+      <div className="animate-fade-in-up space-y-4">
+        {/* Filtro rápido de ciclo no topo */}
+        {!isContextual && companyCycles.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground">
+              Ciclo:
+            </span>
+            <a
+              href="/painel"
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                !currentCycleId
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
             >
-              <option value="general">Visão Geral (todas as pesquisas)</option>
-              {surveys.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.title} — {STATUS_LABELS[s.status] ?? s.status}
-                  {s.instrumentName ? ` (${s.instrumentName})` : ""}
-                  {` · ${s.responseCount} respostas`}
-                </option>
-              ))}
-            </select>
-            <Icon
-              name="expand_more"
-              size={18}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
+              Todos (Geral)
+            </a>
+            {companyCycles.map((c) => (
+              <a
+                key={c.id}
+                href={`/painel?cycleId=${c.id}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  currentCycleId === c.id
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {c.title}
+              </a>
+            ))}
           </div>
         )}
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-black tracking-tight">{pageTitle}</h1>
+              {!isContextual && !currentCycleTitle && (
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                  Geral
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{pageSubtitle}</p>
+          </div>
+
+          {/* Survey selector */}
+          {hasSurveys && !isContextual && (
+            <div className="relative w-full sm:w-auto sm:max-w-xs">
+              <select
+                value={selectedSurveyId}
+                onChange={(e) => setSelectedSurveyId(e.target.value)}
+                className="appearance-none w-full truncate rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="general">Visão Geral (todas as pesquisas)</option>
+                {surveys.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title} — {STATUS_LABELS[s.status] ?? s.status}
+                    {s.instrumentName ? ` (${s.instrumentName})` : ""}
+                    {` · ${s.responseCount} respostas`}
+                  </option>
+                ))}
+              </select>
+              <Icon
+                name="expand_more"
+                size={18}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPIs */}

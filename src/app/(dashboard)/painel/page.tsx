@@ -52,12 +52,22 @@ export default async function DashboardPage(props: {
     }
   }
 
-  const [kpis, allSurveys, departments, trendData] = await Promise.all([
+  const [kpis, allSurveys, departments, trendData, companyCyclesData] = await Promise.all([
     fetchDashboardKPIs(supabase, companyId),
     fetchAllSurveysWithResponses(supabase, companyId),
     fetchDepartments(supabase, companyId),
     fetchHistoricalTrends(supabase, companyId, cycleId ?? undefined),
+    supabase
+      .from("survey_cycles")
+      .select("id, title")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false }),
   ]);
+
+  const companyCycles = companyCyclesData.data ?? [];
+  const currentCycleInfo = cycleId
+    ? companyCycles.find((c) => c.id === cycleId) ?? null
+    : null;
 
   // Only process surveys that have responses
   const surveysWithData = allSurveys.filter((s) => s.responseCount > 0);
@@ -249,6 +259,9 @@ export default async function DashboardPage(props: {
         trendData={trendData}
         initialSurveyId={initialSurveyId}
         contextualMode={Boolean(selectedSurvey)}
+        companyCycles={companyCycles}
+        currentCycleId={cycleId}
+        currentCycleTitle={currentCycleInfo?.title ?? null}
       />
     </div>
   );

@@ -48,6 +48,13 @@ export default async function ActionPlansPage(props: {
     cycleInfo = c;
   }
 
+  // Lista de ciclos da empresa para filtro rápido
+  const { data: companyCycles } = await supabase
+    .from("survey_cycles")
+    .select("id, title")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false });
+
   // Planos (leves — só o necessário para contagem por status)
   const { data: planRows } = await supabase
     .from("action_plans")
@@ -185,6 +192,38 @@ export default async function ActionPlansPage(props: {
             ? `Pesquisas e planos de intervenção correspondentes ao ciclo ${cycleInfo.title}.`
             : "Escolha uma pesquisa para revisar os planos gerados por inteligência artificial a partir dos seus resultados psicossociais."}
         </p>
+
+        {/* Filtro rápido por ciclo */}
+        {(companyCycles ?? []).length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs font-semibold text-muted-foreground">
+              Ciclo:
+            </span>
+            <Link
+              href="/planos-acao"
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                !cycleId
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              Todos (Geral)
+            </Link>
+            {(companyCycles ?? []).map((c) => (
+              <Link
+                key={c.id}
+                href={`/planos-acao?cycleId=${c.id}`}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  cycleId === c.id
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {c.title}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       <SurveyCardsGrid
