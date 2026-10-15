@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchSurveyDimensionScores } from "@/lib/copsoq/dashboard";
 import { computeHealthIndex } from "@/lib/copsoq/health-index";
 import { SurveyCardsGrid, type SurveyCardData } from "./survey-cards-grid";
+import { CycleFilterPills } from "@/components/cycle-filter-pills";
 
 type PlanCountRow = {
   id: string;
@@ -14,10 +15,11 @@ type PlanCountRow = {
 };
 
 export default async function ActionPlansPage(props: {
-  searchParams?: Promise<{ cycleId?: string }>;
+  searchParams?: Promise<{ cycleId?: string; ciclo?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const cycleId = searchParams?.cycleId ?? null;
+  const cycleIdParam = searchParams?.cycleId ?? searchParams?.ciclo ?? null;
+  const cycleId = cycleIdParam && cycleIdParam !== "todos" ? cycleIdParam : null;
 
   const supabase = await createClient();
   const {
@@ -58,9 +60,12 @@ export default async function ActionPlansPage(props: {
   // Planos (leves — só o necessário para contagem por status)
   const { data: planRows } = await supabase
     .from("action_plans")
-    .select("id, status, survey_id, surveys (id, title, status)")
+    .select("id, status, survey_id, surveys (id, title, status, cycle_id)")
     .eq("company_id", companyId);
-  const plans = (planRows ?? []) as unknown as PlanCountRow[];
+  const allPlans = (planRows ?? []) as unknown as (PlanCountRow & { surveys: { id: string; title: string; status: string; cycle_id?: string | null } | null })[];
+  const plans = cycleId
+    ? allPlans.filter((p) => p.surveys?.cycle_id === cycleId)
+    : allPlans;
 
   // Pesquisas que viram card: CLOSED + ACTIVE
   let surveyQuery = supabase
@@ -87,11 +92,13 @@ export default async function ActionPlansPage(props: {
   }
   for (const p of plans) {
     if (p.surveys && !surveyMap.has(p.surveys.id)) {
-      surveyMap.set(p.surveys.id, {
-        id: p.surveys.id,
-        title: p.surveys.title,
-        status: p.surveys.status,
-      });
+      if (!cycleId || p.surveys.cycle_id === cycleId) {
+        surveyMap.set(p.surveys.id, {
+          id: p.surveys.id,
+          title: p.surveys.title,
+          status: p.surveys.status,
+        });
+      }
     }
   }
 
@@ -166,24 +173,6 @@ export default async function ActionPlansPage(props: {
   return (
     <div className="space-y-6">
       <div className="animate-fade-in-up">
-        {cycleInfo && (
-          <div className="mb-2 flex items-center gap-2">
-            <Link
-              href={`/gerenciar-pesquisas/ciclo/${cycleInfo.id}`}
-              className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Icon name="arrow_back" size={14} />
-              {cycleInfo.title}
-            </Link>
-            <span className="text-muted-foreground/40">•</span>
-            <Link
-              href="/planos-acao"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Ver todas as pesquisas
-            </Link>
-          </div>
-        )}
         <h1 className="text-3xl font-black tracking-tight">
           {cycleInfo ? `Planos de Ação — ${cycleInfo.title}` : "Planos de Ação IA"}
         </h1>
@@ -195,34 +184,12 @@ export default async function ActionPlansPage(props: {
 
         {/* Filtro rápido por ciclo */}
         {(companyCycles ?? []).length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs font-semibold text-muted-foreground">
-              Ciclo:
-            </span>
-            <Link
-              href="/planos-acao"
-              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                !cycleId
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              Todos (Geral)
-            </Link>
-            {(companyCycles ?? []).map((c) => (
-              <Link
-                key={c.id}
-                href={`/planos-acao?cycleId=${c.id}`}
-                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                  cycleId === c.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                {c.title}
-              </Link>
-            ))}
-          </div>
+          <CycleFilterPills
+            cycles={companyCycles ?? []}
+            currentCycleId={cycleId}
+            basePath="/planos-acao"
+            className="mt-3 pt-1"
+          />
         )}
       </div>
 

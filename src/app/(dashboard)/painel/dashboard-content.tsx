@@ -10,6 +10,7 @@ import { CriticalAreas } from "./critical-areas";
 import { RiskBarChart } from "./risk-bar-chart";
 import { DimensionSemaphore } from "./dimension-semaphore";
 import { TrendsChart } from "./trends-chart";
+import { CycleFilterPills } from "@/components/cycle-filter-pills";
 
 interface SurveyOption {
   id: string;
@@ -124,34 +125,11 @@ export function DashboardContent({
       <div className="animate-fade-in-up space-y-4">
         {/* Filtro rápido de ciclo no topo */}
         {!isContextual && companyCycles.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">
-              Ciclo:
-            </span>
-            <a
-              href="/painel"
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                !currentCycleId
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              Todos (Geral)
-            </a>
-            {companyCycles.map((c) => (
-              <a
-                key={c.id}
-                href={`/painel?cycleId=${c.id}`}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  currentCycleId === c.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                {c.title}
-              </a>
-            ))}
-          </div>
+          <CycleFilterPills
+            cycles={companyCycles}
+            currentCycleId={currentCycleId}
+            basePath="/painel"
+          />
         )}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -166,31 +144,6 @@ export function DashboardContent({
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{pageSubtitle}</p>
           </div>
-
-          {/* Survey selector */}
-          {hasSurveys && !isContextual && (
-            <div className="relative w-full sm:w-auto sm:max-w-xs">
-              <select
-                value={selectedSurveyId}
-                onChange={(e) => setSelectedSurveyId(e.target.value)}
-                className="appearance-none w-full truncate rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="general">Visão Geral (todas as pesquisas)</option>
-                {surveys.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title} — {STATUS_LABELS[s.status] ?? s.status}
-                    {s.instrumentName ? ` (${s.instrumentName})` : ""}
-                    {` · ${s.responseCount} respostas`}
-                  </option>
-                ))}
-              </select>
-              <Icon
-                name="expand_more"
-                size={18}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-            </div>
-          )}
         </div>
       </div>
 

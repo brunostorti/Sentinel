@@ -494,3 +494,90 @@ export async function getReminderMessage(surveyId: string) {
 
   return { success: true, message, pending };
 }
+
+/**
+ * Dispara e-mails de lembrete com Magic Link para todos os colaboradores que ainda não responderam (has_accessed = false).
+ * Respeita integralmente as regras de anonimato do sistema.
+ */
+export async function sendSurveyReminders(surveyId: string) {
+  const supabase = await createClient();
+
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) return { error: "Não autenticado." };
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("company_id, role")
+    .eq("auth_id", authData.user.id)
+    .single();
+
+  if (!userData || (userData.role !== "HR" && userData.role !== "ADMIN")) {
+    return { error: "Sem permissão." };
+  }
+
+  const { data: survey } = await supabase
+    .from("surveys")
+    .select("id, company_id, status, title, expires_at")
+    .eq("id", surveyId)
+    .single();
+
+  if (!survey || survey.company_id !== userData.company_id) {
+    return { error: "Pesquisa não encontrada." };
+  }
+
+  if (survey.status !== "ACTIVE") {
+    return { error: "Apenas pesquisas ativas podem receber lembretes." };
+  }
+
+  // Busca estritamente colaboradores com has_accessed = false (não responderam)
+  const { data: pendingParticipants, error: pendingError } = await supabase
+    .from("survey_participants")
+    .select("id, email")
+    .eq("survey_id", surveyId)
+    .eq("has_accessed", false);
+
+  if (pendingError) {
+    return { error: "Erro ao buscar colaboradores pendentes." };
+  }
+
+  if (!pendingParticipants || pendingParticipants.length === 0) {
+    return { error: "Todos os colaboradores já responderam a pesquisa." };
+  }
+
+  const headersList = await headers();
+  const origin = headersList.get("x-forwarded-host")
+    ? `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("x-forwarded-host")}`
+    : headersList.get("origin") ?? "http://localhost:3000";
+
+  let sentCount = 0;
+  const errors: string[] = [];
+
+  for (const participant of pendingParticipants) {
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: participant.email,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
+        },
+      });
+
+      if (otpError) {
+        errors.push(`${participant.email}: ${otpError.message}`);
+      } else {
+        sentCount++;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${participant.email}: ${msg}`);
+    }
+  }
+
+  return {
+    success: true,
+    sentCount,
+    totalPending: pendingParticipants.length,
+    errors: errors.length > 0 ? errors : undefined,
+  };
+}
+

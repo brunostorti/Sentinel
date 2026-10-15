@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { toast } from "sonner";
 import { activateSurvey, closeSurvey } from "../actions";
@@ -59,10 +60,6 @@ export function CollectionPanel({
       return;
     }
     if (kind === "close") {
-      // Encerrar dispara a geração de planos em segundo plano no servidor —
-      // a tela já mostra "encerrada" na hora, mas a IA ainda está rodando.
-      // Sem este aviso, a demora (a IA passa por toda a pesquisa e o perfil
-      // da empresa antes de sugerir ações) parece falha silenciosa.
       toast("Gerando planos de ação com IA...", {
         description:
           "Pode levar alguns minutos. Você pode continuar usando o sistema normalmente — os planos aparecem em Planos de Ação quando ficarem prontos.",
@@ -72,10 +69,60 @@ export function CollectionPanel({
     router.refresh();
   }
 
+  const isClosed = status === "CLOSED";
   const pending = Math.max(invited - responded, 0);
 
-  // Cada estado tem uma proxima acao obvia. O painel diz onde a coleta esta e
-  // qual e essa acao, em vez de listar todos os botoes o tempo todo.
+  // Renderização específica para Coleta Encerrada conforme novos requisitos de UX
+  if (isClosed) {
+    return (
+      <Card className="rounded-xl border-slate-200 bg-card p-6 shadow-xs">
+        <div className="space-y-4">
+          {/* Topo: Identificação Clara de Status com Badge destacado e término */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Badge
+                variant="outline"
+                className="rounded-lg border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <Icon name="check_circle" size={14} className="text-slate-600 dark:text-slate-400" />
+                Coleta Encerrada
+              </Badge>
+              {closedAt && (
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Encerrada em {formatDate(closedAt)}
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">
+              Resultados consolidados
+            </span>
+          </div>
+
+          {/* Barra de Progresso e Métricas limpas sem artefatos */}
+          <div>
+            <div className="mb-2 flex items-baseline justify-between text-sm">
+              <span className="text-sm font-bold text-foreground">
+                {responded} de {invited} responderam ({responseRate}% de adesão)
+              </span>
+              <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                {responded}/{invited}
+              </span>
+            </div>
+
+            {/* Barra de progresso horizontal em largura total, limpa e sólida */}
+            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div
+                className="h-full rounded-full bg-slate-600 dark:bg-slate-400 transition-all duration-500"
+                style={{ width: `${Math.min(responseRate, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Estado para Coleta em Rascunho (DRAFT) ou Em Andamento (ACTIVE)
   const state =
     status === "DRAFT"
       ? {
@@ -85,28 +132,19 @@ export function CollectionPanel({
           title: "Ainda não enviada",
           hint: "Os convites só saem quando você ativar a pesquisa.",
         }
-      : status === "ACTIVE"
-        ? {
-            icon: "send",
-            tone: "text-emerald-600 dark:text-emerald-400",
-            bg: "bg-emerald-500/10",
-            title: "Coleta em andamento",
-            hint: pending > 0
+      : {
+          icon: "send",
+          tone: "text-emerald-600 dark:text-emerald-400",
+          bg: "bg-emerald-500/10",
+          title: "Coleta em andamento",
+          hint:
+            pending > 0
               ? `${pending} pessoa(s) ainda não responderam.`
               : "Todos os convidados já responderam.",
-          }
-        : {
-            icon: "task_alt",
-            tone: "text-muted-foreground",
-            bg: "bg-muted",
-            title: "Coleta encerrada",
-            hint: closedAt
-              ? `Encerrada em ${formatDate(closedAt)}.`
-              : "Os resultados já podem ser analisados.",
-          };
+        };
 
   return (
-    <Card className="border-primary/20">
+    <Card className="rounded-xl border-primary/20 shadow-xs">
       <CardContent className="pt-5 pb-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-3">
@@ -157,15 +195,13 @@ export function CollectionPanel({
         <div className="mt-4">
           <div className="mb-1.5 flex items-baseline justify-between text-sm">
             <span className="font-bold">
-              {responded} de {invited} responderam
+              {responded} de {invited} responderam ({responseRate}% de adesão)
             </span>
             <span className="font-black tabular-nums">{responseRate}%</span>
           </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className={`h-full rounded-full transition-all ${
-                status === "CLOSED" ? "bg-muted-foreground/50" : "bg-primary"
-              }`}
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${Math.min(responseRate, 100)}%` }}
             />
           </div>

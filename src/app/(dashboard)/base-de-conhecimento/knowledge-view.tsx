@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +110,37 @@ export function KnowledgeView() {
           assistente e os planos funcionam, mas sem citar documentos.
         </Card>
       )}
+
+      {/* ── Atalho: Histórico de Ações da Empresa ── */}
+      <Card className="rounded-xl border-slate-200 p-6 shadow-sm bg-gradient-to-r from-card to-muted/20">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Icon name="history_edu" size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black tracking-tight">
+                  Histórico de Ações & Intervenções Anteriores
+                </h2>
+                <Badge variant="outline" className="text-[11px] font-semibold border-primary/20 text-primary">
+                  Memória da IA
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Iniciativas, programas e intervenções já testadas pela empresa. Usado diretamente pela IA para evitar sugerir abordagens que já falharam.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/base-de-conhecimento/historico-acoes"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+          >
+            <Icon name="manage_history" size={16} />
+            Gerenciar histórico
+          </Link>
+        </div>
+      </Card>
 
       {/* ── Documentos da empresa ── */}
       <Card className="rounded-xl border-slate-200 p-6 shadow-sm">

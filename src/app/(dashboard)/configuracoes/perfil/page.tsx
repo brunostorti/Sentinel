@@ -62,7 +62,7 @@ export default async function ProfilePage() {
           </p>
         </div>
         <Link
-          href="/configuracoes/perfil/historico"
+          href="/base-de-conhecimento/historico-acoes"
           className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-accent"
         >
           Histórico de ações tentadas →

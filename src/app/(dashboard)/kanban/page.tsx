@@ -5,13 +5,15 @@ import { SurveyContextNav } from "@/components/survey-context-nav";
 import { Icon } from "@/components/icon";
 import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 import { KanbanBoard } from "./kanban-board";
+import { CycleFilterPills } from "@/components/cycle-filter-pills";
 
 export default async function KanbanPage(props: {
-  searchParams?: Promise<{ surveyId?: string; cycleId?: string }>;
+  searchParams?: Promise<{ surveyId?: string; cycleId?: string; ciclo?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const surveyId = searchParams?.surveyId ?? null;
-  const cycleId = searchParams?.cycleId ?? null;
+  const cycleIdParam = searchParams?.cycleId ?? searchParams?.ciclo ?? null;
+  const cycleId = cycleIdParam && cycleIdParam !== "todos" ? cycleIdParam : null;
 
   const supabase = await createClient();
   const {
@@ -117,8 +119,12 @@ export default async function KanbanPage(props: {
 
   if (currentSurvey) {
     taskQuery = taskQuery.eq("source_survey_id", currentSurvey.id);
-  } else if (currentCycle && cycleSurveyIds.length > 0) {
-    taskQuery = taskQuery.in("source_survey_id", cycleSurveyIds);
+  } else if (currentCycle) {
+    if (cycleSurveyIds.length > 0) {
+      taskQuery = taskQuery.in("source_survey_id", cycleSurveyIds);
+    } else {
+      taskQuery = taskQuery.eq("source_survey_id", "00000000-0000-0000-0000-000000000000");
+    }
   }
 
   const { data: tasks } = await taskQuery;
@@ -143,38 +149,6 @@ export default async function KanbanPage(props: {
         />
       )}
 
-      {currentCycle && !currentSurvey && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/15 bg-card/95 p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Icon name="view_kanban" size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/gerenciar-pesquisas/ciclo/${currentCycle.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <Icon name="arrow_back" size={14} />
-                  {currentCycle.title}
-                </Link>
-                <span className="text-muted-foreground/40">•</span>
-                <span className="text-xs font-semibold text-primary">Filtro do ciclo</span>
-              </div>
-              <h2 className="text-base font-bold sm:text-lg">
-                Tarefas do {currentCycle.title}
-              </h2>
-            </div>
-          </div>
-          <Link
-            href="/kanban"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Ver todas as tarefas da empresa
-          </Link>
-        </div>
-      )}
-
       <div className="animate-fade-in-up">
         <h1 className="text-3xl font-black tracking-tight">
           {currentSurvey
@@ -193,34 +167,12 @@ export default async function KanbanPage(props: {
 
         {/* Quick filter by cycle when viewing general kanban */}
         {!currentSurvey && (companyCycles ?? []).length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs font-semibold text-muted-foreground">
-              Ciclo:
-            </span>
-            <Link
-              href="/kanban"
-              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                !cycleId
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              Todos (Geral)
-            </Link>
-            {(companyCycles ?? []).map((c) => (
-              <Link
-                key={c.id}
-                href={`/kanban?cycleId=${c.id}`}
-                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                  cycleId === c.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                {c.title}
-              </Link>
-            ))}
-          </div>
+          <CycleFilterPills
+            cycles={companyCycles ?? []}
+            currentCycleId={cycleId}
+            basePath="/kanban"
+            className="mt-3 pt-1"
+          />
         )}
       </div>
 

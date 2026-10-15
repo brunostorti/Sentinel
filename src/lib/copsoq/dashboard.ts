@@ -5,28 +5,39 @@ import type { DimensionScore, DepartmentResult } from "./types";
 import { cutsFromColumns, toFavorability, toTrafficLight } from "./scoring";
 
 /** Fetch dashboard KPIs for a company */
+/** Fetch dashboard KPIs for a company */
 export async function fetchDashboardKPIs(
   supabase: SupabaseClient,
-  companyId: string
+  companyId: string,
+  cycleId?: string | null
 ) {
   // Active surveys count
-  const { count: activeSurveys } = await supabase
+  let activeSurveysQuery = supabase
     .from("surveys")
     .select("*", { count: "exact", head: true })
     .eq("company_id", companyId)
     .eq("status", "ACTIVE");
 
   // Total surveys
-  const { count: totalSurveys } = await supabase
+  let totalSurveysQuery = supabase
     .from("surveys")
     .select("*", { count: "exact", head: true })
     .eq("company_id", companyId);
 
   // Get survey IDs for this company
-  const { data: companySurveys } = await supabase
+  let companySurveysQuery = supabase
     .from("surveys")
     .select("id")
     .eq("company_id", companyId);
+
+  if (cycleId) {
+    activeSurveysQuery = activeSurveysQuery.eq("cycle_id", cycleId);
+    totalSurveysQuery = totalSurveysQuery.eq("cycle_id", cycleId);
+    companySurveysQuery = companySurveysQuery.eq("cycle_id", cycleId);
+  }
+
+  const [{ count: activeSurveys }, { count: totalSurveys }, { data: companySurveys }] =
+    await Promise.all([activeSurveysQuery, totalSurveysQuery, companySurveysQuery]);
 
   const surveyIds = (companySurveys ?? []).map((s) => s.id);
 
@@ -205,14 +216,21 @@ export async function fetchSurveyDimensionScores(
 /** Fetch all non-draft surveys with their response counts */
 export async function fetchAllSurveysWithResponses(
   supabase: SupabaseClient,
-  companyId: string
+  companyId: string,
+  cycleId?: string | null
 ) {
-  const { data: surveys } = await supabase
+  let surveysQuery = supabase
     .from("surveys")
     .select("id, title, version, status, created_at, expires_at, closed_at, instrument_id, questionnaire_instruments(code, name)")
     .eq("company_id", companyId)
     .in("status", ["CLOSED", "ACTIVE"])
     .order("created_at", { ascending: false });
+
+  if (cycleId) {
+    surveysQuery = surveysQuery.eq("cycle_id", cycleId);
+  }
+
+  const { data: surveys } = await surveysQuery;
 
   if (!surveys?.length) return [];
 
