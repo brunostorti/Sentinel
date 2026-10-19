@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { toast } from "sonner";
-import { activateSurvey, closeSurvey } from "../actions";
+import { activateSurvey, closeSurvey, type AccessLinksResult } from "../actions";
 import { ReminderButton } from "../reminder-button";
+import { showAccessLinksResult } from "../access-links-toast";
 
 interface CollectionPanelProps {
   surveyId: string;
@@ -43,7 +44,7 @@ export function CollectionPanel({
 
   async function run(
     kind: "activate" | "close",
-    fn: () => Promise<{ error?: string; message?: string }>
+    fn: () => Promise<{ error?: string; message?: string; emails?: AccessLinksResult }>
   ) {
     setBusy(kind);
     setError("");
@@ -55,6 +56,7 @@ export function CollectionPanel({
       setError(result.error);
       return;
     }
+    if (result.emails) showAccessLinksResult(result.emails, "Pesquisa ativada e links enviados!");
     if (result.message) {
       setSuccess(result.message);
       return;

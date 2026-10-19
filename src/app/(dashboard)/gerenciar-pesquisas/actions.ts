@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requestOrigin } from "@/lib/request-origin";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
 
 async function enrollParticipants(supabase: any, surveyId: string, targetDeptIds: string[] | null, companyId: string) {
@@ -380,7 +380,16 @@ export async function activateSurvey(surveyId: string) {
 
   if (error) return { error: "Erro ao ativar pesquisa." };
 
-  return { success: true, enrolled: count };
+  // Cada participante recebe o link de acesso, que já faz o login. Uma falha de e-mail não
+  // desfaz a ativação: o RH vê o resultado e pode reenviar pelo botão de lembrete.
+  const { data: participants } = await supabase
+    .from("survey_participants")
+    .select("email")
+    .eq("survey_id", surveyId)
+    .eq("has_accessed", false);
+  const emails = await sendAccessLinks((participants ?? []).map((p) => p.email));
+
+  return { success: true, enrolled: count, emails };
 }
 
 export async function closeSurvey(surveyId: string) {
@@ -478,10 +487,7 @@ export async function getReminderMessage(surveyId: string) {
     return { error: "Todos os colaboradores já responderam." };
   }
 
-  const headersList = await headers();
-  const origin = headersList.get("x-forwarded-host")
-    ? `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("x-forwarded-host")}`
-    : headersList.get("origin") ?? "http://localhost:3000";
+  const origin = await requestOrigin();
   const deadline = survey.expires_at
     ? ` até ${new Date(survey.expires_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
     : "";
@@ -545,51 +551,63 @@ export async function sendSurveyReminders(surveyId: string) {
     return { error: "Todos os colaboradores já responderam a pesquisa." };
   }
 
-  const headersList = await headers();
-  const origin = headersList.get("x-forwarded-host")
-    ? `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("x-forwarded-host")}`
-    : headersList.get("origin") ?? "http://localhost:3000";
-
-  // Cliente admin: o link é pedido em nome do colaborador, então nada pode ficar gravado
-  // no navegador do RH (com o cliente da sessão, o link dependia do cookie dele).
-  const admin = createAdminClient();
-  let sentCount = 0;
-  let rateLimited = false;
-
-  for (const participant of pendingParticipants) {
-    const { error: otpError } = await admin.auth.signInWithOtp({
-      email: participant.email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
-      },
-    });
-
-    if (!otpError) {
-      sentCount++;
-      continue;
-    }
-    // Sem e-mails na resposta: a lista de pendentes revelaria ao RH quem não respondeu.
-    console.error("Reminder magic link error:", otpError.code ?? otpError.message);
-    if (otpError.status === 429 || otpError.code === "over_email_send_rate_limit") {
-      rateLimited = true;
-      break;
-    }
-  }
-
-  const notSent = pendingParticipants.length - sentCount;
-  if (sentCount === 0) {
+  const result = await sendAccessLinks(pendingParticipants.map((p) => p.email));
+  if (result.sentCount === 0) {
     return {
-      error: rateLimited
+      error: result.rateLimited
         ? "Limite de envio de e-mails atingido. Tente novamente mais tarde."
         : "Não foi possível enviar os lembretes. Verifique a configuração de e-mail.",
     };
   }
+  return { success: true, ...result };
+}
 
+export interface AccessLinksResult {
+  sentCount: number;
+  totalPending: number;
+  notSent?: number;
+  rateLimited?: boolean;
+}
+
+/**
+ * Envia o link de acesso (o próprio login) para cada e-mail, de 5 em 5. Usa o cliente
+ * admin: o link é pedido em nome do colaborador, então nada pode ficar gravado no navegador
+ * do RH. Para no limite de envio. Não devolve e-mails: a lista de pendentes revelaria ao RH
+ * quem não respondeu.
+ */
+async function sendAccessLinks(emails: string[]): Promise<AccessLinksResult> {
+  const origin = await requestOrigin();
+  const admin = createAdminClient();
+  let sentCount = 0;
+  let rateLimited = false;
+
+  for (let i = 0; i < emails.length && !rateLimited; i += 5) {
+    const errors = await Promise.all(
+      emails.slice(i, i + 5).map(async (email) => {
+        const { error } = await admin.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+            emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
+          },
+        });
+        return error;
+      })
+    );
+    for (const error of errors) {
+      if (!error) {
+        sentCount++;
+        continue;
+      }
+      console.error("Access link error:", error.code ?? error.message);
+      if (error.status === 429 || error.code === "over_email_send_rate_limit") rateLimited = true;
+    }
+  }
+
+  const notSent = emails.length - sentCount;
   return {
-    success: true,
     sentCount,
-    totalPending: pendingParticipants.length,
+    totalPending: emails.length,
     notSent: notSent > 0 ? notSent : undefined,
     rateLimited: rateLimited || undefined,
   };

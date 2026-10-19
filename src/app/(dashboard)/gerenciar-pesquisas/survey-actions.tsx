@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 import { activateSurvey, closeSurvey } from "./actions";
 import { ReminderButton } from "./reminder-button";
+import { showAccessLinksResult } from "./access-links-toast";
 
 interface SurveyActionsProps {
   surveyId: string;
@@ -26,6 +27,7 @@ export function SurveyActions({ surveyId, status }: SurveyActionsProps) {
       setLoading(false);
       return;
     }
+    if (result.emails) showAccessLinksResult(result.emails, "Pesquisa ativada e links enviados!");
     router.refresh();
   }
 

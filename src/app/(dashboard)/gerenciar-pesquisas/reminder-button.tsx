@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Icon } from "@/components/icon";
 import { getReminderMessage, sendSurveyReminders } from "./actions";
+import { showAccessLinksResult } from "./access-links-toast";
 
 interface ReminderButtonProps {
   surveyId: string;
@@ -35,23 +36,12 @@ export function ReminderButton({
     const result = await sendSurveyReminders(surveyId);
     setSendingEmail(false);
 
-    if (result.error) {
+    if (result.error !== undefined) {
       toast.error(result.error);
       return;
     }
 
-    const description = `${result.sentCount} de ${result.totalPending} colaborador(es) pendente(s) receberam o link de acesso.`;
-    if (result.notSent) {
-      toast.warning("Parte dos lembretes não foi enviada", {
-        description: `${description} ${
-          result.rateLimited
-            ? "O limite de envio de e-mails foi atingido; tente de novo mais tarde."
-            : `${result.notSent} envio(s) falharam.`
-        }`,
-      });
-      return;
-    }
-    toast.success("Lembretes enviados com sucesso!", { description });
+    showAccessLinksResult(result, "Lembretes enviados com sucesso!");
   }
 
   // 2. Cópia da mensagem para canais internos (chat/WhatsApp/e-mail corporativo)

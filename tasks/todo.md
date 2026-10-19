@@ -24,6 +24,11 @@ convite de RH/Admin, com tela de primeira senha.
 - [x] 6b. Convite: redirectTo com next=/definir-senha; tela /definir-senha (vale uma vez,
       sem pedir senha atual; marca password_defined).
 - [x] 7. Testes do validador de destino; tsc, lint e testes.
+- [x] 10. Ativar pesquisa envia o link de acesso a todos os participantes (mesmo envio do
+      lembrete, de 5 em 5; falha de e-mail não desfaz a ativação). Cadastro de colaborador
+      continua sem e-mail (decisão do usuário).
+- [x] 11. QR Code do link na tela de confirmação (só no computador; gerado no servidor, sem
+      serviço externo).
 - [ ] 8. Passos no painel do Supabase (usuário): SMTP Gmail, limite de e-mails/hora, modelos,
       Site URL e Redirect URLs. Só trocar os modelos depois do deploy do código.
 - [ ] 9. Teste de ponta a ponta em produção com um e-mail real da equipe (com OK do usuário).
@@ -34,6 +39,8 @@ convite de RH/Admin, com tela de primeira senha.
   /inicio; destino da denúncia preservado; /definir-senha sem login vai para /entrar.
 - Lembretes não devolvem mais e-mails ao RH (revelaria quem não respondeu).
 - tsc limpo; 80 testes (4 novos); lint limpo nos arquivos alterados; build ok.
+- QR confere com o link da página; some na tela de celular. Ativação não testada localmente
+  (exige login e manda e-mails reais).
 - Falta: deploy, passos no painel do Supabase e teste real de e-mail (itens 8 e 9).
 
 # Instrumentos precisos em todo o app (12/10/2026)

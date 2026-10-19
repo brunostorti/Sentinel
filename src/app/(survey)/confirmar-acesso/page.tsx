@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { Card, CardContent } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import { parseEmailLinkType } from "@/lib/auth/email-link";
+import { requestOrigin } from "@/lib/request-origin";
 import { confirmAccess } from "./actions";
 import { ConfirmButton } from "./confirm-button";
 
@@ -15,6 +17,17 @@ export default async function ConfirmAccessPage({
   if (!tokenHash || !type) redirect("/entrar?error=auth");
 
   const isInvite = type === "invite";
+
+  // QR do próprio link, para quem abriu o e-mail no computador e prefere responder no
+  // celular. Gerado aqui, nunca num serviço externo: o link é a chave de acesso da pessoa.
+  let qrCode: string | null = null;
+  if (!isInvite) {
+    const link = new URL("/confirmar-acesso", await requestOrigin());
+    link.searchParams.set("token_hash", tokenHash);
+    link.searchParams.set("type", type);
+    if (next) link.searchParams.set("next", next);
+    qrCode = await QRCode.toDataURL(link.toString(), { margin: 1, width: 176 });
+  }
 
   return (
     <Card className="shadow-sm">
@@ -38,6 +51,16 @@ export default async function ConfirmAccessPage({
           <input type="hidden" name="next" value={next ?? ""} />
           <ConfirmButton label={isInvite ? "Aceitar convite" : "Entrar no Sentinel"} />
         </form>
+        {qrCode && (
+          <div className="mx-auto hidden max-w-xs flex-col items-center gap-2 rounded-xl border border-border bg-muted/40 p-4 md:flex">
+            <p className="text-sm font-semibold">Prefere responder no celular?</p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor (data URL) */}
+            <img src={qrCode} alt="QR Code do link de acesso" width={176} height={176} className="rounded-lg bg-white" />
+            <p className="text-xs text-muted-foreground">
+              Aponte a câmera do celular para o código e toque em &quot;Entrar no Sentinel&quot; por lá.
+            </p>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           {isInvite
             ? "O link vale uma única vez. Se ele expirar, peça um novo convite ao administrador."
