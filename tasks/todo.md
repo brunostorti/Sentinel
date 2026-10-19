@@ -1,3 +1,31 @@
+# Revisão: metodologia e base do RAG em dia (19/10/2026)
+
+Pedido: conferir se a metodologia e os documentos do RAG refletem os commits recentes e se
+há pontas soltas. Decisões do usuário: corrigir página Metodologia, referências no banco e
+docs do git; design do RAG mantém resultados sem caminhos para arquivos locais; busca do chat
+e PDFs da raiz ficam para depois.
+
+- [x] Página Metodologia: "Como a IA usa essas fontes" com RAG (vagas por tipo, F1…, fontes
+      inventadas descartadas) e chat; grupo "Estudos observacionais" (Chisholm 2016 não
+      aparecia); limitação da base de consulta.
+- [x] Migração 20261019185436_referencias_versoes_validadas (md5 conferido): Cotrim 2022,
+      Schuster e Dias 2018, Peterson 2008, Souza 2015 e 2017, Manual GRO/PGR e P&R do MTE 2026;
+      notas de Burr, Demerouti e Spector; manual do COPSOQ II (editor e link corrigidos). DOIs
+      conferidos na Crossref.
+- [x] fontes.json: kb_reference nos 5 documentos completos (sem ficha duplicada); fichas
+      reindexadas (5, custo desprezível).
+- [x] Docs: design do RAG (10 fontes, busca dos planos de 10/10, custos, avaliação sem caminhos
+      locais, limitação do chat) e Dossiê (probabilidade pelo limite verde de cada
+      questionário, mapas próprios); comentários de código sem caminhos locais.
+- [ ] Depois da banca: busca do chat com vagas por tipo de fonte; página Segurança com as
+      proteções do RAG.
+
+## Revisão
+- Conferido em dia: doc de metodologia no RAG = versão do git (hash); 10 links oficiais
+  respondem; 7 planos de exemplo com origem válida; Privacidade e aba de questionários.
+- tsc, lint, 80 testes e build ok. A página Metodologia exige login: conferida pelo banco
+  (32 referências, todas em algum grupo), não na tela.
+
 # Links de acesso por e-mail (19/10/2026)
 
 Objetivo: os links de acesso do colaborador (primeiro acesso em /entrar, lembrete do RH e

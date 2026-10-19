@@ -1,6 +1,8 @@
 # RAG do Sentinel: documento de design (v1)
 
-Data: 09/10/2026 · Escopo: Fase 2 do plano (entrega para a banca em 20/10/2026)
+Data: 09/10/2026 · Escopo: Fase 2 do plano (entrega para a banca em 20/10/2026) · Atualizado em
+19/10/2026: busca dos planos por tipo de fonte (10/10), fontes dos questionários (12/10) e
+referências das versões validadas (19/10).
 
 ## 1. Objetivo
 
@@ -9,7 +11,9 @@ verificáveis e citando a fonte** (documento, seção e página), em vez de depe
 modelo "lembra". Isso vale para dois tipos de fonte:
 
 - **Base global**: normas e guias oficiais (NR-1, Guia do MTE, Manual GRO/PGR, Perguntas e
-  Respostas do MTE, Lei 14.831), o manual do COPSOQ II e as referências científicas curadas.
+  Respostas do MTE, Lei 14.831), os manuais e artigos de validação dos questionários usados
+  (COPSOQ II e III, JSS e OLBI), o documento de metodologia dos questionários do Sentinel e as
+  referências científicas curadas.
 - **Base da empresa**: documentos que o RH envia (políticas internas, relatórios, atas da CIPA,
   PGR anterior etc.). Só a própria empresa os vê.
 
@@ -24,7 +28,7 @@ modelo "lembra". Isso vale para dois tipos de fonte:
 O RAG traz **texto** (o que a norma diz, o que o guia recomenda, o que a política interna prevê).
 Os **números** vêm sempre do banco.
 
-## 3. Fontes da base global (v1)
+## 3. Fontes da base global
 
 | Documento | Tipo | Origem |
 |---|---|---|
@@ -33,12 +37,25 @@ Os **números** vêm sempre do banco.
 | Manual GRO/PGR da NR-1 (MTE, 2026) | manual técnico | gov.br/trabalho-e-emprego |
 | Perguntas e Respostas GRO/PGR (MTE, 1ª rodada, 2026) | guia oficial | gov.br/trabalho-e-emprego |
 | Lei nº 14.831/2024 (Certificado Empresa Promotora da Saúde Mental) | lei | planalto.gov.br |
-| Manual do COPSOQ II, versão portuguesa (Silva et al.) | instrumento | copsoq-network.org |
+| Manual do COPSOQ II, versão portuguesa (Silva et al., 2013) | instrumento | copsoq-network.org |
+| COPSOQ III, versão média portuguesa (Cotrim et al., 2022) — desde 12/10 | instrumento | PMC (acesso aberto) |
+| OLBI, validação brasileira de 13 itens (Schuster e Dias, 2018) — desde 12/10 | instrumento | SciELO |
+| JSS, adaptação brasileira (Souza, Milani e Alexandre, 2015) — desde 12/10 | instrumento | SciELO |
+| Questionários do Sentinel: versões, pontuação e uso na NR-1 — desde 12/10 | manual técnico | `docs/instrumentos/2026-10-12-instrumentos.md` |
 | Referências científicas curadas (`kb_references` + alegações por intervenção) | referência científica | banco do Sentinel |
 
 A lista fica em `docs/rag/fontes.json` (título, órgão, ano, URL oficial, citação). Os PDFs
 ficam fora do git (`docs/referencias/`); o script de ingestão baixa da URL oficial quando o
-arquivo local não existe.
+arquivo local não existe. Documentos do próprio repositório entram em Markdown (`"format": "md"`).
+
+- **Referências curadas**: cada uma vira uma ficha curta (título, autores, tipo de evidência,
+  observações e as alegações verificadas usadas no Sentinel). As que já estão na base com o
+  texto completo apontam para a sua referência pelo campo `kb_reference` do `fontes.json` e não
+  ganham ficha, para não duplicar (em 19/10: NR-1, Guia e Manual do MTE, Perguntas e Respostas,
+  Lei 14.831, manual do COPSOQ II e as versões validadas do COPSOQ III, OLBI e JSS).
+- **Documento de metodologia**: escrito com itens autocontidos (cada item repete o nome do
+  questionário), porque o trecho vai sem cabeçalho para o embedding (seção 4); com itens
+  genéricos ("a versão usada…"), a busca não sabia de qual questionário o trecho falava.
 
 **Planos de outras empresas (exemplos):** planos aprovados ou concluídos de empresas com
 `companies.share_plans_as_examples = true` entram na base global **anonimizados**
@@ -73,15 +90,16 @@ setores, as contagens de pessoas e a justificativa, que cita perguntas e setores
    piorou (MRR 0,68 → 0,58), porque o prefixo deixa parecidos trechos diferentes da mesma
    seção. Título e seção continuam guardados para a busca por palavras e para a citação.
 5. **Embeddings**: OpenAI `text-embedding-3-large` com 1.536 dimensões (escolhido no teste de
-   09/10, `docs/rag/2026-10-09-teste-embeddings.pdf`: 18/24 acertos no 1º lugar contra 12/24
-   do modelo menor). O modelo é fixo da plataforma e fica registrado em cada documento
+   09/10 com 24 perguntas: 18/24 acertos no 1º lugar contra 12/24 do modelo menor; o relatório
+   do teste fica com a equipe, fora do repositório). O modelo é fixo da plataforma e fica registrado em cada documento
    (`embedding_model`), para permitir trocar de modelo no futuro reprocessando a base.
 6. **Triagem anti-injeção** (ver seção 8): trechos com cara de instrução para IA são marcados e
    ficam fora da busca.
 
-Custo: a base global inteira (6 documentos + 21 referências, cerca de 650 trechos) tem perto
-de 110 mil tokens, o que dá menos de US$ 0,02 por reprocessamento completo (US$ 0,13 por
-milhão de tokens).
+Custo: a base global inteira (em 19/10: 10 documentos, 23 fichas de referência e 7 planos de
+exemplo, cerca de 920 trechos e 81 mil palavras) tem perto de 115 mil tokens, o que dá menos de
+US$ 0,02 por reprocessamento completo (US$ 0,13 por milhão de tokens). O script só reprocessa o
+que mudou (compara o *hash* do texto).
 
 ## 5. Armazenamento (Supabase/Postgres + pgvector)
 
@@ -126,9 +144,9 @@ citar" quando nenhum documento trata do assunto: na avaliação, o acerto menos 
 ## 7. Uso na IA
 
 ### Chat (assistente)
-- A cada mensagem, o servidor busca os trechos mais relevantes (global + empresa) e os anexa ao
-  prompt numerados `[1]`, `[2]`… junto com os **escores da pesquisa mais recente** (contexto
-  direto).
+- A cada mensagem, o servidor busca os 6 trechos mais relevantes (global + empresa, sem vagas
+  por tipo) e os anexa ao prompt numerados `[1]`, `[2]`… junto com os **escores da pesquisa
+  mais recente** (contexto direto). Pergunta curta ("e o prazo?") leva junto a anterior.
 - A IA é instruída a citar `[n]` ao usar um trecho e a dizer quando os documentos não cobrem o
   assunto.
 - As fontes ficam salvas na mensagem (`chat_messages.metadata.sources`) e aparecem abaixo da
@@ -136,9 +154,20 @@ citar" quando nenhum documento trata do assunto: na avaliação, o acerto menos 
 
 ### Planos de ação (pipeline)
 - Para cada par dimensão + intervenção, o servidor busca trechos usando o nome da dimensão, a
-  intervenção e a pergunta da pesquisa que mais pesou.
-- O Consultant recebe os trechos com identificadores `[F1]`, `[F2]`… e devolve em cada plano
-  quais usou (`source_ids`).
+  intervenção e a pergunta da pesquisa que mais pesou, em **três buscas separadas**, para um
+  tipo de fonte não tomar a vaga do outro (10/10):
+  - até 2 trechos dos **documentos da própria empresa**;
+  - 3 de **normas, leis, guias, manuais e referências científicas**;
+  - até 2 **planos de exemplo** de outras empresas (anonimizados).
+- Mais 3 trechos gerais sobre plano de ação na NR-1 (cronograma, responsáveis, aferição),
+  comuns a todos os itens.
+- **O texto dos questionários fica fora dessa busca.** Como a consulta leva a pergunta da
+  pesquisa, os trechos do próprio questionário (que a IA já recebe) ocupavam as 3 vagas de
+  normas e os documentos da empresa ficavam de fora. Com as vagas separadas (10/10), os planos
+  passaram a usar os documentos da empresa.
+- Cada plano é escrito numa chamada própria, em paralelo, e recebe só o seu bloco de trechos,
+  com identificadores `[F1]`, `[F2]`…; o Consultant devolve em cada plano quais usou
+  (`source_ids`).
 - O servidor **descarta identificadores que não foram fornecidos** (a IA não consegue inventar
   uma fonte) e grava as fontes no plano (`ai_recommendation.sources`), exibidas na tela do plano
   em "Fontes consultadas".
@@ -173,8 +202,8 @@ dados pessoais** (nomes, CPF, prontuários). Excluir um documento apaga o arquiv
 
 ## 9. Avaliação
 
-**Resultado em 09/10** (36 perguntas com resposta + 3 fora do escopo; relatório completo em
-`docs/rag/avaliacao/resultado-2026-10-09.md`):
+**Resultado em 09/10** (36 perguntas com resposta + 3 fora do escopo; o relatório completo fica
+com a equipe, fora do repositório):
 
 | Configuração | 1º lugar | Top-5 | MRR |
 |---|---|---|---|
@@ -190,16 +219,16 @@ comuns em perguntas de RH sobre a norma. As 3 perguntas fora do escopo não traz
 acima do limiar. Com 36 perguntas, diferenças de 1 a 2 acertos são ruído: o conjunto da equipe
 (30 a 50 perguntas reais de RH) vai confirmar ou corrigir esses números.
 
-Como funciona:
+Como funciona (o conjunto de perguntas, o script de avaliação e os relatórios ficam com a
+equipe, fora do repositório):
 
-- Conjunto de perguntas em `docs/rag/avaliacao/perguntas.csv`: pergunta, documento esperado e
-  um ou mais **trechos-âncora** (frase curta que precisa aparecer no trecho recuperado). A
-  âncora em texto, em vez de número do trecho, sobrevive a mudanças no *chunking*.
-- A equipe escreve de 30 a 50 perguntas reais de RH. O arquivo já começa com as 24 perguntas do
+- Cada pergunta tem o documento esperado e um ou mais **trechos-âncora** (frase curta que
+  precisa aparecer no trecho recuperado). A âncora em texto, em vez de número do trecho,
+  sobrevive a mudanças no *chunking*.
+- A equipe escreve de 30 a 50 perguntas reais de RH; o conjunto começou com as 24 perguntas do
   teste de 09/10.
-- `scripts/rag/evaluate.ts` roda a busca real do banco e calcula **acerto no 1º lugar**,
-  **acerto no top-5** e **MRR**, por documento, gravando o relatório em
-  `docs/rag/avaliacao/`.
+- A avaliação roda a busca real do banco e calcula **acerto no 1º lugar**, **acerto no top-5**
+  e **MRR**, por documento.
 - Rodar a avaliação antes e depois de qualquer mudança em *chunking*, busca ou modelo.
 
 ## 10. Limitações conhecidas (v1)
@@ -213,3 +242,6 @@ Como funciona:
   fonte e a orientação de preferir a mais recente e apontar a divergência.
 - Sem reranker; sem índice HNSW (ver seções 5 e 6).
 - A base global é atualizada por script (`scripts/rag/ingest-global.ts`), não pela interface.
+- **Chat sem vagas por tipo de fonte**: os 6 trechos disputam a mesma lista, e o texto dos
+  questionários pode ocupar vagas dos documentos da empresa (o problema que os planos tinham
+  até 10/10). Próximo passo: a mesma separação por tipo usada nos planos.

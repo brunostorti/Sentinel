@@ -34,6 +34,7 @@
       "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/manuais-e-publicacoes/2026/manual_gro_pgr_da_nr_1.pdf",
       "file": "docs/referencias/manual-gro-pgr-2026/manual_gro_pgr_da_nr_1.pdf",
       "format": "pdf",
+      "kb_reference": "MTE2026_ManualGROPGR",
       "citation": "BRASIL. Ministério do Trabalho e Emprego. Manual do Gerenciamento de Riscos Ocupacionais (GRO) e do Programa de Gerenciamento de Riscos (PGR) da NR-1. Brasília: MTE, 2026."
     },
     {
@@ -45,6 +46,7 @@
       "url": "https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/manuais-e-publicacoes/2026/perguntas-e-respostas-gro-pgr-maio-2026",
       "file": "docs/referencias/mte-perguntas-respostas-maio-2026/perguntas-e-respostas-gro-pgr-maio-2026.pdf",
       "format": "pdf",
+      "kb_reference": "MTE2026_PerguntasRespostas",
       "citation": "BRASIL. Ministério do Trabalho e Emprego. NR-1 — Gerenciamento de riscos ocupacionais (GRO): perguntas e respostas sobre o capítulo 1.5 da NR-1. 1ª rodada. Brasília: MTE, 2026."
     },
     {
@@ -80,6 +82,7 @@
       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8834667/",
       "file": "docs/referencias/cotrim-2022-copsoq-iii-pt.html",
       "format": "html",
+      "kb_reference": "Cotrim2022_COPSOQ3_PT",
       "citation": "COTRIM, T. P. et al. The Portuguese Third Version of the Copenhagen Psychosocial Questionnaire: Preliminary Validation Studies of the Middle Version among Municipal and Healthcare Workers. International Journal of Environmental Research and Public Health, v. 19, n. 3, 1167, 2022. DOI: 10.3390/ijerph19031167."
     },
     {
@@ -91,6 +94,7 @@
       "url": "https://www.scielo.br/j/csc/a/DsJjWhKtqPxtsspbgSBz3jk/?format=pdf&lang=pt",
       "file": "docs/referencias/schuster-dias-2018-olbi-br.pdf",
       "format": "pdf",
+      "kb_reference": "SchusterDias2018_OLBI_BR",
       "citation": "SCHUSTER, M. S.; DIAS, V. V. Oldenburg Burnout Inventory - validação de uma nova forma de mensurar Burnout no Brasil. Ciência & Saúde Coletiva, v. 23, n. 2, p. 553-562, 2018. DOI: 10.1590/1413-81232018232.27952015."
     },
     {
@@ -102,6 +106,7 @@
       "url": "https://www.scielo.br/j/rbso/a/xhGXGBXdwTj9XmpFzcVTwKP/?format=pdf&lang=pt",
       "file": "docs/referencias/souza-2015-jss-br.pdf",
       "format": "pdf",
+      "kb_reference": "Souza2015_JSS_BR",
       "citation": "SOUZA, A. C.; MILANI, D.; ALEXANDRE, N. M. C. Adaptação cultural de um instrumento para avaliar a satisfação no trabalho. Revista Brasileira de Saúde Ocupacional, v. 40, n. 132, p. 219-227, 2015. DOI: 10.1590/0303-7657000113715."
     },
     {

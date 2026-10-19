@@ -12,7 +12,7 @@ export const EMBEDDING_MODEL_ID = `${EMBEDDING_MODEL}@${EMBEDDING_DIMENSIONS}`;
 
 /**
  * Tamanho dos trechos, em palavras (~1,4 token por palavra em português).
- * Escolhido na avaliação de 09/10 (docs/rag/avaliacao/): com 31 perguntas, trechos de
+ * Escolhido na avaliação de 09/10 (material da equipe, fora do repositório): com 31 perguntas, trechos de
  * até 120 palavras acertaram no top-5 em 28 (MRR 0,68), contra 25 (MRR 0,55) com 300.
  */
 export const CHUNK_MAX_WORDS = 120;

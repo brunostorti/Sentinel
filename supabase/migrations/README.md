@@ -39,6 +39,14 @@ brasileiros) vêm da migração `20261012174401_instrumentos_validados.sql`, que
 cortes de semáforo por escala. As versões anteriores ficaram arquivadas (`copsoq_iii_legado`,
 `olbi_legado`) e os scripts `seed-copsoq-iii.ts`, `seed-jss.ts` e `seed-olbi.ts` foram
 desativados. Fontes e decisões em `docs/instrumentos/2026-10-12-instrumentos.md`.
+
+**Referências curadas (`kb_references`, lista da página Metodologia):** seed em
+`20260521070316_seed_kb_references.sql`, auditoria em `20261008011829_fix_kb_references.sql` e
+versões validadas dos questionários e documentos do MTE de 2026 em
+`20261019185436_referencias_versoes_validadas.sql`. Cada referência também vira uma ficha na
+base do RAG: depois de mudar referências, rode
+`npx tsx --env-file=.env.local scripts/rag/ingest-global.ts --only referencias` (só reprocessa
+as fichas que mudaram).
 O antigo `003_copsoq_seed.sql` (nunca aplicado em produção, escrito para as tabelas
 `copsoq_*` anteriores à renomeação) foi removido em 2026-10-08; ele continua no histórico
 do git (commit a11ea42).

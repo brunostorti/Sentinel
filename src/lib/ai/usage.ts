@@ -3,8 +3,8 @@
  *
  * Quem quer medir abre um "registro" com `withUsageRecorder(fn)`; dentro dele, as etapas
  * chamam `recordUsage(...)`. Fora de um registro, `recordUsage` não faz nada. Usado pelo
- * pipeline (log no fim de cada geração) e pelos scripts de benchmark
- * (docs/avaliacao/).
+ * pipeline (log no fim de cada geração) e pelos scripts de benchmark da equipe (fora do
+ * repositório).
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";

@@ -30,6 +30,12 @@ const EVIDENCE_GROUPS: { key: string; label: string; description: string; types:
     types: ["rct"],
   },
   {
+    key: "observational",
+    label: "Estudos observacionais",
+    description: "Estudos sem intervenção experimental: retorno do investimento e pontos de corte usados no semáforo.",
+    types: ["observational"],
+  },
+  {
     key: "theoretical",
     label: "Modelos teóricos",
     description: "Frameworks que estruturam o desenho das intervenções (JD-R, SDT, MBI).",
@@ -38,7 +44,7 @@ const EVIDENCE_GROUPS: { key: string; label: string; description: string; types:
   {
     key: "validation",
     label: "Validação de instrumentos",
-    description: "Papers de validação dos questionários usados (COPSOQ, JSS, OLBI).",
+    description: "Versões originais dos questionários e as versões validadas em português que o Sentinel usa (COPSOQ II e III, JSS, OLBI).",
     types: ["validation_study"],
   },
 ];
@@ -83,8 +89,9 @@ export default async function MetodologiaPage(props: { searchParams?: Promise<{ 
           Esta plataforma usa inteligência artificial assistida para gerar planos
           de ação a partir de pesquisas psicossociais. Todas as recomendações são
           embasadas em literatura científica indexada, diretrizes internacionais
-          (OMS/OIT) e regulação brasileira (NR-1 e o certificado voluntário da Lei 14.831/2024). Esta página
-          documenta integralmente as fontes.
+          (OMS/OIT), regulação brasileira (NR-1, guias e manual do MTE e o certificado voluntário
+          da Lei 14.831/2024) e nos documentos internos da própria empresa. Esta página documenta
+          integralmente as fontes.
         </p>
       </div>
 
@@ -151,32 +158,58 @@ export default async function MetodologiaPage(props: { searchParams?: Promise<{ 
       {/* Como a IA usa as referências */}
       <Card className="border-primary/10 bg-primary/5 p-8 shadow-sm">
         <h2 className="text-lg font-black text-foreground">Como a IA usa essas fontes</h2>
-        <ol className="mt-4 space-y-3.5 text-sm leading-relaxed">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Os números (escores, adesão, setores e custos) vêm sempre do banco e de cálculos no
+          código. A IA escreve o texto e só pode citar as fontes que recebeu.
+        </p>
+
+        <h3 className="mt-5 text-sm font-black text-foreground">Planos de ação (ao encerrar uma pesquisa)</h3>
+        <ol className="mt-3 space-y-3.5 text-sm leading-relaxed">
           <li className="text-muted-foreground">
-            <span className="font-bold text-foreground/80">1. Análise (Stage 1):</span> Identifica dimensões em risco
-            com base nos instrumentos validados (COPSOQ II/III, JSS, OLBI). Usa
-            sistema semáforo (verde/amarelo/vermelho) e taxa de resposta.
+            <span className="font-bold text-foreground/80">1. Análise:</span> identifica as dimensões
+            em risco pelos escores de cada questionário (COPSOQ II/III, JSS, OLBI), com o semáforo e
+            os pontos de corte próprios de cada um, a adesão e a tendência entre ciclos.
           </li>
           <li className="text-muted-foreground">
-            <span className="font-bold text-foreground/80">2. Curadoria (Stage 2):</span> Filtra intervenções do
-            catálogo aplicando restrições reais da empresa (orçamento, RH
-            disponível, histórico de ações). <em className="text-foreground/70 not-italic font-medium">Hard-filters em código</em>{" "}
-            descartam o que não cabe — não depende do LLM &ldquo;lembrar&rdquo;
-            do contexto.
+            <span className="font-bold text-foreground/80">2. Curadoria:</span>{" "}
+            <em className="text-foreground/70 not-italic font-medium">filtros em código</em>{" "}
+            descartam do catálogo o que não cabe na empresa (orçamento, estrutura de RH, restrições
+            declaradas) e o que já falhou nela. A IA escolhe só entre as intervenções que sobram.
           </li>
           <li className="text-muted-foreground">
-            <span className="font-bold text-foreground/80">3. Síntese (Stage 3):</span> Para cada intervenção, o LLM
-            recebe as referências científicas curadas (lista acima) e <strong>só
-            pode citar dessa lista</strong>. Cada métrica de impacto no plano
-            tem fonte rastreável.
+            <span className="font-bold text-foreground/80">3. Busca nas fontes (RAG):</span> para cada
+            item do plano, o sistema busca na base de consulta trechos das normas e guias oficiais
+            (NR-1, Guia, Manual e Perguntas e Respostas do MTE, Lei 14.831), dos manuais dos
+            questionários, das referências desta página, dos documentos enviados pela própria
+            empresa e de planos de exemplo anonimizados. Cada tipo de fonte tem vagas próprias,
+            para que os documentos da empresa não sejam abafados pelas normas.
           </li>
           <li className="text-muted-foreground">
-            <span className="font-bold text-foreground/80">4. Aprendizado:</span> Quando a próxima pesquisa fecha, o
-            sistema calcula delta de score, pede atribuição ao HR e usa o
-            resultado para o próximo ciclo (intervenções com falha entram em
-            blocklist específico da empresa).
+            <span className="font-bold text-foreground/80">4. Redação:</span> cada plano é escrito
+            numa chamada própria, com os trechos numerados (F1, F2…), as alegações verificadas das
+            referências e os fatos calculados (perguntas que mais pesaram, setores, custo estimado).
+            O servidor <strong>descarta qualquer fonte citada que não tenha sido fornecida</strong>,
+            e o plano mostra as fontes consultadas.
+          </li>
+          <li className="text-muted-foreground">
+            <span className="font-bold text-foreground/80">5. Aprendizado:</span> quando a próxima
+            pesquisa fecha, o sistema mede a variação da dimensão em cada plano implantado e pede ao
+            RH a atribuição. Intervenções que não funcionaram na empresa saem das próximas
+            sugestões, e as categorias que funcionaram ganham prioridade.
           </li>
         </ol>
+
+        <h3 className="mt-6 text-sm font-black text-foreground">Assistente (chat)</h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          A cada pergunta, a busca traz até 6 trechos da base de consulta e dos documentos da
+          empresa, que a IA cita como [1], [2]…; abaixo da resposta aparecem só as fontes citadas.
+          Quando os documentos não tratam do assunto, ela deve dizer isso. A lista dos documentos
+          está em{" "}
+          <Link href="/base-de-conhecimento" className="font-semibold text-primary hover:underline">
+            Base de conhecimento
+          </Link>
+          .
+        </p>
       </Card>
 
       {/* Bibliografia por categoria */}
@@ -260,8 +293,14 @@ export default async function MetodologiaPage(props: { searchParams?: Promise<{ 
           <li className="text-muted-foreground">
             <span className="text-foreground/95 font-semibold">• Generalização para o Brasil:</span> a maioria das
             meta-análises usa amostras europeias e norte-americanas. Sempre que
-            possível, citamos também dados brasileiros (INSS, manual COPSOQ
-            Portugal 2013).
+            possível, usamos versões validadas em português (COPSOQ de Portugal; JSS e
+            OLBI validados no Brasil) e dados brasileiros (INSS, MTE).
+          </li>
+          <li className="text-muted-foreground">
+            <span className="text-foreground/95 font-semibold">• Base de consulta limitada:</span> a
+            IA só cita o que está na base (normas, guias, manuais dos questionários, referências e
+            documentos da empresa). Os documentos enviados pela empresa não são verificados pelo
+            Sentinel e chegam à IA identificados como tal.
           </li>
           <li className="text-muted-foreground">
             <span className="text-foreground/95 font-semibold">• Contextualização local:</span> o pipeline usa o perfil

@@ -33,8 +33,8 @@ export interface RetrievedChunk {
 /**
  * Semelhança mínima (cosseno) para um trecho ser usado. Abaixo disso, o trecho só
  * apareceu por coincidência de palavras e a IA tenderia a "citar por citar".
- * Calibrado com scripts/rag/evaluate.ts em 09/10: o acerto menos parecido teve 0,47 e
- * a pergunta fora do escopo mais parecida, 0,35 (docs/rag/avaliacao/).
+ * Calibrado na avaliação de 09/10 (material da equipe, fora do repositório): o acerto menos
+ * parecido teve 0,47 e a pergunta fora do escopo mais parecida, 0,35.
  */
 export const MIN_SIMILARITY = 0.4;
 
