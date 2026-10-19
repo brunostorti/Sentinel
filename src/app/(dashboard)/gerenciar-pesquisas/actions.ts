@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { triggerActionPlanGeneration } from "@/lib/ai/trigger-generation";
 
 async function enrollParticipants(supabase: any, surveyId: string, targetDeptIds: string[] | null, companyId: string) {
@@ -549,35 +550,48 @@ export async function sendSurveyReminders(surveyId: string) {
     ? `${headersList.get("x-forwarded-proto") ?? "https"}://${headersList.get("x-forwarded-host")}`
     : headersList.get("origin") ?? "http://localhost:3000";
 
+  // Cliente admin: o link é pedido em nome do colaborador, então nada pode ficar gravado
+  // no navegador do RH (com o cliente da sessão, o link dependia do cookie dele).
+  const admin = createAdminClient();
   let sentCount = 0;
-  const errors: string[] = [];
+  let rateLimited = false;
 
   for (const participant of pendingParticipants) {
-    try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: participant.email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
-        },
-      });
+    const { error: otpError } = await admin.auth.signInWithOtp({
+      email: participant.email,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
+      },
+    });
 
-      if (otpError) {
-        errors.push(`${participant.email}: ${otpError.message}`);
-      } else {
-        sentCount++;
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`${participant.email}: ${msg}`);
+    if (!otpError) {
+      sentCount++;
+      continue;
     }
+    // Sem e-mails na resposta: a lista de pendentes revelaria ao RH quem não respondeu.
+    console.error("Reminder magic link error:", otpError.code ?? otpError.message);
+    if (otpError.status === 429 || otpError.code === "over_email_send_rate_limit") {
+      rateLimited = true;
+      break;
+    }
+  }
+
+  const notSent = pendingParticipants.length - sentCount;
+  if (sentCount === 0) {
+    return {
+      error: rateLimited
+        ? "Limite de envio de e-mails atingido. Tente novamente mais tarde."
+        : "Não foi possível enviar os lembretes. Verifique a configuração de e-mail.",
+    };
   }
 
   return {
     success: true,
     sentCount,
     totalPending: pendingParticipants.length,
-    errors: errors.length > 0 ? errors : undefined,
+    notSent: notSent > 0 ? notSent : undefined,
+    rateLimited: rateLimited || undefined,
   };
 }
 

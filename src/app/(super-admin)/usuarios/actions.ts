@@ -47,7 +47,7 @@ export async function createUser(payload: CreateUserPayload) {
   const { data: authUser, error: authError } =
     await admin.auth.admin.inviteUserByEmail(payload.email, {
       data: { name: payload.name, role: payload.role },
-      redirectTo: `${appUrl()}/api/auth/callback`,
+      redirectTo: `${appUrl()}/api/auth/callback?next=/definir-senha`,
     });
 
   if (authError) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { use, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,18 @@ import { TutorialModal } from "@/components/tutorial-modal";
 type LoginMode = "employee" | "admin";
 type Step = "email" | "sent";
 
-export default function LoginPage() {
+const LINK_ERROR = "O link de acesso é inválido ou expirou. Peça um novo link abaixo.";
+
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error: linkError } = use(searchParams);
   const [mode, setMode] = useState<LoginMode>("employee");
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(linkError === "auth" ? LINK_ERROR : "");
   const [loading, setLoading] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
@@ -59,7 +66,7 @@ export default function LoginPage() {
     },
     {
       title: "Primeiro Acesso",
-      description: "Ao clicar no link, você entrará automaticamente. Se for seu primeiro acesso, o sistema pedirá para criar uma senha.",
+      description: "Abra o link do e-mail e clique em \"Entrar no Sentinel\". Pode ser no celular ou no computador, e você não precisa criar senha.",
       icon: "key",
     },
     {

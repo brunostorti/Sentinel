@@ -40,9 +40,18 @@ export function ReminderButton({
       return;
     }
 
-    toast.success("Lembretes enviados com sucesso!", {
-      description: `${result.sentCount} de ${result.totalPending} colaborador(es) pendente(s) receberam o link de acesso.`,
-    });
+    const description = `${result.sentCount} de ${result.totalPending} colaborador(es) pendente(s) receberam o link de acesso.`;
+    if (result.notSent) {
+      toast.warning("Parte dos lembretes não foi enviada", {
+        description: `${description} ${
+          result.rateLimited
+            ? "O limite de envio de e-mails foi atingido; tente de novo mais tarde."
+            : `${result.notSent} envio(s) falharam.`
+        }`,
+      });
+      return;
+    }
+    toast.success("Lembretes enviados com sucesso!", { description });
   }
 
   // 2. Cópia da mensagem para canais internos (chat/WhatsApp/e-mail corporativo)

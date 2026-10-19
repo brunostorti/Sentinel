@@ -1,3 +1,41 @@
+# Links de acesso por e-mail (19/10/2026)
+
+Objetivo: os links de acesso do colaborador (primeiro acesso em /entrar, lembrete do RH e
+denúncia) funcionarem para qualquer e-mail, em qualquer aparelho.
+
+Diagnóstico (logs do Supabase, 15/10): SMTP padrão do Supabase (só entrega para membros da
+organização, ~2 e-mails/hora; 429 no 3º envio); link PKCE exige o code verifier no navegador
+de quem pediu (no lembrete, é o navegador do RH); pedidos repetidos invalidam o link anterior.
+
+Decisões do usuário (19/10): SMTP via Gmail com senha de app; link abre página com botão
+"Entrar" (não é consumido por verificadores de links do e-mail corporativo); incluir o
+convite de RH/Admin, com tela de primeira senha.
+
+## Plano
+- [x] 1. Página pública /confirmar-acesso: mostra o botão; o envio do formulário chama
+      verifyOtp({ token_hash, type }) no servidor e redireciona para o destino.
+- [x] 2. /api/auth/callback: com token_hash, encaminha para /confirmar-acesso (sem consumir o
+      link); com code, segue como hoje (compatível com os e-mails antigos).
+- [x] 3. Destino (next) validado: só caminhos internos ("/..." e nunca "//").
+- [x] 4. Lembretes: envio pelo cliente admin (não grava cookie no navegador do RH); para no
+      limite de envio; informa falhas em vez de "sucesso" com 0 enviados.
+- [x] 5. /entrar: aviso "link inválido ou expirado" quando o callback falha.
+- [x] 6. Modelos de e-mail em PT-BR (Magic Link, Confirm signup e Invite) em supabase/templates/.
+- [x] 6b. Convite: redirectTo com next=/definir-senha; tela /definir-senha (vale uma vez,
+      sem pedir senha atual; marca password_defined).
+- [x] 7. Testes do validador de destino; tsc, lint e testes.
+- [ ] 8. Passos no painel do Supabase (usuário): SMTP Gmail, limite de e-mails/hora, modelos,
+      Site URL e Redirect URLs. Só trocar os modelos depois do deploy do código.
+- [ ] 9. Teste de ponta a ponta em produção com um e-mail real da equipe (com OK do usuário).
+
+## Revisão (19/10)
+- Local: callback com token_hash leva a /confirmar-acesso sem gastar o link; clique com
+  token falso volta a /entrar?error=auth com o aviso; next externo (//, /\, https://) vira
+  /inicio; destino da denúncia preservado; /definir-senha sem login vai para /entrar.
+- Lembretes não devolvem mais e-mails ao RH (revelaria quem não respondeu).
+- tsc limpo; 80 testes (4 novos); lint limpo nos arquivos alterados; build ok.
+- Falta: deploy, passos no painel do Supabase e teste real de e-mail (itens 8 e 9).
+
 # Instrumentos precisos em todo o app (12/10/2026)
 
 Objetivo: COPSOQ II, COPSOQ III, JSS e OLBI corretos e coerentes em escores, semáforo,
