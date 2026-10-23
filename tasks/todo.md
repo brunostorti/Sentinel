@@ -1,3 +1,90 @@
+# Área do colaborador: denúncia dentro dela e formulário melhor (22/10/2026)
+
+Pedido: trazer a denúncia para dentro da área do colaborador, tão anônima quanto as respostas
+das pesquisas; o formulário ganhar volta ao início e ficar mais agradável; melhorar toda a parte
+do colaborador.
+
+Diagnóstico: a área é só uma lista de pesquisas ativas (sem abas, sem estado "respondida"); o
+formulário não volta ao início e perde tudo ao sair; a bolinha marcada mostra o valor interno
+(0–100); "Obrigado" cita COPSOQ II para qualquer questionário. A denúncia fica fora (/denuncia,
+pública) e lista todas as empresas clientes para qualquer pessoa (/api/companies); guarda dia e
+HORA (o RH vê "às 14:32"); a caixa "anônimo" não muda nada mas gera selo para o RH; anexos vão
+com metadados (GPS, aparelho, autor); protocolo curto, ano fixo, consulta pública sem limite.
+
+Decisões do usuário (22/10): uma pergunta por tela com avanço automático (e tela curta entre as
+partes); progresso salvo só no aparelho; denúncia sempre anônima (sai a caixa); resultado
+individual mantido com tom acolhedor e apoio (CVV 188, RH, SESMT); denúncia guarda só o dia,
+INCLUSIVE as já gravadas (irreversível); anexos limpos automaticamente (sharp vira dependência);
+endereços /denuncia pedem login e levam à aba; protocolo mais forte + lista no aparelho;
+seis tipos de ocorrência (assédio moral, assédio sexual, discriminação, violência ou ameaça,
+conduta antiética, outro). Aprovado para implementar.
+
+## Plano
+### A. Área do colaborador
+- [x] A1. Grupo de rotas (colaborador): cabeçalho (logo, empresa, Sair) e abas "Pesquisas" e
+      "Canal de denúncia"; /pesquisas passa para ele.
+- [x] A2. Início: cartões com estado (a responder com tempo estimado e prazo; em andamento com
+      % salvo no aparelho e "Continuar"; respondida); tela vazia amigável.
+- [x] A3. Middleware: /denuncia exige login de colaborador; rotas comparadas por segmento (hoje
+      "/denuncia" também casa com "/denuncias", a tela do RH).
+- [x] A4. Login com destino: /entrar?next=/denuncia leva o link do e-mail de volta à aba
+      (safeNext); quem já está logado vai direto.
+- [x] A5. Sair apaga do aparelho os rascunhos de pesquisa desse usuário.
+
+### B. Formulário da pesquisa (servidor/actions.ts inalterado)
+- [x] B1. Abertura: nº de perguntas, tempo estimado, como responder, anonimato; "Começar" ou
+      "Continuar de onde parei".
+- [x] B2. Uma pergunta por tela, avanço automático, Voltar, teclas 1–5, progresso; transição
+      suave que respeita "reduzir movimento".
+- [x] B3. Tela curta ao concluir cada parte, sem nome de tema (não induzir a resposta).
+- [x] B4. Revisão antes de enviar; "Início" em todas as telas.
+- [x] B5. Rascunho em localStorage por usuário e pesquisa; apagado ao enviar ou sair; ao
+      carregar, descarta perguntas e valores que não existem.
+- [x] B6. Sem número interno na opção; opções acessíveis (radio).
+- [x] B7. Resultado acolhedor: Favorável / Intermédio / Ponto de atenção, ícones neutros; com
+      ponto de atenção, apoio (CVV 188, RH, SESMT).
+- [x] B8. Obrigado: texto vale para qualquer questionário; "Voltar ao início".
+
+### C. Canal de denúncia na área
+- [x] C1. Aba /denuncia: o que é, garantias, "Fazer um relato", "Acompanhar", "Relatos enviados
+      neste aparelho" com status.
+- [x] C2. /denuncia/nova: empresa do cadastro (se várias, só as suas); tipo, relato com
+      orientações, anexos; protocolo com "copiar", salvo na lista do aparelho.
+- [x] C3. /denuncia/acompanhar: consulta por protocolo, com login.
+- [x] C4. Apagar src/app/denuncia (público), /api/reports/request-access e /api/companies.
+
+### D. Anonimato da denúncia
+- [x] D1. Migração: só o dia em created_at/updated_at no INSERT e nas já gravadas.
+- [x] D2. Protocolo DEN-AAAA-XXXX-XXXX (sem 0/O/1/I), ano automático; PROT- antigo consultável.
+- [x] D3. Anexos: fotos regravadas sem metadados (sharp); PDF sem Info/XMP (pdf-lib); arquivo
+      que não abre é recusado.
+- [x] D4. Submit sempre anônimo, empresa validada no cadastro do usuário; track exige login.
+- [x] D5. Tela do RH: sem selo "Anônimo" e sem hora.
+- [x] D6. Página Privacidade: explicação do canal atualizada.
+
+### E. Verificação
+- [x] E1. Testes: protocolo, limpeza de anexos (foto com GPS, PDF com autor), rascunho, rotas.
+- [x] E2. tsc, lint, testes e build.
+- [ ] E3. Telas no navegador (celular e computador) com conta da Empresa Teste; dados de teste
+      apagados ao final (com OK do usuário, pois o banco é o de produção).
+
+## Revisão (22/10)
+- Migração 20261022233148_denuncia_so_o_dia aplicada: corte na meia-noite de Brasília (em UTC
+  a data exibida voltaria um dia); as 3 denúncias existentes (demo) ficaram só com o dia.
+- Denúncia real pelo fluxo novo (DEN-2026-BP8H-MNQW, Empresa Teste) gravada com protocolo novo,
+  só o dia e is_anonymous; tela do RH (rh@sentinel.com) mostra os 6 tipos, só a data e sem
+  selo "Anônimo".
+- Redirecionamentos conferidos: /denuncia, /pesquisas e /responder sem login vão para
+  /entrar?next=... (acompanhar preserva o protocolo); /denuncias (RH) segue separado.
+- Protocolos de demonstração (PROT-2026-DEMOBUSSOLA1) continuam consultáveis.
+- Achado no caminho: prazo contado em blocos de 24 h dizia "amanhã" para algo que vence hoje;
+  agora conta dias do calendário de Brasília (teste novo).
+- tsc, lint e 112 testes (36 novos: protocolo, limpeza de anexos com foto e PDF reais,
+  rascunho, prazo, rotas, formatação) e build ok.
+- Falta (E3): percorrer como colaborador (início, formulário com rascunho, resultado, relato e
+  acompanhamento). Pesquisa temporária "[Verificação] Área do colaborador" (ciclo próprio, só
+  ana.teste) criada na Empresa Teste para isso; apagar ao final com OK do usuário.
+
 # Revisão: metodologia e base do RAG em dia (19/10/2026)
 
 Pedido: conferir se a metodologia e os documentos do RAG refletem os commits recentes e se

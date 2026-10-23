@@ -3,8 +3,10 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { safeNext } from "@/lib/auth/email-link";
 
-export async function sendMagicLink(email: string) {
+/** `next`: para onde o link do e-mail leva depois do login (só caminhos internos). */
+export async function sendMagicLink(email: string, next?: string) {
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!normalizedEmail || !normalizedEmail.includes("@")) {
@@ -70,7 +72,9 @@ export async function sendMagicLink(email: string) {
     email: normalizedEmail,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${origin}/api/auth/callback?next=/pesquisas`,
+      emailRedirectTo: `${origin}/api/auth/callback?next=${encodeURIComponent(
+        safeNext(next, "/pesquisas")
+      )}`,
     },
   });
 

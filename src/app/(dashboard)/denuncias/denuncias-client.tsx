@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +13,18 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { OCCURRENCE_TYPES } from "@/lib/reports/occurrence-types";
+import { formatReportDay } from "@/lib/reports/format";
+
+/** Cor da barra por tipo (inclui "Assédio", usado pelas denúncias antigas). */
+const OCCURRENCE_COLORS: Record<string, string> = {
+  "Assédio moral": "bg-amber-500",
+  "Assédio sexual": "bg-rose-500",
+  "Assédio": "bg-amber-500",
+  "Discriminação": "bg-violet-500",
+  "Violência ou ameaça": "bg-red-500",
+  "Conduta antiética": "bg-sky-500",
+};
 
 interface Report {
   id: string;
@@ -22,7 +32,6 @@ interface Report {
   protocol: string;
   occurrence_type: string;
   description: string;
-  is_anonymous: boolean;
   status: "PENDING" | "RESOLVED";
   created_at: string;
   updated_at: string;
@@ -79,10 +88,19 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
       (occurrenceCounts[r.occurrence_type] || 0) + 1;
   });
 
-  const occurrenceStats = Object.entries(occurrenceCounts).map(([type, count]) => {
-    const percentage = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
-    return { type, count, percentage };
-  }).sort((a, b) => b.count - a.count);
+  const occurrenceTypes = [
+    ...OCCURRENCE_TYPES.map((t) => t.value as string),
+    ...Object.keys(occurrenceCounts).filter(
+      (type) => !OCCURRENCE_TYPES.some((t) => t.value === type)
+    ),
+  ];
+  const occurrenceStats = occurrenceTypes
+    .map((type) => {
+      const count = occurrenceCounts[type] ?? 0;
+      const percentage = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+      return { type, count, percentage };
+    })
+    .sort((a, b) => b.count - a.count);
 
   // 2. Filter and Sort Reports
   const filteredReports = reports
@@ -261,67 +279,43 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
               {occurrenceStats.map((stat) => {
-                let barColor = "bg-slate-500";
-                let badgeVariant: "default" | "secondary" | "warning" | "destructive" | "outline" | "success" = "default";
-                
-                if (stat.type === "Assédio") {
-                  barColor = "bg-amber-500";
-                  badgeVariant = "warning";
-                } else if (stat.type === "Discriminação") {
-                  barColor = "bg-violet-500";
-                  badgeVariant = "secondary";
-                }
-
+                const empty = stat.count === 0;
                 return (
-                  <div key={stat.type} className="rounded-xl border border-border/40 p-4 bg-muted/20 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">{stat.type}</span>
-                        <Badge variant={badgeVariant} className="h-5 px-1.5 text-[10px]">
-                          {stat.count} {stat.count === 1 ? "caso" : "casos"}
-                        </Badge>
+                  <div
+                    key={stat.type}
+                    className={cn(
+                      "rounded-xl border border-border/40 p-4 space-y-3",
+                      empty ? "bg-muted/5 opacity-50" : "bg-muted/20"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className={cn("font-semibold text-sm", empty && "text-muted-foreground")}>
+                          {stat.type}
+                        </span>
+                        {!empty && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                            {stat.count} {stat.count === 1 ? "caso" : "casos"}
+                          </Badge>
+                        )}
                       </div>
-                      <span className="text-lg font-black text-foreground">{stat.percentage}%</span>
+                      <span className={cn("text-lg font-black", empty ? "text-muted-foreground" : "text-foreground")}>
+                        {stat.percentage}%
+                      </span>
                     </div>
 
                     <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
                       <div
-                        className={cn("h-full rounded-full transition-all duration-500", barColor)}
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          OCCURRENCE_COLORS[stat.type] ?? "bg-slate-500"
+                        )}
                         style={{ width: `${stat.percentage}%` }}
                       />
                     </div>
                   </div>
                 );
               })}
-
-              {/* In case some types are missing from database but we want to show a clean placeholder layout */}
-              {!occurrenceCounts["Assédio"] && (
-                <div className="rounded-xl border border-border/40 p-4 bg-muted/5 opacity-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm text-muted-foreground">Assédio</span>
-                    <span className="text-lg font-black text-muted-foreground">0%</span>
-                  </div>
-                  <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden" />
-                </div>
-              )}
-              {!occurrenceCounts["Discriminação"] && (
-                <div className="rounded-xl border border-border/40 p-4 bg-muted/5 opacity-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm text-muted-foreground">Discriminação</span>
-                    <span className="text-lg font-black text-muted-foreground">0%</span>
-                  </div>
-                  <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden" />
-                </div>
-              )}
-              {!occurrenceCounts["Outro"] && (
-                <div className="rounded-xl border border-border/40 p-4 bg-muted/5 opacity-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm text-muted-foreground">Outro</span>
-                    <span className="text-lg font-black text-muted-foreground">0%</span>
-                  </div>
-                  <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden" />
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -456,18 +450,13 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
                     <Badge variant={report.status === "PENDING" ? "warning" : "success"}>
                       {report.status === "PENDING" ? "Pendente" : "Resolvido"}
                     </Badge>
-                    {report.is_anonymous && (
-                      <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5">
-                        Anônimo
-                      </Badge>
-                    )}
                   </div>
                   <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                     {report.occurrence_type}
                   </CardTitle>
                   <CardDescription className="flex items-center gap-1.5 text-xs">
                     <Icon name="schedule" size={14} className="text-muted-foreground" />
-                    Recebido em {format(new Date(report.created_at), "PPP 'às' HH:mm", { locale: ptBR })}
+                    Recebido em {formatReportDay(report.created_at)}
                   </CardDescription>
                 </div>
 

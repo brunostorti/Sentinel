@@ -183,7 +183,8 @@ export default function SegurancaPage() {
             <tbody className="divide-y divide-border text-xs">
               <ControlRow camada="Trânsito" tecnica="TLS 1.3" onde="Vercel + Supabase (HSTS)" />
               <ControlRow camada="Banco at-rest" tecnica="AES-256" onde="Supabase" />
-              <ControlRow camada="Horário de envio" tecnica="Truncado ao dia" onde="Gatilho no banco (migração 020)" />
+              <ControlRow camada="Horário de envio" tecnica="Truncado ao dia" onde="Gatilhos no banco: respostas (migração 020) e denúncias (denuncia_so_o_dia)" />
+              <ControlRow camada="Anexos de denúncia" tecnica="Metadados removidos (EXIF, XMP, autor)" onde="lib/reports/sanitize-attachment.ts" />
               <ControlRow camada="Multi-tenancy" tecnica="RLS por company_id" onde="Todas as tabelas do Postgres" />
               <ControlRow camada="Anonimização" tecnica="Sem PII em survey_responses" onde="Migration 001" />
               <ControlRow camada="K-anonymity" tecnica="n≥5 por dimensão" onde="lib/copsoq/aggregation.ts" />

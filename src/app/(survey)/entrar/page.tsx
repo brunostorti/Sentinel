@@ -20,9 +20,10 @@ const LINK_ERROR = "O link de acesso é inválido ou expirou. Peça um novo link
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error: linkError } = use(searchParams);
+  const { error: linkError, next } = use(searchParams);
+  const forReport = next === "/denuncia" || next?.startsWith("/denuncia/") === true;
   const [mode, setMode] = useState<LoginMode>("employee");
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -35,7 +36,7 @@ export default function LoginPage({
     setError("");
     setLoading(true);
 
-    const result = await sendMagicLink(email);
+    const result = await sendMagicLink(email, next);
 
     if (result.error) {
       setError(result.error);
@@ -206,6 +207,16 @@ export default function LoginPage({
                 </p>
               </CardHeader>
               <CardContent className="px-5">
+                {mode === "employee" && forReport && step === "email" && (
+                  <div className="mb-4 flex gap-3 rounded-xl border border-primary/15 bg-primary/5 p-3">
+                    <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-primary" />
+                    <p className="text-xs leading-5 text-foreground/80">
+                      Para fazer ou acompanhar uma denúncia, entre com o e-mail cadastrado pela
+                      sua empresa. O login só confirma que você é colaborador: seu nome e seu
+                      e-mail nunca ficam ligados ao relato.
+                    </p>
+                  </div>
+                )}
                 {mode === "admin" ? (
                   <AdminLogin />
                 ) : step === "email" ? (
@@ -240,7 +251,8 @@ export default function LoginPage({
                       <p className="text-sm font-semibold text-primary">{email}</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Clique no link que enviamos para acessar suas pesquisas.
+                      Clique no link que enviamos para{" "}
+                      {forReport ? "abrir o canal de denúncia" : "acessar suas pesquisas"}.
                       Verifique também a pasta de spam.
                     </p>
                     <button
@@ -265,7 +277,8 @@ export default function LoginPage({
               </button>
 
               <Link
-                href="/denuncia"
+                href="/entrar?next=/denuncia"
+                onClick={() => switchMode("employee")}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground/80 transition-colors hover:text-primary"
               >
                 <Icon name="shield" size={14} />

@@ -47,7 +47,6 @@ export default async function DenunciasAdminPage() {
     protocol: r.protocol,
     occurrence_type: r.occurrence_type,
     description: r.description,
-    is_anonymous: r.is_anonymous,
     status: r.status as "PENDING" | "RESOLVED",
     created_at: r.created_at,
     updated_at: r.updated_at,

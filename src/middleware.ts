@@ -1,8 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { matchesAnyRoute } from "@/lib/auth/routes";
+import { safeNext } from "@/lib/auth/email-link";
 
-const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao", "/denuncia"];
-const SURVEY_ROUTES = ["/pesquisas", "/responder"];
+const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao"];
+/** Área do colaborador: exige login, mas não um registro em users. */
+const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia"];
 const SUPER_ADMIN_ROUTES = ["/empresas", "/usuarios"];
 
 export async function middleware(request: NextRequest) {
@@ -15,22 +18,33 @@ export async function middleware(request: NextRequest) {
   supabaseResponse.headers.set("x-pathname", path);
 
   // Public routes — allow unauthenticated
-  if (PUBLIC_ROUTES.some((route) => path.startsWith(route))) {
+  if (matchesAnyRoute(path, PUBLIC_ROUTES)) {
     // If authenticated on /entrar, redirect to appropriate area
-    if (path.startsWith("/entrar") && user) {
+    if (path === "/entrar" && user) {
+      const url = request.nextUrl.clone();
+      url.search = "";
+      const next = request.nextUrl.searchParams.get("next");
+
+      if (next) {
+        // Veio de um link interno (ex.: canal de denúncia): volta para lá.
+        const target = new URL(safeNext(next, "/pesquisas"), request.url);
+        url.pathname = target.pathname;
+        url.search = target.search;
+        return NextResponse.redirect(url);
+      }
+
       const { data: userData } = await supabase
         .from("users")
         .select("role")
         .eq("auth_id", user.id)
         .single();
 
-      const url = request.nextUrl.clone();
       if (userData?.role === "SUPER_ADMIN") {
         url.pathname = "/empresas";
       } else if (userData) {
         url.pathname = "/inicio";
       } else {
-        // Survey participant — redirect to survey list
+        // Survey participant — redirect to the employee area
         url.pathname = "/pesquisas";
       }
       return NextResponse.redirect(url);
@@ -43,15 +57,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // No user → redirect to login
+  // No user → redirect to login (a área do colaborador volta ao destino depois do link)
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/entrar";
+    url.search = "";
+    if (matchesAnyRoute(path, EMPLOYEE_ROUTES)) {
+      url.searchParams.set("next", path + request.nextUrl.search);
+    }
     return NextResponse.redirect(url);
   }
 
-  // Survey participant routes — require auth but NOT a users record
-  if (SURVEY_ROUTES.some((route) => path.startsWith(route))) {
+  // Employee area — require auth but NOT a users record
+  if (matchesAnyRoute(path, EMPLOYEE_ROUTES)) {
     return supabaseResponse;
   }
 
@@ -63,17 +81,19 @@ export async function middleware(request: NextRequest) {
     .single();
 
   if (!userData) {
-    // Auth user with no platform record → redirect to survey list
+    // Auth user with no platform record → redirect to the employee area
     const url = request.nextUrl.clone();
     url.pathname = "/pesquisas";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
   // Super admin routes — only SUPER_ADMIN
-  if (SUPER_ADMIN_ROUTES.some((route) => path.startsWith(route))) {
+  if (matchesAnyRoute(path, SUPER_ADMIN_ROUTES)) {
     if (userData.role !== "SUPER_ADMIN") {
       const url = request.nextUrl.clone();
       url.pathname = "/inicio";
+      url.search = "";
       return NextResponse.redirect(url);
     }
   }
@@ -83,6 +103,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

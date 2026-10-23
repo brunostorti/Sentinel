@@ -100,7 +100,7 @@ export default function PrivacidadePage() {
                 tipo="Logs de denúncias anônimas"
                 categoria="Sensível (denúncia)"
                 finalidade="Canal de denúncias anônimas (prevenção ao assédio)"
-                retencao="Protocolo único, sem dados do denunciante"
+                retencao="Protocolo único e só o dia do envio, sem dados do denunciante"
               />
             </tbody>
           </table>
@@ -128,12 +128,13 @@ export default function PrivacidadePage() {
               preservar o anonimato&rdquo;.
             </li>
             <li>
-              <strong>Denúncias anônimas:</strong> o canal{" "}
-              <Link href="/denuncia" className="text-primary underline">
-                /denuncia
-              </Link>{" "}
-              gera protocolo único (<code className="font-mono text-xs">PROT-AAAA-NNNNNN</code>)
-              sem coletar dados do denunciante.
+              <strong>Denúncias anônimas:</strong> o canal fica na área do colaborador
+              (<Link href="/denuncia" className="text-primary underline">/denuncia</Link>). O
+              login só confirma o vínculo com a empresa: e-mail e usuário não são gravados no
+              relato. Guardamos apenas o dia do envio (sem horário), os anexos têm localização,
+              aparelho e autor removidos, e o protocolo
+              (<code className="font-mono text-xs">DEN-AAAA-XXXX-XXXX</code>) só é consultado
+              com login.
             </li>
           </ul>
         </Card>
