@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { Icon } from "@/components/icon";
 import { EditEmployeeModal } from "./edit-employee-modal";
+import { ThirdPartyBadge } from "./third-party-fields";
+import { cn } from "@/lib/utils";
+
+type Filter = "all" | "own" | "third";
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "own", label: "Quadro próprio" },
+  { value: "third", label: "Terceiros" },
+];
 
 interface Employee {
   id: string;
@@ -10,6 +20,8 @@ interface Employee {
   name: string | null;
   department_id: string;
   created_at: string;
+  is_third_party: boolean;
+  third_party_company: string | null;
   departments: { name: string } | null;
 }
 
@@ -26,13 +38,29 @@ export function EmployeeTable({
 }: EmployeeTableProps) {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filter, setFilter] = useState<Filter>("all");
   const itemsPerPage = 10;
 
-  const totalItems = employees.length;
+  const filtered =
+    filter === "all"
+      ? employees
+      : employees.filter((e) => (filter === "third" ? e.is_third_party : !e.is_third_party));
+  const counts: Record<Filter, number> = {
+    all: employees.length,
+    own: employees.filter((e) => !e.is_third_party).length,
+    third: employees.filter((e) => e.is_third_party).length,
+  };
+
+  function changeFilter(next: Filter) {
+    setFilter(next);
+    setCurrentPage(1);
+  }
+
+  const totalItems = filtered.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const currentEmployees = employees.slice(startIndex, endIndex);
+  const currentEmployees = filtered.slice(startIndex, endIndex);
 
   // Helper to generate a consistent subtle indicator color based on department name
   function getDeptColorClass(name: string) {
@@ -52,7 +80,33 @@ export function EmployeeTable({
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar colaboradores">
+        {FILTERS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => changeFilter(f.value)}
+            aria-pressed={filter === f.value}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+              filter === f.value
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            {f.label}
+            <span className="tabular-nums opacity-70">{counts[f.value]}</span>
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          Nenhum colaborador neste filtro.
+        </p>
+      )}
+
+      <div className={cn("overflow-x-auto", filtered.length === 0 && "hidden")}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -82,11 +136,16 @@ export function EmployeeTable({
                              .toUpperCase()
                          : "?"}
                     </div>
-                    <span className="font-semibold text-foreground/90">
-                      {emp.name || (
-                        <span className="text-muted-foreground">—</span>
+                    <div className="flex min-w-0 flex-col items-start gap-1">
+                      <span className="font-semibold text-foreground/90">
+                        {emp.name || (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </span>
+                      {emp.is_third_party && (
+                        <ThirdPartyBadge company={emp.third_party_company} />
                       )}
-                    </span>
+                    </div>
                   </div>
                 </td>
                 <td className="py-3.5 pr-4 text-left text-muted-foreground">{emp.email}</td>
@@ -126,7 +185,7 @@ export function EmployeeTable({
           <p className="text-xs text-muted-foreground">
             Exibindo <span className="font-semibold text-foreground">{startIndex + 1}</span> a{" "}
             <span className="font-semibold text-foreground">{endIndex}</span> de{" "}
-            <span className="font-semibold text-foreground">{totalItems}</span> colaboradores
+            <span className="font-semibold text-foreground">{totalItems}</span> {filter === "all" ? "colaboradores" : "neste filtro"}
           </p>
           <div className="flex items-center gap-1.5">
             <button
