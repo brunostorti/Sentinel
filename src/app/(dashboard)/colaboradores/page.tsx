@@ -36,6 +36,8 @@ export default async function EmployeesPage() {
       name,
       department_id,
       created_at,
+      is_third_party,
+      third_party_company,
       departments (name)
     `
     )
@@ -48,6 +50,8 @@ export default async function EmployeesPage() {
     name: string | null;
     department_id: string;
     created_at: string;
+    is_third_party: boolean;
+    third_party_company: string | null;
     departments: { name: string } | null;
   }[];
 
@@ -55,6 +59,7 @@ export default async function EmployeesPage() {
 
   const totalEmployees = employeeList.length;
   const departmentCount = new Set(employeeList.map((e) => e.department_id)).size;
+  const thirdPartyCount = employeeList.filter((e) => e.is_third_party).length;
   const now = new Date();
   const thisMonth = employeeList.filter((e) => {
     const d = new Date(e.created_at);
@@ -75,6 +80,13 @@ export default async function EmployeesPage() {
       icon: "apartment",
       iconBg: "bg-gradient-to-br from-violet-500/15 to-purple-600/10",
       iconColor: "text-violet-600",
+    },
+    {
+      value: thirdPartyCount,
+      label: "Terceiros",
+      icon: "badge",
+      iconBg: "bg-gradient-to-br from-amber-500/15 to-amber-600/10",
+      iconColor: "text-amber-600",
     },
     {
       value: thisMonth,
@@ -103,7 +115,7 @@ export default async function EmployeesPage() {
       </div>
 
       {/* Stats */}
-      <div className="stagger-children grid gap-4 w-full grid-cols-1 sm:grid-cols-3">
+      <div className="stagger-children grid gap-4 w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label} className="card-hover overflow-hidden w-full shadow-sm border border-border/80 bg-card">
             <CardContent className="flex items-center gap-4 py-5.5 px-5">

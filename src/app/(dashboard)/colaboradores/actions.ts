@@ -24,6 +24,15 @@ function canManage(role: string) {
   return role === "HR" || role === "ADMIN";
 }
 
+/** Empresa prestadora só é gravada para terceiros; vazio vira null. */
+function thirdPartyFields(isThirdParty: boolean | undefined, company: string | null | undefined) {
+  const thirdParty = Boolean(isThirdParty);
+  return {
+    is_third_party: thirdParty,
+    third_party_company: thirdParty ? company?.trim() || null : null,
+  };
+}
+
 // ── Import employees from CSV ────────────────────────────────
 
 interface ImportPayload {
@@ -93,6 +102,8 @@ interface AddEmployeePayload {
   name: string | null;
   departmentId: string;
   newDepartmentName?: string;
+  isThirdParty?: boolean;
+  thirdPartyCompany?: string | null;
 }
 
 export async function addEmployee(payload: AddEmployeePayload) {
@@ -133,6 +144,7 @@ export async function addEmployee(payload: AddEmployeePayload) {
     email,
     name: payload.name?.trim() || null,
     department_id: departmentId,
+    ...thirdPartyFields(payload.isThirdParty, payload.thirdPartyCompany),
   });
 
   if (error) {
@@ -151,6 +163,8 @@ interface UpdateEmployeePayload {
   employeeId: string;
   name: string | null;
   departmentId: string;
+  isThirdParty?: boolean;
+  thirdPartyCompany?: string | null;
 }
 
 export async function updateEmployee(payload: UpdateEmployeePayload) {
@@ -167,6 +181,7 @@ export async function updateEmployee(payload: UpdateEmployeePayload) {
     .update({
       name: payload.name?.trim() || null,
       department_id: payload.departmentId,
+      ...thirdPartyFields(payload.isThirdParty, payload.thirdPartyCompany),
     })
     .eq("id", payload.employeeId)
     .eq("company_id", userData.company_id);

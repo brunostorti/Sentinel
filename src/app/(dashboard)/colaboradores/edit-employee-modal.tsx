@@ -8,12 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 import { updateEmployee, removeEmployee } from "./actions";
+import { ThirdPartyFields } from "./third-party-fields";
 
 interface Employee {
   id: string;
   email: string;
   name: string | null;
   department_id: string;
+  is_third_party: boolean;
+  third_party_company: string | null;
 }
 
 interface EditEmployeeModalProps {
@@ -35,6 +38,8 @@ export function EditEmployeeModal({
 
   const [name, setName] = useState(employee.name ?? "");
   const [departmentId, setDepartmentId] = useState(employee.department_id);
+  const [isThirdParty, setIsThirdParty] = useState(employee.is_third_party);
+  const [thirdPartyCompany, setThirdPartyCompany] = useState(employee.third_party_company ?? "");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +50,8 @@ export function EditEmployeeModal({
       employeeId: employee.id,
       name: name.trim() || null,
       departmentId,
+      isThirdParty,
+      thirdPartyCompany: isThirdParty ? thirdPartyCompany.trim() || null : null,
     });
 
     if (result.error) {
@@ -142,6 +149,13 @@ export function EditEmployeeModal({
               ))}
             </select>
           </div>
+
+          <ThirdPartyFields
+            isThirdParty={isThirdParty}
+            company={thirdPartyCompany}
+            onThirdPartyChange={setIsThirdParty}
+            onCompanyChange={setThirdPartyCompany}
+          />
 
           {error && (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

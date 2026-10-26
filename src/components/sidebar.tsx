@@ -68,6 +68,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Canal Seguro",
     items: [
       { label: "Denúncias", href: ROUTES.DASHBOARD.INCIDENTS, icon: "gavel" },
+      { label: "Feedbacks", href: ROUTES.DASHBOARD.FEEDBACKS, icon: "rate_review" },
     ],
   },
 ];

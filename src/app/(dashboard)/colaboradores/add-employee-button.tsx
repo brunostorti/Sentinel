@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
 import { addEmployee } from "./actions";
+import { ThirdPartyFields } from "./third-party-fields";
 
 interface AddEmployeeButtonProps {
   departments: { id: string; name: string }[];
@@ -24,6 +25,8 @@ export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
   const [newDept, setNewDept] = useState(false);
   const [newDeptName, setNewDeptName] = useState("");
+  const [isThirdParty, setIsThirdParty] = useState(false);
+  const [thirdPartyCompany, setThirdPartyCompany] = useState("");
 
   function handleClose() {
     setOpen(false);
@@ -32,6 +35,8 @@ export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
     setDepartmentId(departments[0]?.id ?? "");
     setNewDept(false);
     setNewDeptName("");
+    setIsThirdParty(false);
+    setThirdPartyCompany("");
     setError("");
   }
 
@@ -45,6 +50,8 @@ export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
       name: name.trim() || null,
       departmentId: newDept ? "" : departmentId,
       newDepartmentName: newDept ? newDeptName.trim() : undefined,
+      isThirdParty,
+      thirdPartyCompany: isThirdParty ? thirdPartyCompany.trim() || null : null,
     });
 
     if (result.error) {
@@ -167,6 +174,13 @@ export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
                   </div>
                 )}
               </div>
+
+              <ThirdPartyFields
+                isThirdParty={isThirdParty}
+                company={thirdPartyCompany}
+                onThirdPartyChange={setIsThirdParty}
+                onCompanyChange={setThirdPartyCompany}
+              />
 
               {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

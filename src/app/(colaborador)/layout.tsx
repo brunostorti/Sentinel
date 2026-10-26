@@ -5,7 +5,7 @@ import { getEmployeeContext } from "@/lib/colaborador/session";
 import { EmployeeTabs } from "./_components/employee-tabs";
 import { SignOutButton } from "./_components/sign-out-button";
 
-/** Área do colaborador: cabeçalho com empresa e Sair, e abas Pesquisas / Canal de denúncia. */
+/** Área do colaborador: cabeçalho com empresa e Sair, e abas Pesquisas / Canal de denúncia / Feedback. */
 export default async function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const employee = await getEmployeeContext();
   if (!employee) redirect("/entrar");

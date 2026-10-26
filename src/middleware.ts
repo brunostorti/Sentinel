@@ -5,7 +5,7 @@ import { safeNext } from "@/lib/auth/email-link";
 
 const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao"];
 /** Área do colaborador: exige login, mas não um registro em users. */
-const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia"];
+const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia", "/feedback"];
 const SUPER_ADMIN_ROUTES = ["/empresas", "/usuarios"];
 
 export async function middleware(request: NextRequest) {
