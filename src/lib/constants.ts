@@ -86,6 +86,7 @@ export const ROUTES = {
     KANBAN: "/kanban",
     REPORTS: "/relatorios",
     INCIDENTS: "/denuncias",
+    FEEDBACKS: "/feedbacks",
     SETTINGS: "/configuracoes/perfil",
     CERTIFICATES: "/certificados",
     ASSISTANT: "/assistente",

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/pesquisas", label: "Pesquisas", icon: "assignment" },
   { href: "/denuncia", label: "Canal de denúncia", icon: "shield" },
+  { href: "/feedback", label: "Feedback", icon: "rate_review" },
 ];
 
 /** Abas da área do colaborador; somem durante o formulário para a pessoa se concentrar. */
@@ -16,7 +17,7 @@ export function EmployeeTabs() {
   if (pathname.startsWith("/responder")) return null;
 
   return (
-    <nav className="mx-auto flex w-full max-w-3xl gap-1 px-2 sm:px-4" aria-label="Seções">
+    <nav className="mx-auto flex w-full max-w-3xl gap-1 overflow-x-auto px-2 sm:px-4" aria-label="Seções">
       {TABS.map((tab) => {
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
@@ -25,7 +26,7 @@ export function EmployeeTabs() {
             href={tab.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex items-center gap-1.5 px-3 py-3 text-sm font-semibold transition-colors",
+              "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-semibold transition-colors",
               active ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
           >
