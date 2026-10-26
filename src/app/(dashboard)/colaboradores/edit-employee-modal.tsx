@@ -22,12 +22,14 @@ interface Employee {
 interface EditEmployeeModalProps {
   employee: Employee;
   departments: { id: string; name: string }[];
+  knownCompanies: string[];
   onClose: () => void;
 }
 
 export function EditEmployeeModal({
   employee,
   departments,
+  knownCompanies,
   onClose,
 }: EditEmployeeModalProps) {
   const router = useRouter();
@@ -155,6 +157,7 @@ export function EditEmployeeModal({
             company={thirdPartyCompany}
             onThirdPartyChange={setIsThirdParty}
             onCompanyChange={setThirdPartyCompany}
+            knownCompanies={knownCompanies}
           />
 
           {error && (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@/components/icon";
 import { importEmployees } from "./actions";
+import { parseEmployeesCsv, type ParsedEmployee } from "@/lib/employees/parse-csv";
 
 interface ImportCSVButtonProps {
   departments: { id: string; name: string }[];
@@ -19,9 +20,7 @@ export function ImportCSVButton({ departments }: ImportCSVButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [csvData, setCsvData] = useState<
-    { email: string; department: string; name?: string }[]
-  >([]);
+  const [csvData, setCsvData] = useState<ParsedEmployee[]>([]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -29,27 +28,7 @@ export function ImportCSVButton({ departments }: ImportCSVButtonProps) {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const lines = text
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-
-      // Skip header if present
-      const startIdx =
-        lines[0]?.toLowerCase().includes("email") ? 1 : 0;
-
-      const parsed: { email: string; department: string; name?: string }[] = [];
-      for (let i = startIdx; i < lines.length; i++) {
-        const parts = lines[i].split(/[,;]/).map((p) => p.trim());
-        if (parts[0]?.includes("@")) {
-          parsed.push({
-            email: parts[0].toLowerCase(),
-            department: parts[1] ?? "",
-            name: parts[2] || undefined,
-          });
-        }
-      }
+      const parsed = parseEmployeesCsv(ev.target?.result as string);
       setCsvData(parsed);
       setError("");
     };
@@ -130,8 +109,12 @@ export function ImportCSVButton({ departments }: ImportCSVButtonProps) {
               Arquivo CSV
             </Label>
             <p className="text-xs text-muted-foreground">
-              Formato: <code className="rounded bg-muted px-1">email,departamento</code> ou{" "}
-              <code className="rounded bg-muted px-1">email,departamento,nome</code>
+              Colunas: <code className="rounded bg-muted px-1">email,departamento,nome,terceiro,empresa_prestadora</code>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Só email e departamento são obrigatórios. Para terceiros, use{" "}
+              <code className="rounded bg-muted px-1">sim</code> na coluna terceiro ou preencha a
+              empresa prestadora.
             </p>
             <input
               ref={fileRef}
@@ -153,6 +136,11 @@ export function ImportCSVButton({ departments }: ImportCSVButtonProps) {
                   ", "
                 ) || "não especificados"}
               </p>
+              {csvData.some((d) => d.isThirdParty) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Terceiros: {csvData.filter((d) => d.isThirdParty).length}
+                </p>
+              )}
             </div>
           )}
 

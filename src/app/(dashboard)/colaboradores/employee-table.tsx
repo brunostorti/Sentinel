@@ -28,12 +28,14 @@ interface Employee {
 interface EmployeeTableProps {
   employees: Employee[];
   departments: { id: string; name: string }[];
+  knownCompanies: string[];
   canManage: boolean;
 }
 
 export function EmployeeTable({
   employees,
   departments,
+  knownCompanies,
   canManage,
 }: EmployeeTableProps) {
   const [editing, setEditing] = useState<Employee | null>(null);
@@ -215,6 +217,7 @@ export function EmployeeTable({
         <EditEmployeeModal
           employee={editing}
           departments={departments}
+          knownCompanies={knownCompanies}
           onClose={() => setEditing(null)}
         />
       )}

@@ -5,6 +5,7 @@ import { Icon } from "@/components/icon";
 import { ImportCSVButton } from "./import-csv-button";
 import { AddEmployeeButton } from "./add-employee-button";
 import { EmployeeTable } from "./employee-table";
+import { uniqueCompanies } from "@/lib/third-party/company-names";
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
@@ -56,6 +57,7 @@ export default async function EmployeesPage() {
   }[];
 
   const canManage = userData.role === "HR" || userData.role === "ADMIN";
+  const knownCompanies = uniqueCompanies(employeeList.map((e) => e.third_party_company));
 
   const totalEmployees = employeeList.length;
   const departmentCount = new Set(employeeList.map((e) => e.department_id)).size;
@@ -109,7 +111,7 @@ export default async function EmployeesPage() {
         {canManage && (
           <div className="flex items-center gap-2 self-start sm:self-center">
             <ImportCSVButton departments={departments ?? []} />
-            <AddEmployeeButton departments={departments ?? []} />
+            <AddEmployeeButton departments={departments ?? []} knownCompanies={knownCompanies} />
           </div>
         )}
       </div>
@@ -155,6 +157,7 @@ export default async function EmployeesPage() {
             <EmployeeTable
               employees={employeeList}
               departments={departments ?? []}
+              knownCompanies={knownCompanies}
               canManage={canManage}
             />
           </CardContent>

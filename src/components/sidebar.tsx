@@ -78,11 +78,15 @@ function NavLink({
   item,
   isActive,
   collapsed,
+  badge = 0,
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
+  /** Contador ao lado do item (ex.: feedbacks não lidos); 0 esconde. */
+  badge?: number;
 }) {
+  const badgeText = badge > 99 ? "99+" : String(badge);
   return (
     <Link
       href={item.href}
@@ -105,6 +109,20 @@ function NavLink({
         )}
       />
       {!collapsed && <span className="animate-fade-in">{item.label}</span>}
+      {badge > 0 && !collapsed && (
+        <span
+          className={cn(
+            "ml-auto min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold tabular-nums",
+            isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground"
+          )}
+          aria-label={`${badge} não lidos`}
+        >
+          {badgeText}
+        </span>
+      )}
+      {badge > 0 && collapsed && (
+        <span className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-card" aria-label={`${badge} não lidos`} />
+      )}
       {isActive && collapsed && (
         <span className="absolute -right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
       )}
@@ -116,9 +134,10 @@ interface SidebarProps {
   role: Role;
   companyName?: string;
   employeeCount?: number;
+  unreadFeedbacks?: number;
 }
 
-export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) {
+export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks = 0 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -202,6 +221,7 @@ export function Sidebar({ role, companyName, employeeCount = 0 }: SidebarProps) 
                         item={item}
                         isActive={isActive}
                         collapsed={collapsed}
+                        badge={item.href === ROUTES.DASHBOARD.FEEDBACKS ? unreadFeedbacks : 0}
                       />
                     );
                   })}

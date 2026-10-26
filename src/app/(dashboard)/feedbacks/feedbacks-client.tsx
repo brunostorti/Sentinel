@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Icon } from "@/components/icon";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +37,7 @@ export function FeedbacksClient({ initialItems }: { initialItems: FeedbackItem[]
   const [ratingFilter, setRatingFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const router = useRouter();
 
   const plans = useMemo(() => {
     const map = new Map<string, string>();
@@ -63,6 +65,7 @@ export function FeedbacksClient({ initialItems }: { initialItems: FeedbackItem[]
     setBusy(null);
     if (result.error) return toast.error(result.error);
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: next } : i)));
+    router.refresh(); // atualiza o contador do menu
   }
 
   return (

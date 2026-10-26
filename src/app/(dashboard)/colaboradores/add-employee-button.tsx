@@ -12,9 +12,10 @@ import { ThirdPartyFields } from "./third-party-fields";
 
 interface AddEmployeeButtonProps {
   departments: { id: string; name: string }[];
+  knownCompanies: string[];
 }
 
-export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
+export function AddEmployeeButton({ departments, knownCompanies }: AddEmployeeButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -180,6 +181,7 @@ export function AddEmployeeButton({ departments }: AddEmployeeButtonProps) {
                 company={thirdPartyCompany}
                 onThirdPartyChange={setIsThirdParty}
                 onCompanyChange={setThirdPartyCompany}
+                knownCompanies={knownCompanies}
               />
 
               {error && (

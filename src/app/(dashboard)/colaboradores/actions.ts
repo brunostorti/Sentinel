@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canonicalCompany, findExactCompany, uniqueCompanies } from "@/lib/third-party/company-names";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -24,19 +25,45 @@ function canManage(role: string) {
   return role === "HR" || role === "ADMIN";
 }
 
-/** Empresa prestadora só é gravada para terceiros; vazio vira null. */
-function thirdPartyFields(isThirdParty: boolean | undefined, company: string | null | undefined) {
+/** Empresas prestadoras já cadastradas na empresa (para manter uma só grafia de cada). */
+async function existingThirdPartyCompanies(
+  admin: ReturnType<typeof createAdminClient>,
+  companyId: string
+): Promise<string[]> {
+  const { data } = await admin
+    .from("employees")
+    .select("third_party_company")
+    .eq("company_id", companyId)
+    .not("third_party_company", "is", null);
+  return uniqueCompanies((data ?? []).map((r) => r.third_party_company));
+}
+
+/**
+ * Empresa prestadora só é gravada para terceiros; vazio vira null. Se já existe com outra
+ * grafia (maiúsculas, acento, espaço), grava a existente.
+ */
+function thirdPartyFields(
+  isThirdParty: boolean | undefined,
+  company: string | null | undefined,
+  existing: readonly string[]
+) {
   const thirdParty = Boolean(isThirdParty);
   return {
     is_third_party: thirdParty,
-    third_party_company: thirdParty ? company?.trim() || null : null,
+    third_party_company: thirdParty ? canonicalCompany(company, existing) : null,
   };
 }
 
 // ── Import employees from CSV ────────────────────────────────
 
 interface ImportPayload {
-  participants: { email: string; department: string; name?: string }[];
+  participants: {
+    email: string;
+    department: string;
+    name?: string;
+    isThirdParty?: boolean;
+    thirdPartyCompany?: string;
+  }[];
   departments: { id: string; name: string }[];
 }
 
@@ -76,6 +103,7 @@ export async function importEmployees(payload: ImportPayload) {
   }
 
   // Insert employees (skip duplicates)
+  const knownCompanies = await existingThirdPartyCompanies(admin, userData.company_id);
   let imported = 0;
   for (const p of payload.participants) {
     const departmentId = deptMap.get(p.department.trim().toLowerCase());
@@ -86,9 +114,15 @@ export async function importEmployees(payload: ImportPayload) {
       email: p.email,
       name: p.name?.trim() || null,
       department_id: departmentId,
+      ...thirdPartyFields(p.isThirdParty, p.thirdPartyCompany, knownCompanies),
     });
 
-    if (!error) imported++;
+    if (!error) {
+      imported++;
+      // Uma empresa nova do próprio CSV vira referência para as linhas seguintes.
+      const company = p.isThirdParty ? p.thirdPartyCompany?.trim() : "";
+      if (company && !findExactCompany(company, knownCompanies)) knownCompanies.push(company);
+    }
     // Duplicates silently skipped (unique constraint on company_id, email)
   }
 
@@ -144,7 +178,11 @@ export async function addEmployee(payload: AddEmployeePayload) {
     email,
     name: payload.name?.trim() || null,
     department_id: departmentId,
-    ...thirdPartyFields(payload.isThirdParty, payload.thirdPartyCompany),
+    ...thirdPartyFields(
+      payload.isThirdParty,
+      payload.thirdPartyCompany,
+      await existingThirdPartyCompanies(admin, userData.company_id)
+    ),
   });
 
   if (error) {
@@ -181,7 +219,11 @@ export async function updateEmployee(payload: UpdateEmployeePayload) {
     .update({
       name: payload.name?.trim() || null,
       department_id: payload.departmentId,
-      ...thirdPartyFields(payload.isThirdParty, payload.thirdPartyCompany),
+      ...thirdPartyFields(
+        payload.isThirdParty,
+        payload.thirdPartyCompany,
+        await existingThirdPartyCompanies(admin, userData.company_id)
+      ),
     })
     .eq("id", payload.employeeId)
     .eq("company_id", userData.company_id);

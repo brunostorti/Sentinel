@@ -1,14 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@/components/icon";
+import { cn } from "@/lib/utils";
+import { findSimilarCompany, matchCompanies } from "@/lib/third-party/company-names";
 
 interface ThirdPartyFieldsProps {
   isThirdParty: boolean;
   company: string;
   onThirdPartyChange: (value: boolean) => void;
   onCompanyChange: (value: string) => void;
+  /** Empresas prestadoras já cadastradas, para o autocomplete. */
+  knownCompanies: string[];
 }
 
 /** Marcação de colaborador terceirizado + empresa prestadora (opcional). */
@@ -17,7 +22,35 @@ export function ThirdPartyFields({
   company,
   onThirdPartyChange,
   onCompanyChange,
+  knownCompanies,
 }: ThirdPartyFieldsProps) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const suggestions = matchCompanies(company, knownCompanies);
+  const similar = findSimilarCompany(company, knownCompanies);
+  const showList = open && suggestions.length > 0;
+
+  function choose(name: string) {
+    onCompanyChange(name);
+    setOpen(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showList) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => (h + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => (h - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      choose(suggestions[highlight] ?? suggestions[0]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
   return (
     <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
       <label className="flex cursor-pointer items-start gap-3">
@@ -47,14 +80,72 @@ export function ThirdPartyFields({
             Empresa prestadora
             <span className="ml-1 font-normal normal-case text-muted-foreground">(opcional)</span>
           </Label>
-          <Input
-            id="third-party-company"
-            placeholder="Ex.: Limpa Bem Serviços Ltda."
-            value={company}
-            onChange={(e) => onCompanyChange(e.target.value)}
-            maxLength={120}
-            className="rounded-lg"
-          />
+          <div className="relative">
+            <Input
+              id="third-party-company"
+              placeholder="Ex.: Limpa Bem Serviços Ltda."
+              value={company}
+              onChange={(e) => {
+                onCompanyChange(e.target.value);
+                setOpen(true);
+                setHighlight(0);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setOpen(false)}
+              onKeyDown={handleKeyDown}
+              maxLength={120}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={showList}
+              aria-controls="third-party-company-list"
+              aria-autocomplete="list"
+              className="rounded-lg"
+            />
+            {showList && (
+              <ul
+                id="third-party-company-list"
+                role="listbox"
+                className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
+              >
+                {suggestions.map((name, i) => (
+                  <li key={name} role="option" aria-selected={i === highlight}>
+                    <button
+                      type="button"
+                      // onMouseDown: escolhe antes do blur do campo fechar a lista.
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        choose(name);
+                      }}
+                      onMouseEnter={() => setHighlight(i)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm",
+                        i === highlight ? "bg-accent text-foreground" : "text-foreground/85"
+                      )}
+                    >
+                      <Icon name="domain" size={14} className="shrink-0 text-muted-foreground" />
+                      <span className="truncate">{name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {similar && !showList && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+              <Icon name="lightbulb" size={14} className="shrink-0" />
+              <span>
+                Já existe <strong>{similar}</strong>. É a mesma empresa?
+              </span>
+              <button
+                type="button"
+                onClick={() => choose(similar)}
+                className="font-bold text-primary hover:underline"
+              >
+                Usar este nome
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

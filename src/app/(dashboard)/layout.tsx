@@ -43,6 +43,16 @@ export default async function DashboardLayout({
   const companyName = companies?.name ?? "";
   const employeeCount = companies?.employee_count ?? 0;
 
+  // Feedbacks não lidos (só RH/Admin os veem; a RLS limita à empresa).
+  let unreadFeedbacks = 0;
+  if (userData.role === "HR" || userData.role === "ADMIN") {
+    const { count } = await supabase
+      .from("action_plan_feedback")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "NEW");
+    unreadFeedbacks = count ?? 0;
+  }
+
   // Detecta rota atual via header injetado pelo middleware
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isFullBleed = FULL_BLEED_PATTERNS.some((re) => re.test(pathname));
@@ -53,6 +63,7 @@ export default async function DashboardLayout({
         role={userData.role}
         companyName={companyName}
         employeeCount={employeeCount}
+        unreadFeedbacks={unreadFeedbacks}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header userName={userData.name} userEmail={userData.email} />
