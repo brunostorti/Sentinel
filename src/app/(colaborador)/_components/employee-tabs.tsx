@@ -9,6 +9,7 @@ const TABS = [
   { href: "/pesquisas", label: "Pesquisas", icon: "assignment" },
   { href: "/denuncia", label: "Canal de denúncia", icon: "shield" },
   { href: "/feedback", label: "Feedback", icon: "rate_review" },
+  { href: "/afastamento", label: "Afastamento", icon: "event_busy" },
 ];
 
 /** Abas da área do colaborador; somem durante o formulário para a pessoa se concentrar. */

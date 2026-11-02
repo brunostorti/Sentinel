@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmployeeContext } from "@/lib/colaborador/session";
 import { generateProtocol } from "@/lib/reports/protocol";
 import { isOccurrenceType } from "@/lib/reports/occurrence-types";
+import { isEligibleDepartment } from "@/lib/privacy/departments";
 import {
   ATTACHMENT_TYPES,
   AttachmentError,
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
     const requestedCompany = String(formData.get("companyId") ?? "").trim();
     const occurrenceType = String(formData.get("occurrenceType") ?? "");
     const description = String(formData.get("description") ?? "").trim();
+    const departmentId = String(formData.get("departmentId") ?? "").trim() || null;
     const files = (formData.getAll("files") as File[]).filter((f) => f.size > 0);
 
     // A empresa vem do cadastro da pessoa; o navegador só escolhe entre as dela.
@@ -59,6 +61,11 @@ export async function POST(req: Request) {
     }
     if (description.length > MAX_DESCRIPTION) {
       return fail("O relato está muito longo. Resuma em até 10 mil caracteres.", 400);
+    }
+
+    // Setor opcional: só com 5+ colaboradores (regra dos 5), validado aqui e não só na tela.
+    if (departmentId && !(await isEligibleDepartment(company.id, departmentId))) {
+      return fail("Este setor não pode ser informado. Escolha outro ou \"Prefiro não informar\".", 400);
     }
 
     if (files.length > MAX_ATTACHMENTS) return fail(`Envie no máximo ${MAX_ATTACHMENTS} anexos.`, 400);
@@ -106,6 +113,7 @@ export async function POST(req: Request) {
         company_id: company.id,
         protocol: candidate,
         occurrence_type: occurrenceType,
+        department_id: departmentId,
         description,
         attachments,
         is_anonymous: true,

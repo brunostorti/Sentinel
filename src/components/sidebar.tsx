@@ -15,12 +15,7 @@ interface NavItem {
 }
 
 const SUPER_ADMIN_NAV: NavItem[] = [
-  { label: "Painel", href: ROUTES.SUPER_ADMIN.DASHBOARD, icon: "dashboard" },
-  {
-    label: "Empresas",
-    href: ROUTES.SUPER_ADMIN.COMPANIES,
-    icon: "business",
-  },
+  { label: "Painel Sentinel", href: ROUTES.SUPER_ADMIN.COMPANIES, icon: "space_dashboard" },
   { label: "Usuários", href: ROUTES.SUPER_ADMIN.USERS, icon: "group" },
 ];
 
@@ -132,12 +127,14 @@ function NavLink({
 
 interface SidebarProps {
   role: Role;
+  /** Master Admin: único que vê o Painel Sentinel. */
+  isMaster?: boolean;
   companyName?: string;
   employeeCount?: number;
   unreadFeedbacks?: number;
 }
 
-export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks = 0 }: SidebarProps) {
+export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks = 0, isMaster = false }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -180,7 +177,7 @@ export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {role === "SUPER_ADMIN" ? (
           <nav className="space-y-1">
-            {SUPER_ADMIN_NAV.map((item) => (
+            {SUPER_ADMIN_NAV.filter((item) => isMaster || item.href !== ROUTES.SUPER_ADMIN.COMPANIES).map((item) => (
               <NavLink
                 key={item.href}
                 item={item}

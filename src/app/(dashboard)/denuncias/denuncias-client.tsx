@@ -36,20 +36,27 @@ interface Report {
   created_at: string;
   updated_at: string;
   attachments: string[] | null;
+  /** Setor informado por quem denunciou (opcional). */
+  department_name: string | null;
 }
 
 interface DenunciasClientProps {
   initialReports: Report[];
+  /** Abas e alertas, mostrados logo abaixo do título. */
+  topSlot?: React.ReactNode;
+  /** Filtro inicial por setor (vindo do alerta). */
+  initialDepartment?: string | null;
 }
 
 type FilterStatus = "ALL" | "PENDING" | "RESOLVED";
 type SortOption = "recent" | "oldest" | "pending_first" | "resolved_first";
 
-export function DenunciasClient({ initialReports }: DenunciasClientProps) {
+export function DenunciasClient({ initialReports, topSlot, initialDepartment }: DenunciasClientProps) {
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [filter, setFilter] = useState<FilterStatus>("ALL");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState<string | null>(initialDepartment ?? null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   if (initialReports.length === 0) {
@@ -61,6 +68,7 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
             Gerencie, classifique e acompanhe os relatos recebidos de forma totalmente segura.
           </p>
         </div>
+        {topSlot}
         <Card className="flex flex-col items-center justify-center p-16 text-center border-dashed border-2">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
             <Icon name="inbox" size={32} className="text-muted-foreground" />
@@ -105,6 +113,8 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
   // 2. Filter and Sort Reports
   const filteredReports = reports
     .filter((report) => {
+      if (departmentFilter && report.department_name !== departmentFilter) return false;
+
       // Status Filter
       if (filter === "PENDING" && report.status !== "PENDING") return false;
       if (filter === "RESOLVED" && report.status !== "RESOLVED") return false;
@@ -195,6 +205,22 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
           </p>
         </div>
       </div>
+
+      {topSlot}
+
+      {departmentFilter && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+          <Icon name="filter_alt" size={16} className="text-primary" />
+          Mostrando só o setor <strong>{departmentFilter}</strong>
+          <button
+            type="button"
+            onClick={() => setDepartmentFilter(null)}
+            className="ml-auto text-xs font-bold text-primary hover:underline"
+          >
+            Ver todos
+          </button>
+        </div>
+      )}
 
       {/* Metrics Section */}
       <div className="grid gap-6 md:grid-cols-4">
@@ -454,6 +480,12 @@ export function DenunciasClient({ initialReports }: DenunciasClientProps) {
                   <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                     {report.occurrence_type}
                   </CardTitle>
+                  {report.department_name && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      <Icon name="apartment" size={14} />
+                      {report.department_name}
+                    </span>
+                  )}
                   <CardDescription className="flex items-center gap-1.5 text-xs">
                     <Icon name="schedule" size={14} className="text-muted-foreground" />
                     Recebido em {formatReportDay(report.created_at)}

@@ -2,11 +2,20 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { matchesAnyRoute } from "@/lib/auth/routes";
 import { safeNext } from "@/lib/auth/email-link";
+import { homeForRole } from "@/lib/auth/home";
+import {
+  SECOND_FACTOR_COOKIE,
+  secondFactorSecret,
+  sessionIdFromAccessToken,
+  verifySecondFactor,
+} from "@/lib/auth/second-factor";
 
-const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao"];
+const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao", "/verificar-acesso"];
 /** Área do colaborador: exige login, mas não um registro em users. */
-const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia", "/feedback"];
-const SUPER_ADMIN_ROUTES = ["/empresas", "/usuarios"];
+const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia", "/feedback", "/afastamento"];
+const SUPER_ADMIN_ROUTES = ["/usuarios"];
+/** Painel Sentinel: só o Master Admin (SUPER_ADMIN com is_master). */
+const MASTER_ROUTES = ["/empresas"];
 
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request);
@@ -35,14 +44,12 @@ export async function middleware(request: NextRequest) {
 
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, is_master")
         .eq("auth_id", user.id)
         .single();
 
-      if (userData?.role === "SUPER_ADMIN") {
-        url.pathname = "/empresas";
-      } else if (userData) {
-        url.pathname = "/inicio";
+      if (userData) {
+        url.pathname = homeForRole(userData.role, userData.is_master === true);
       } else {
         // Survey participant — redirect to the employee area
         url.pathname = "/pesquisas";
@@ -76,7 +83,7 @@ export async function middleware(request: NextRequest) {
   // Platform user routes — require a users record
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, is_master")
     .eq("auth_id", user.id)
     .single();
 
@@ -86,6 +93,34 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/pesquisas";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  // Master Admin: todo login precisa do segundo fator (código por e-mail ou app autenticador)
+  if (userData.is_master === true) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const verified = await verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
+      userId: user.id,
+      sessionId: sessionIdFromAccessToken(session?.access_token) ?? "",
+      secret: secondFactorSecret(),
+    });
+    if (!verified) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/verificar-acesso";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Painel Sentinel — only Master Admin
+  if (matchesAnyRoute(path, MASTER_ROUTES)) {
+    if (userData.role !== "SUPER_ADMIN" || userData.is_master !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = homeForRole(userData.role, false);
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   // Super admin routes — only SUPER_ADMIN

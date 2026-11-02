@@ -7,12 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
-import { createTask, updateTask } from "./actions";
+import { createTask, updateTask, createExternalAssignee } from "./actions";
 import type { Task } from "./kanban-card";
+import {
+  EXTERNAL_KINDS,
+  externalLabel,
+  type ExternalAssignee,
+  type ExternalKind,
+} from "@/lib/kanban/external-assignees";
+
+const NEW_EXTERNAL = "__novo__";
 
 interface CreateTaskModalProps {
   columns: { id: string; name: string }[];
   companyUsers: { id: string; name: string }[];
+  externals: ExternalAssignee[];
   onClose: () => void;
   editingTask?: Task | null;
   sourceSurveyId?: string | null;
@@ -21,6 +30,7 @@ interface CreateTaskModalProps {
 export function CreateTaskModal({
   columns,
   companyUsers,
+  externals: initialExternals,
   onClose,
   editingTask,
   sourceSurveyId,
@@ -36,10 +46,41 @@ export function CreateTaskModal({
   const [columnId, setColumnId] = useState(editingTask?.columnId ?? columns[0]?.id ?? "");
   const [assignedTo, setAssignedTo] = useState(editingTask?.assignedTo ?? "");
   const [dueDate, setDueDate] = useState(editingTask?.dueDate ?? "");
+  const [externals, setExternals] = useState<ExternalAssignee[]>(initialExternals);
+  const [externalId, setExternalId] = useState(editingTask?.externalAssigneeId ?? "");
+  const [newExtName, setNewExtName] = useState("");
+  const [newExtOrg, setNewExtOrg] = useState("");
+  const [newExtKind, setNewExtKind] = useState<ExternalKind>("prestadora");
+  const [savingExt, setSavingExt] = useState(false);
+
+  async function handleCreateExternal() {
+    setError("");
+    setSavingExt(true);
+    const result = await createExternalAssignee({
+      name: newExtName,
+      organization: newExtOrg,
+      kind: newExtKind,
+    });
+    setSavingExt(false);
+    if ("error" in result && result.error) return setError(result.error);
+    if ("external" in result && result.external) {
+      const created = result.external as ExternalAssignee;
+      setExternals((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+      );
+      setExternalId(created.id);
+      setNewExtName("");
+      setNewExtOrg("");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (externalId === NEW_EXTERNAL) {
+      setError("Termine o cadastro do responsável externo ou escolha \"Nenhum\".");
+      return;
+    }
     setLoading(true);
 
     const result = isEdit
@@ -49,6 +90,7 @@ export function CreateTaskModal({
           description: description.trim() || null,
           columnId,
           assignedTo: assignedTo || null,
+          externalAssigneeId: externalId && externalId !== NEW_EXTERNAL ? externalId : null,
           dueDate: dueDate || null,
         })
       : await createTask({
@@ -56,6 +98,7 @@ export function CreateTaskModal({
           description: description.trim() || null,
           columnId,
           assignedTo: assignedTo || null,
+          externalAssigneeId: externalId && externalId !== NEW_EXTERNAL ? externalId : null,
           dueDate: dueDate || null,
           sourceSurveyId: sourceSurveyId ?? null,
         });
@@ -77,7 +120,7 @@ export function CreateTaskModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-background shadow-2xl animate-scale-in mx-4">
+      <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2">
@@ -146,7 +189,7 @@ export function CreateTaskModal({
 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Responsável
+                Dono interno
               </Label>
               <select
                 value={assignedTo}
@@ -161,6 +204,73 @@ export function CreateTaskModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Executor externo
+              <span className="ml-1 font-normal normal-case text-muted-foreground">(opcional)</span>
+            </Label>
+            <select
+              value={externalId}
+              onChange={(e) => setExternalId(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Nenhum</option>
+              {externals.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {externalLabel(x)}
+                </option>
+              ))}
+              <option value={NEW_EXTERNAL}>+ Cadastrar novo responsável externo</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Prestadora, consultoria de SST ou medicina do trabalho. O dono interno continua
+              respondendo pelo prazo e atualiza o status.
+            </p>
+
+            {externalId === NEW_EXTERNAL && (
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    placeholder="Nome (ex.: Carlos Souza)"
+                    value={newExtName}
+                    onChange={(e) => setNewExtName(e.target.value)}
+                    maxLength={120}
+                    className="rounded-lg"
+                  />
+                  <Input
+                    placeholder="Empresa (opcional)"
+                    value={newExtOrg}
+                    onChange={(e) => setNewExtOrg(e.target.value)}
+                    maxLength={120}
+                    className="rounded-lg"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={newExtKind}
+                    onChange={(e) => setNewExtKind(e.target.value as ExternalKind)}
+                    className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {(Object.keys(EXTERNAL_KINDS) as ExternalKind[]).map((k) => (
+                      <option key={k} value={k}>
+                        {EXTERNAL_KINDS[k].label}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-lg"
+                    disabled={savingExt || !newExtName.trim()}
+                    onClick={handleCreateExternal}
+                  >
+                    {savingExt ? "Salvando..." : "Cadastrar"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

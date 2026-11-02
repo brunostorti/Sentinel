@@ -3,6 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm, type CompanyBasics } from "./profile-form";
 import type { CompanyProfile } from "@/lib/ai/profile/schema";
+import { AlertSettings } from "./alert-settings";
+import { DEFAULT_ALERT_THRESHOLD, DEFAULT_ALERT_WINDOW_DAYS } from "@/lib/reports/alerts";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -29,7 +31,7 @@ export default async function ProfilePage() {
       .single(),
     supabase
       .from("companies")
-      .select("id, name, cnpj, industry, employee_count, work_regime")
+      .select("id, name, cnpj, industry, employee_count, work_regime, report_alert_threshold, report_alert_window_days")
       .eq("id", userData.company_id!)
       .single(),
   ]);
@@ -72,6 +74,11 @@ export default async function ProfilePage() {
       <ProfileForm
         initialProfile={profile as CompanyProfile}
         initialCompany={companyBasics}
+      />
+
+      <AlertSettings
+        initialThreshold={(company.report_alert_threshold as number | null) ?? DEFAULT_ALERT_THRESHOLD}
+        initialWindowDays={(company.report_alert_window_days as number | null) ?? DEFAULT_ALERT_WINDOW_DAYS}
       />
     </div>
   );

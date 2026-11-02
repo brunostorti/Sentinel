@@ -6,6 +6,7 @@ import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import { formatReportDay, reportStatus } from "@/lib/reports/format";
 import { useLocalStorageItem } from "@/lib/local-store";
+import { PrivacyNotice } from "@/components/privacy-notice";
 import {
   parseSavedReports,
   removeSavedReport,
@@ -25,6 +26,10 @@ const GUARANTEES = [
   {
     icon: "admin_panel_settings",
     text: "Só o RH e a administração da empresa leem os relatos. Gestores não têm acesso.",
+  },
+  {
+    icon: "groups",
+    text: "Informar o setor é opcional e só é possível em setores com 5 ou mais pessoas.",
   },
 ];
 
@@ -58,6 +63,8 @@ export function ReportHome({ userId, canReport }: { userId: string; canReport: b
           no trabalho.
         </p>
       </div>
+
+      <PrivacyNotice />
 
       {!canReport && (
         <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
