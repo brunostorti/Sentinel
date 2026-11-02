@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/icon";
 import { AccountDataActions } from "./actions-client";
-import { TwoFactorCard } from "@/components/two-factor-card";
 
 export default async function MeusDadosPage() {
   const supabase = await createClient();
@@ -20,8 +19,6 @@ export default async function MeusDadosPage() {
 
   if (!userData) redirect("/entrar");
 
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -34,8 +31,6 @@ export default async function MeusDadosPage() {
           direitos de exportação ou exclusão de conta (Art. 18 LGPD).
         </p>
       </div>
-
-      <TwoFactorCard hasAuthenticator={(factors?.totp?.length ?? 0) > 0} />
 
       {/* Resumo da conta */}
       <Card className="p-5">
