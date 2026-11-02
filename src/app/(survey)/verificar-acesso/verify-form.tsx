@@ -10,7 +10,17 @@ import { cancelSecondFactor, sendEmailCode, verifyAuthenticator, verifyEmailCode
 
 type Method = "email" | "app";
 
-export function VerifyForm({ email, hasAuthenticator }: { email: string; hasAuthenticator: boolean }) {
+export function VerifyForm({
+  email,
+  home,
+  setupHint,
+  hasAuthenticator,
+}: {
+  email: string;
+  home: string;
+  setupHint: string;
+  hasAuthenticator: boolean;
+}) {
   const router = useRouter();
   const [method, setMethod] = useState<Method>("email");
   const [sent, setSent] = useState(false);
@@ -47,7 +57,7 @@ export function VerifyForm({ email, hasAuthenticator }: { email: string; hasAuth
       setLoading(false);
       return;
     }
-    router.replace("/empresas");
+    router.replace(home);
     router.refresh();
   }
 
@@ -61,7 +71,7 @@ export function VerifyForm({ email, hasAuthenticator }: { email: string; hasAuth
       <CardHeader>
         <CardTitle className="text-2xl font-black tracking-tight">Verificação em duas etapas</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Acesso Master: confirme que é você para continuar. Isso é pedido em todo login.
+          Confirme que é você para continuar. Isso é pedido em todo login administrativo.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -77,7 +87,7 @@ export function VerifyForm({ email, hasAuthenticator }: { email: string; hasAuth
         {method === "app" && !hasAuthenticator ? (
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             O app autenticador ainda não foi configurado. Entre agora com o código por e-mail e configure em
-            Empresas &gt; Segurança. Nos próximos logins você poderá escolher o app.
+            &quot;{setupHint}&quot;. Nos próximos logins você poderá escolher o app.
           </p>
         ) : method === "email" && !sent ? (
           <Button type="button" className="h-11 w-full" onClick={send} disabled={loading}>

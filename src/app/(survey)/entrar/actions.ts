@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeNext } from "@/lib/auth/email-link";
-import { homeForRole } from "@/lib/auth/home";
 
 /** `next`: para onde o link do e-mail leva depois do login (só caminhos internos). */
 export async function sendMagicLink(email: string, next?: string) {
@@ -124,12 +123,7 @@ export async function loginAdmin(email: string, password: string) {
     return { error: "Conta não possui acesso administrativo." };
   }
 
-  // Master Admin: antes de qualquer tela, segundo fator (e-mail ou app autenticador).
-  if (userData.is_master === true) {
-    return { success: true, redirect: "/verificar-acesso" };
-  }
-
-  const redirect = homeForRole(userData.role, false);
-
-  return { success: true, redirect };
+  // Todo acesso administrativo passa pelo segundo fator (e-mail ou app autenticador),
+  // que depois leva para a página inicial do papel.
+  return { success: true, redirect: "/verificar-acesso" };
 }

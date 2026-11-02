@@ -52,7 +52,7 @@ export default async function SentinelPanelPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/empresas/seguranca"
+            href="/seguranca"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
           >
             <Icon name="shield" size={16} />
