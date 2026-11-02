@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import { matchesAnyRoute } from "@/lib/auth/routes";
+import { matchesAnyRoute, matchesRoute } from "@/lib/auth/routes";
 import { safeNext } from "@/lib/auth/email-link";
 import { homeForRole } from "@/lib/auth/home";
 import {
@@ -13,7 +13,40 @@ import {
 const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao", "/verificar-acesso"];
 /** Área do colaborador: exige login, mas não um registro em users. */
 const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia", "/feedback", "/afastamento"];
-const SUPER_ADMIN_ROUTES = ["/usuarios"];
+const SUPER_ADMIN_ROUTES = ["/usuarios", "/seguranca"];
+/** Telas de acesso administrativo que ainda não exigem o segundo fator (o link do convite já prova o e-mail). */
+const SECOND_FACTOR_EXEMPT_ROUTES = ["/definir-senha"];
+/**
+ * APIs usadas só pelo painel administrativo: também exigem o segundo fator do login.
+ * As APIs do colaborador (denúncia, feedback, afastamento, conta) ficam de fora.
+ */
+const ADMIN_API_PREFIXES = [
+  "/api/action-plans",
+  "/api/chat",
+  "/api/company",
+  "/api/knowledge",
+  "/api/kanban",
+  "/api/nr1",
+  "/api/outcomes",
+  "/api/profile",
+  "/api/relatorios",
+  "/api/certificates/generate",
+];
+
+async function passedSecondFactor(
+  request: NextRequest,
+  supabase: Awaited<ReturnType<typeof updateSession>>["supabase"],
+  userId: string
+): Promise<boolean> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
+    userId,
+    sessionId: sessionIdFromAccessToken(session?.access_token) ?? "",
+    secret: secondFactorSecret(),
+  });
+}
 /** Painel Sentinel: só o Master Admin (SUPER_ADMIN com is_master). */
 const MASTER_ROUTES = ["/empresas"];
 
@@ -59,8 +92,18 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // API routes — handle auth internally
+  // API routes — handle auth internally; admin-panel ones also require the second factor
   if (path.startsWith("/api")) {
+    if (user && ADMIN_API_PREFIXES.some((prefix) => matchesRoute(path, prefix))) {
+      const { data: platformUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("auth_id", user.id)
+        .maybeSingle();
+      if (platformUser && !(await passedSecondFactor(request, supabase, user.id))) {
+        return NextResponse.json({ error: "Verificação em duas etapas pendente." }, { status: 403 });
+      }
+    }
     return supabaseResponse;
   }
 
@@ -95,22 +138,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Master Admin: todo login precisa do segundo fator (código por e-mail ou app autenticador)
-  if (userData.is_master === true) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const verified = await verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
-      userId: user.id,
-      sessionId: sessionIdFromAccessToken(session?.access_token) ?? "",
-      secret: secondFactorSecret(),
-    });
-    if (!verified) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/verificar-acesso";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
+  // Todo acesso administrativo (RH, Admin, Gestor, Super Admin e Master) precisa do segundo
+  // fator neste login: código por e-mail ou app autenticador.
+  if (
+    !matchesAnyRoute(path, SECOND_FACTOR_EXEMPT_ROUTES) &&
+    !(await passedSecondFactor(request, supabase, user.id))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verificar-acesso";
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   // Painel Sentinel — only Master Admin

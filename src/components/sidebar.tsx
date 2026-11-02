@@ -17,6 +17,7 @@ interface NavItem {
 const SUPER_ADMIN_NAV: NavItem[] = [
   { label: "Painel Sentinel", href: ROUTES.SUPER_ADMIN.COMPANIES, icon: "space_dashboard" },
   { label: "Usuários", href: ROUTES.SUPER_ADMIN.USERS, icon: "group" },
+  { label: "Segurança", href: "/seguranca", icon: "shield" },
 ];
 
 const GROUPS: { title: string; items: NavItem[] }[] = [

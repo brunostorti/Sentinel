@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { confirmAuthenticatorSetup, startAuthenticatorSetup } from "./actions";
+import { confirmAuthenticatorSetup, startAuthenticatorSetup } from "@/lib/auth/authenticator-actions";
 
 interface Setup {
   factorId: string;

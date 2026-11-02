@@ -22,9 +22,17 @@ export default async function VerifyAccessPage() {
     .select("role, is_master")
     .eq("auth_id", user.id)
     .single();
-  if (!data || data.is_master !== true) redirect("/entrar");
-  if (await hasSecondFactor(supabase, user.id)) redirect(homeForRole(data.role, true));
+  if (!data) redirect("/entrar");
+  const home = homeForRole(data.role, data.is_master === true);
+  if (await hasSecondFactor(supabase, user.id)) redirect(home);
 
   const { data: factors } = await supabase.auth.mfa.listFactors();
-  return <VerifyForm email={maskEmail(user.email ?? "")} hasAuthenticator={(factors?.totp?.length ?? 0) > 0} />;
+  return (
+    <VerifyForm
+      email={maskEmail(user.email ?? "")}
+      home={home}
+      setupHint={data.role === "SUPER_ADMIN" ? "Segurança" : "Meus dados"}
+      hasAuthenticator={(factors?.totp?.length ?? 0) > 0}
+    />
+  );
 }

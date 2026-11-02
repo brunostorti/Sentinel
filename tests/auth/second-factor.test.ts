@@ -23,7 +23,8 @@ describe("segundo fator do master", () => {
   it("nega com outra chave, cookie adulterado, vazio ou mal formado", async () => {
     const token = await signSecondFactor(base);
     expect(await verifySecondFactor(token, { ...base, secret: "outro" })).toBe(false);
-    expect(await verifySecondFactor(token.slice(0, -1) + "0", base)).toBe(false);
+    const last = token.slice(-1);
+    expect(await verifySecondFactor(token.slice(0, -1) + (last === "0" ? "1" : "0"), base)).toBe(false);
     expect(await verifySecondFactor(undefined, base)).toBe(false);
     expect(await verifySecondFactor("abc", base)).toBe(false);
     expect(await verifySecondFactor(token, { ...base, secret: "" })).toBe(false);

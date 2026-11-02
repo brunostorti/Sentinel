@@ -11,8 +11,8 @@ const TRIES_COOKIE = "sentinel_2fa_tries";
 const RESEND_SECONDS = 60;
 const MAX_TRIES = 5;
 
-/** Sessão atual, só se for Master Admin. */
-async function requireMaster() {
+/** Sessão atual, só se for usuário da plataforma (RH, Admin, Gestor, Super Admin, Master). */
+async function requirePlatformUser() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,10 +20,10 @@ async function requireMaster() {
   if (!user || !user.email) return null;
   const { data } = await supabase
     .from("users")
-    .select("role, is_master")
+    .select("id")
     .eq("auth_id", user.id)
     .single();
-  if (!data || data.role !== "SUPER_ADMIN" || data.is_master !== true) return null;
+  if (!data) return null;
   return { supabase, userId: user.id, email: user.email };
 }
 
@@ -37,7 +37,7 @@ function statelessClient() {
 }
 
 export async function sendEmailCode() {
-  const master = await requireMaster();
+  const master = await requirePlatformUser();
   if (!master) return { error: "Sessão expirada. Entre de novo." };
 
   const store = await cookies();
@@ -61,7 +61,7 @@ export async function sendEmailCode() {
 }
 
 export async function verifyEmailCode(code: string) {
-  const master = await requireMaster();
+  const master = await requirePlatformUser();
   if (!master) return { error: "Sessão expirada. Entre de novo." };
 
   const token = code.replace(/\s+/g, "");
@@ -86,14 +86,14 @@ export async function verifyEmailCode(code: string) {
 }
 
 export async function authenticatorFactorId(): Promise<string | null> {
-  const master = await requireMaster();
+  const master = await requirePlatformUser();
   if (!master) return null;
   const { data } = await master.supabase.auth.mfa.listFactors();
   return data?.totp?.[0]?.id ?? null;
 }
 
 export async function verifyAuthenticator(code: string) {
-  const master = await requireMaster();
+  const master = await requirePlatformUser();
   if (!master) return { error: "Sessão expirada. Entre de novo." };
 
   const token = code.replace(/\s+/g, "");
