@@ -7,6 +7,9 @@ import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import { OCCURRENCE_TYPES } from "@/lib/reports/occurrence-types";
 import { addSavedReport } from "@/lib/reports/saved-reports";
+import { PrivacyNotice } from "@/components/privacy-notice";
+
+const NO_DEPARTMENT = "nao-informar";
 
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -24,8 +27,17 @@ interface Sent {
   sentOn: string;
 }
 
-export function ReportForm({ userId, companies }: { userId: string; companies: Company[] }) {
+export function ReportForm({
+  userId,
+  companies,
+  departmentsByCompany,
+}: {
+  userId: string;
+  companies: Company[];
+  departmentsByCompany: Record<string, { id: string; name: string }[]>;
+}) {
   const [companyId, setCompanyId] = useState(companies.length === 1 ? companies[0].id : "");
+  const [departmentId, setDepartmentId] = useState("");
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -35,7 +47,10 @@ export function ReportForm({ userId, companies }: { userId: string; companies: C
   const fileInput = useRef<HTMLInputElement>(null);
 
   const askCompany = companies.length > 1;
-  const step = (n: number) => (askCompany ? n + 1 : n);
+  const departments = companyId ? departmentsByCompany[companyId] ?? [] : [];
+  const askDepartment = departments.length > 0;
+  // Numeração das seções: empresa (se houver mais de uma) e setor (se houver setor elegível).
+  const step = (n: number) => n + (askCompany ? 1 : 0) + (askDepartment && n > 1 ? 1 : 0);
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -56,6 +71,9 @@ export function ReportForm({ userId, companies }: { userId: string; companies: C
     setError("");
     if (!companyId) return setError("Escolha a empresa.");
     if (!type) return setError("Escolha o tipo de ocorrência.");
+    if (askDepartment && !departmentId) {
+      return setError("Escolha o setor onde aconteceu ou \"Prefiro não informar\".");
+    }
     if (description.trim().length < MIN_DESCRIPTION) {
       return setError(`Conte um pouco mais (pelo menos ${MIN_DESCRIPTION} caracteres).`);
     }
@@ -65,6 +83,7 @@ export function ReportForm({ userId, companies }: { userId: string; companies: C
       const data = new FormData();
       data.append("companyId", companyId);
       data.append("occurrenceType", type);
+      if (departmentId && departmentId !== NO_DEPARTMENT) data.append("departmentId", departmentId);
       data.append("description", description.trim());
       files.forEach((f) => data.append("files", f));
 
@@ -98,17 +117,19 @@ export function ReportForm({ userId, companies }: { userId: string; companies: C
           Canal de denúncia
         </Link>
         <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Fazer um relato</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Seu nome e seu e-mail não são gravados. Guardamos só o dia do envio.
-        </p>
       </div>
+
+      <PrivacyNotice compact />
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {askCompany && (
           <Section number={1} title="Em qual empresa aconteceu?">
             <select
               value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
+              onChange={(e) => {
+                setCompanyId(e.target.value);
+                setDepartmentId("");
+              }}
               className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
             >
               <option value="">Escolha a empresa...</option>
@@ -160,6 +181,28 @@ export function ReportForm({ userId, companies }: { userId: string; companies: C
             })}
           </div>
         </Section>
+
+        {askDepartment && (
+          <Section number={step(1) + 1} title="Em qual setor aconteceu?">
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Escolha o setor...</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+              <option value={NO_DEPARTMENT}>Prefiro não informar</option>
+            </select>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              O setor ajuda a empresa a perceber quando um problema se repete no mesmo lugar. Só
+              aparecem setores com 5 ou mais pessoas, para proteger o seu anonimato.
+            </p>
+          </Section>
+        )}
 
         <Section number={step(2)} title="Conte o que aconteceu">
           <textarea

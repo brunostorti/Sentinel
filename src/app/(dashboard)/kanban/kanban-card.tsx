@@ -15,6 +15,9 @@ export interface Task {
   sourceSurveyId: string | null;
   assigneeName: string | null;
   assignedTo: string | null;
+  externalAssigneeId: string | null;
+  /** "Nome · Organização" do executor externo, quando houver. */
+  externalName: string | null;
 }
 
 interface KanbanCardProps {
@@ -93,7 +96,7 @@ export function KanbanCard({
 
       {/* Footer: assignee + date + actions */}
       <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
           {/* Assignee */}
           {task.assigneeName && (
             <div className="flex items-center gap-1.5">
@@ -108,6 +111,17 @@ export function KanbanCard({
               <span className="text-[11px] text-muted-foreground">
                 {task.assigneeName.split(" ")[0]}
               </span>
+            </div>
+          )}
+
+          {/* External executor */}
+          {task.externalName && (
+            <div
+              className="flex max-w-[9rem] items-center gap-1 rounded-lg bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-800 dark:text-amber-200"
+              title={`Executor externo: ${task.externalName}`}
+            >
+              <Icon name="engineering" size={12} className="shrink-0" />
+              <span className="truncate">{task.externalName}</span>
             </div>
           )}
 

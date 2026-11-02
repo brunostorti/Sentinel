@@ -20,6 +20,9 @@ export function CreateCompanyButton() {
   const [industry, setIndustry] = useState("");
   const [employeeCount, setEmployeeCount] = useState("");
   const [workRegime, setWorkRegime] = useState("");
+  const [plan, setPlan] = useState("Piloto");
+  const [senderName, setSenderName] = useState("");
+  const [replyToEmail, setReplyToEmail] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +35,9 @@ export function CreateCompanyButton() {
       industry: industry.trim() || null,
       employeeCount: employeeCount ? parseInt(employeeCount, 10) : null,
       workRegime: (workRegime as "presencial" | "remoto" | "hibrido") || null,
+      plan,
+      senderName,
+      replyToEmail,
     });
 
     if (result.error) {
@@ -46,6 +52,9 @@ export function CreateCompanyButton() {
     setIndustry("");
     setEmployeeCount("");
     setWorkRegime("");
+    setPlan("Piloto");
+    setSenderName("");
+    setReplyToEmail("");
     setLoading(false);
     router.refresh();
   }
@@ -61,7 +70,7 @@ export function CreateCompanyButton() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-md shadow-lg">
+      <Card className="mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-lg font-bold">Nova Empresa</CardTitle>
         </CardHeader>
@@ -120,6 +129,48 @@ export function CreateCompanyButton() {
                 <option value="remoto">Remoto</option>
                 <option value="hibrido">Híbrido</option>
               </select>
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Contrato e e-mails
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="plan">Plano</Label>
+                <Input
+                  id="plan"
+                  list="plan-options"
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value)}
+                  maxLength={40}
+                />
+                <datalist id="plan-options">
+                  <option value="Piloto" />
+                  <option value="Contratado" />
+                  <option value="Encerrado" />
+                </datalist>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="senderName">Nome exibido nos e-mails (opcional)</Label>
+                <Input
+                  id="senderName"
+                  placeholder="Ex.: RH Osborne via Sentinel"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  maxLength={80}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="replyTo">E-mail de resposta (opcional)</Label>
+                <Input
+                  id="replyTo"
+                  type="email"
+                  placeholder="rh@empresa.com.br"
+                  value={replyToEmail}
+                  onChange={(e) => setReplyToEmail(e.target.value)}
+                  maxLength={200}
+                />
+              </div>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

@@ -21,6 +21,7 @@ import { CreateFollowUpButton } from "./create-follow-up-button";
 import { CycleTabs } from "./cycle-tabs";
 import { ActionPlansList } from "../../../planos-acao/action-plans-list";
 import { KanbanBoard } from "../../../kanban/kanban-board";
+import { externalLabel, type ExternalAssignee } from "@/lib/kanban/external-assignees";
 import { toPlanView, type RawPlanRow } from "../../../planos-acao/_lib/format-plan";
 import type { PlanView } from "../../../planos-acao/types";
 
@@ -264,6 +265,7 @@ export default async function CycleHubPage({
     { data: detailedTaskRows },
     { data: companyUsersRows },
     { data: kanbanColumnsRows },
+    { data: externalRows },
   ] = await Promise.all([
     supabase
       .from("action_plans")
@@ -292,7 +294,7 @@ export default async function CycleHubPage({
     supabase
       .from("kanban_tasks")
       .select(
-        `id, title, description, column_id, due_date, assigned_to, dimension_id, source_survey_id, questionnaire_scales(name), surveys(id, title), users!kanban_tasks_assigned_to_fkey(name)`
+        `id, title, description, column_id, due_date, assigned_to, external_assignee_id, dimension_id, source_survey_id, questionnaire_scales(name), surveys(id, title), users!kanban_tasks_assigned_to_fkey(name), external_assignees(name, organization)`
       )
       .eq("company_id", userData.company_id)
       .in("source_survey_id", surveyIds),
@@ -306,6 +308,11 @@ export default async function CycleHubPage({
       .select("id, name, order_index")
       .eq("company_id", userData.company_id)
       .order("order_index"),
+    supabase
+      .from("external_assignees")
+      .select("id, name, organization, kind")
+      .eq("company_id", userData.company_id)
+      .order("name"),
   ]);
 
   const plans = planRows ?? [];
@@ -735,8 +742,14 @@ export default async function CycleHubPage({
           assigneeName:
             (t.users as unknown as { name: string })?.name ?? null,
           assignedTo: (t.assigned_to as string | null) ?? null,
+          externalAssigneeId: (t.external_assignee_id as string | null) ?? null,
+          externalName: (() => {
+            const e = t.external_assignees as { name: string; organization: string | null } | null;
+            return e?.name ? externalLabel(e) : null;
+          })(),
         })) : []}
         companyUsers={companyUsers}
+        externals={(externalRows ?? []) as ExternalAssignee[]}
         canManage={canManage}
         sourceSurveyId={null}
       />

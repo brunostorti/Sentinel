@@ -6,6 +6,12 @@ import { Icon } from "@/components/icon";
 import { fetchCycleContextForSurvey } from "@/lib/surveys/cycle";
 import { KanbanBoard } from "./kanban-board";
 import { CycleFilterPills } from "@/components/cycle-filter-pills";
+import { externalLabel, type ExternalAssignee } from "@/lib/kanban/external-assignees";
+
+function externalName(value: unknown): string | null {
+  const e = value as { name: string; organization: string | null } | null;
+  return e?.name ? externalLabel(e) : null;
+}
 
 export default async function KanbanPage(props: {
   searchParams?: Promise<{ surveyId?: string; cycleId?: string; ciclo?: string }>;
@@ -108,11 +114,13 @@ export default async function KanbanPage(props: {
       column_id,
       due_date,
       assigned_to,
+      external_assignee_id,
       dimension_id,
       source_survey_id,
       questionnaire_scales (name),
       surveys (id, title),
-      users!kanban_tasks_assigned_to_fkey (name)
+      users!kanban_tasks_assigned_to_fkey (name),
+      external_assignees (name, organization)
     `
     )
     .eq("company_id", companyId);
@@ -129,11 +137,14 @@ export default async function KanbanPage(props: {
 
   const { data: tasks } = await taskQuery;
 
-  const { data: companyUsers } = await supabase
-    .from("users")
-    .select("id, name")
-    .eq("company_id", companyId)
-    .order("name");
+  const [{ data: companyUsers }, { data: externals }] = await Promise.all([
+    supabase.from("users").select("id, name").eq("company_id", companyId).order("name"),
+    supabase
+      .from("external_assignees")
+      .select("id, name, organization, kind")
+      .eq("company_id", companyId)
+      .order("name"),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -192,8 +203,11 @@ export default async function KanbanPage(props: {
           assigneeName:
             (t.users as unknown as { name: string })?.name ?? null,
           assignedTo: t.assigned_to,
+          externalAssigneeId: t.external_assignee_id ?? null,
+          externalName: externalName(t.external_assignees),
         }))}
         companyUsers={companyUsers ?? []}
+        externals={(externals ?? []) as ExternalAssignee[]}
         canManage={canManage}
         sourceSurveyId={currentSurvey?.id ?? null}
       />

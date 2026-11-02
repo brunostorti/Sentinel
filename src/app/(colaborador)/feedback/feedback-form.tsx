@@ -10,6 +10,7 @@ import {
   type FeedbackRating,
 } from "@/lib/feedback/constants";
 import type { FeedbackCompanyOption } from "@/lib/feedback/options";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const MIN_MESSAGE = 10;
 const GENERAL = "";
@@ -100,6 +101,8 @@ export function FeedbackForm({ options }: { options: FeedbackCompanyOption[] }) 
           de forma anônima, se elas estão funcionando para você e o que poderia mudar.
         </p>
       </div>
+
+      <PrivacyNotice compact />
 
       {options.length === 0 && (
         <Notice>

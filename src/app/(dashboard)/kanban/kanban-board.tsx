@@ -25,6 +25,8 @@ import { CreateTaskModal } from "./create-task-modal";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard, type Task } from "./kanban-card";
 import { KanbanOutcomeModal } from "@/components/kanban/outcome-modal";
+import type { ExternalAssignee } from "@/lib/kanban/external-assignees";
+import { AssigneeView } from "./assignee-view";
 
 interface Column {
   id: string;
@@ -36,9 +38,12 @@ interface KanbanBoardProps {
   columns: Column[];
   tasks: Task[];
   companyUsers: { id: string; name: string }[];
+  externals: ExternalAssignee[];
   canManage: boolean;
   sourceSurveyId?: string | null;
 }
+
+type View = "board" | "people";
 
 const COLUMN_COLORS: Record<number, string> = {
   0: "#6b7280", // gray — A Definir
@@ -51,9 +56,11 @@ export function KanbanBoard({
   columns,
   tasks: initialTasks,
   companyUsers,
+  externals,
   canManage,
   sourceSurveyId,
 }: KanbanBoardProps) {
+  const [view, setView] = useState<View>("board");
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -157,7 +164,31 @@ export function KanbanBoard({
     <>
       {/* Header bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5" role="tablist">
+            {(
+              [
+                ["board", "Quadro", "view_kanban"],
+                ["people", "Por responsável", "group"],
+              ] as [View, string, string][]
+            ).map(([key, label, icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={view === key}
+                onClick={() => setView(key)}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  view === key
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon name={icon} size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
           <span className="text-sm text-muted-foreground">
             {totalTasks} {totalTasks === 1 ? "tarefa" : "tarefas"} em{" "}
             {columns.length} colunas
@@ -177,6 +208,18 @@ export function KanbanBoard({
         )}
       </div>
 
+      {view === "people" && (
+        <AssigneeView
+          tasks={tasks}
+          companyUsers={companyUsers}
+          externals={externals}
+          doneColumnId={doneColumnId}
+          columns={columns}
+          canComplete={canManage}
+          onComplete={(t) => setCompletingTask(t)}
+        />
+      )}
+
       {/* Board */}
       <DndContext
         sensors={sensors}
@@ -185,7 +228,7 @@ export function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className={`flex gap-4 overflow-x-auto pb-4 ${view === "board" ? "" : "hidden"}`}>
           {columns.map((col) => {
             const colTasks = tasks.filter((t) => t.columnId === col.id);
             const accentColor =
@@ -262,6 +305,7 @@ export function KanbanBoard({
         <CreateTaskModal
           columns={columns}
           companyUsers={companyUsers}
+          externals={externals}
           sourceSurveyId={sourceSurveyId}
           onClose={() => setShowCreate(false)}
         />
@@ -271,6 +315,7 @@ export function KanbanBoard({
         <CreateTaskModal
           columns={columns}
           companyUsers={companyUsers}
+          externals={externals}
           editingTask={editingTask}
           onClose={() => setEditingTask(null)}
         />
