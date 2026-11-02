@@ -3,8 +3,14 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { matchesAnyRoute } from "@/lib/auth/routes";
 import { safeNext } from "@/lib/auth/email-link";
 import { homeForRole } from "@/lib/auth/home";
+import {
+  SECOND_FACTOR_COOKIE,
+  secondFactorSecret,
+  sessionIdFromAccessToken,
+  verifySecondFactor,
+} from "@/lib/auth/second-factor";
 
-const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao"];
+const PUBLIC_ROUTES = ["/entrar", "/confirmar-acesso", "/obrigado", "/validacao", "/verificar-acesso"];
 /** Área do colaborador: exige login, mas não um registro em users. */
 const EMPLOYEE_ROUTES = ["/pesquisas", "/responder", "/denuncia", "/feedback", "/afastamento"];
 const SUPER_ADMIN_ROUTES = ["/usuarios"];
@@ -87,6 +93,24 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/pesquisas";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  // Master Admin: todo login precisa do segundo fator (código por e-mail ou app autenticador)
+  if (userData.is_master === true) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const verified = await verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
+      userId: user.id,
+      sessionId: sessionIdFromAccessToken(session?.access_token) ?? "",
+      secret: secondFactorSecret(),
+    });
+    if (!verified) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/verificar-acesso";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   // Painel Sentinel — only Master Admin

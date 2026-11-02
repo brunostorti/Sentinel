@@ -50,7 +50,16 @@ export default async function SentinelPanelPage() {
             Status de cada cliente, só com contagens. Respostas, denúncias e textos nunca aparecem aqui.
           </p>
         </div>
-        <CreateCompanyButton />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/empresas/seguranca"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
+          >
+            <Icon name="shield" size={16} />
+            Segurança
+          </Link>
+          <CreateCompanyButton />
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

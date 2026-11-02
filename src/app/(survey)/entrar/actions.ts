@@ -124,7 +124,12 @@ export async function loginAdmin(email: string, password: string) {
     return { error: "Conta não possui acesso administrativo." };
   }
 
-  const redirect = homeForRole(userData.role, userData.is_master === true);
+  // Master Admin: antes de qualquer tela, segundo fator (e-mail ou app autenticador).
+  if (userData.is_master === true) {
+    return { success: true, redirect: "/verificar-acesso" };
+  }
+
+  const redirect = homeForRole(userData.role, false);
 
   return { success: true, redirect };
 }

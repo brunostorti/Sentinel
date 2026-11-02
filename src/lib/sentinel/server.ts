@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasSecondFactor } from "@/lib/auth/second-factor-server";
 import { parseOverviewRow, type CompanyOverview } from "./onboarding";
 
 export interface SuperAdmin {
@@ -8,7 +9,8 @@ export interface SuperAdmin {
 }
 
 /**
- * Usuário da sessão, se for Master Admin (SUPER_ADMIN com is_master). Toda leitura e
+ * Usuário da sessão, se for Master Admin (SUPER_ADMIN com is_master) e já tiver passado
+ * pelo segundo fator neste login. Toda leitura e
  * escrita do Painel Sentinel passa por aqui.
  */
 export async function getMasterAdmin(): Promise<SuperAdmin | null> {
@@ -24,6 +26,8 @@ export async function getMasterAdmin(): Promise<SuperAdmin | null> {
     .eq("auth_id", user.id)
     .single();
   if (!data || data.role !== "SUPER_ADMIN" || data.is_master !== true) return null;
+  // Sem o segundo fator deste login, o master não passa (vale também para ações de servidor).
+  if (!(await hasSecondFactor(supabase, user.id))) return null;
   return { id: data.id as string, name: (data.name as string | null) ?? null };
 }
 
