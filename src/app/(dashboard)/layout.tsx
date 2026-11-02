@@ -1,3 +1,4 @@
+import { homeForRole } from "@/lib/auth/home";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -32,12 +33,12 @@ export default async function DashboardLayout({
 
   const { data: userData } = await supabase
     .from("users")
-    .select("name, email, role, company_id, companies(name, employee_count)")
+    .select("name, email, role, is_master, company_id, companies(name, employee_count)")
     .eq("auth_id", authUser.id)
     .single();
 
   if (!userData) redirect("/entrar");
-  if (userData.role === "SUPER_ADMIN") redirect("/empresas");
+  if (userData.role === "SUPER_ADMIN") redirect(homeForRole("SUPER_ADMIN", userData.is_master === true));
 
   const companies = userData.companies as unknown as { name: string; employee_count: number } | null;
   const companyName = companies?.name ?? "";

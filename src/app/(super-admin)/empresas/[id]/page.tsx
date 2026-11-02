@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Icon } from "@/components/icon";
-import { getCompanyOverviews, getSuperAdmin } from "@/lib/sentinel/server";
+import { getCompanyOverviews, getMasterAdmin } from "@/lib/sentinel/server";
 import { onboardingSteps, responseRate } from "@/lib/sentinel/onboarding";
 import { CommercialForm } from "./commercial-form";
 
@@ -33,7 +33,7 @@ export default async function CompanyDetailPage(props: {
   const searchParams = await props.searchParams;
   const tab: TabKey = (TABS.find((t) => t.key === searchParams?.aba)?.key ?? "visao") as TabKey;
 
-  const admin = await getSuperAdmin();
+  const admin = await getMasterAdmin();
   if (!admin) redirect("/inicio");
 
   const supabase = await createClient();

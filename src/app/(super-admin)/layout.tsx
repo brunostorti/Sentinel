@@ -17,7 +17,7 @@ export default async function SuperAdminLayout({
 
   const { data: userData } = await supabase
     .from("users")
-    .select("name, email, role")
+    .select("name, email, role, is_master")
     .eq("auth_id", authUser.id)
     .single();
 
@@ -25,7 +25,7 @@ export default async function SuperAdminLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar role="SUPER_ADMIN" />
+      <Sidebar role="SUPER_ADMIN" isMaster={userData.is_master === true} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header userName={userData.name} userEmail={userData.email} />
         <main className="flex-1 overflow-y-auto bg-background p-8">

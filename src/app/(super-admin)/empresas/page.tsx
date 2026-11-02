@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/icon";
 import { CreateCompanyButton } from "./create-company-button";
-import { getCompanyOverviews, getSuperAdmin } from "@/lib/sentinel/server";
+import { getCompanyOverviews, getMasterAdmin } from "@/lib/sentinel/server";
 import { onboardingSteps, responseRate, type CompanyOverview } from "@/lib/sentinel/onboarding";
 
 const SURVEY_STATUS: Record<string, string> = {
@@ -17,7 +17,7 @@ function shortDate(iso: string | null): string {
 }
 
 export default async function SentinelPanelPage() {
-  const admin = await getSuperAdmin();
+  const admin = await getMasterAdmin();
   if (!admin) redirect("/inicio");
 
   const supabase = await createClient();

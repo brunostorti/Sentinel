@@ -7,8 +7,11 @@ export interface SuperAdmin {
   name: string | null;
 }
 
-/** Usuário da sessão, se for SUPER_ADMIN. Toda leitura do painel passa por aqui. */
-export async function getSuperAdmin(): Promise<SuperAdmin | null> {
+/**
+ * Usuário da sessão, se for Master Admin (SUPER_ADMIN com is_master). Toda leitura e
+ * escrita do Painel Sentinel passa por aqui.
+ */
+export async function getMasterAdmin(): Promise<SuperAdmin | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,16 +20,16 @@ export async function getSuperAdmin(): Promise<SuperAdmin | null> {
 
   const { data } = await supabase
     .from("users")
-    .select("id, name, role")
+    .select("id, name, role, is_master")
     .eq("auth_id", user.id)
     .single();
-  if (!data || data.role !== "SUPER_ADMIN") return null;
+  if (!data || data.role !== "SUPER_ADMIN" || data.is_master !== true) return null;
   return { id: data.id as string, name: (data.name as string | null) ?? null };
 }
 
 /**
  * Agregados por empresa (só contagens e datas). A função do banco só roda com o
- * service role, então o chamador precisa ter conferido o papel com getSuperAdmin().
+ * service role, então o chamador precisa ter conferido o acesso com getMasterAdmin().
  */
 export async function getCompanyOverviews(): Promise<Map<string, CompanyOverview>> {
   const { data, error } = await createAdminClient().rpc("sentinel_company_overview");

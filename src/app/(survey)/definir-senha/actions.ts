@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { homeForRole } from "@/lib/auth/home";
 
 /**
  * Primeira senha de quem entrou pelo convite. Sem pedir a senha atual (o convidado não
@@ -20,7 +21,7 @@ export async function definePassword(password: string, confirmation: string) {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, is_master")
     .eq("auth_id", user.id)
     .single();
   if (!userData) return { error: "Conta sem acesso administrativo." };
@@ -37,5 +38,5 @@ export async function definePassword(password: string, confirmation: string) {
     };
   }
 
-  return { success: true, redirect: userData.role === "SUPER_ADMIN" ? "/empresas" : "/inicio" };
+  return { success: true, redirect: homeForRole(userData.role, userData.is_master === true) };
 }

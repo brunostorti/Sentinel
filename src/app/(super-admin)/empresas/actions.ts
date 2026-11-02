@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getSuperAdmin, logAdminAction } from "@/lib/sentinel/server";
+import { getMasterAdmin, logAdminAction } from "@/lib/sentinel/server";
 import { normalizeCommercial } from "@/lib/sentinel/onboarding";
 
 interface CreateCompanyPayload {
@@ -21,7 +21,7 @@ export async function createCompany(payload: CreateCompanyPayload) {
     return { error: "Nome é obrigatório." };
   }
 
-  const admin = await getSuperAdmin();
+  const admin = await getMasterAdmin();
   if (!admin) return { error: "Sem permissão." };
 
   const commercial = normalizeCommercial(payload);
@@ -61,7 +61,7 @@ export async function updateCompanyCommercial(
   companyId: string,
   input: { plan: string; senderName: string; replyToEmail: string }
 ) {
-  const admin = await getSuperAdmin();
+  const admin = await getMasterAdmin();
   if (!admin) return { error: "Sem permissão." };
 
   const commercial = normalizeCommercial(input);

@@ -5,6 +5,7 @@ import { Icon } from "@/components/icon";
 import { CreateUserButton } from "./create-user-button";
 
 const ROLE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+  MASTER: { label: "Master Admin", variant: "default" },
   SUPER_ADMIN: { label: "Super Admin", variant: "default" },
   ADMIN: { label: "Admin", variant: "secondary" },
   HR: { label: "RH", variant: "secondary" },
@@ -23,7 +24,7 @@ export default async function UsersPage() {
   // Fetch all platform users
   const { data: users } = await supabase
     .from("users")
-    .select("id, name, email, role, created_at, company_id, companies(name)")
+    .select("id, name, email, role, is_master, created_at, company_id, companies(name)")
     .order("created_at", { ascending: false });
 
   return (
@@ -70,7 +71,7 @@ export default async function UsersPage() {
                 </thead>
                 <tbody className="divide-y">
                   {(users ?? []).map((u) => {
-                    const roleConfig = ROLE_LABELS[u.role] ?? {
+                    const roleConfig = ROLE_LABELS[u.is_master ? "MASTER" : u.role] ?? {
                       label: u.role,
                       variant: "outline" as const,
                     };

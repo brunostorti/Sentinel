@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeNext } from "@/lib/auth/email-link";
+import { homeForRole } from "@/lib/auth/home";
 
 /** `next`: para onde o link do e-mail leva depois do login (só caminhos internos). */
 export async function sendMagicLink(email: string, next?: string) {
@@ -115,7 +116,7 @@ export async function loginAdmin(email: string, password: string) {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, is_master")
     .eq("auth_id", user.id)
     .single();
 
@@ -123,8 +124,7 @@ export async function loginAdmin(email: string, password: string) {
     return { error: "Conta não possui acesso administrativo." };
   }
 
-  const redirect =
-    userData.role === "SUPER_ADMIN" ? "/empresas" : "/inicio";
+  const redirect = homeForRole(userData.role, userData.is_master === true);
 
   return { success: true, redirect };
 }
