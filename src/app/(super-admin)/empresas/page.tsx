@@ -16,22 +16,36 @@ function shortDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 }
 
-export default async function SentinelPanelPage() {
+export default async function SentinelPanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
   const admin = await getMasterAdmin();
   if (!admin) redirect("/inicio");
 
+  // Por padrão só aparecem empresas reais; dados de demonstração ficam atrás de um botão.
+  const showDemo = (await searchParams).demo === "1";
+
   const supabase = await createClient();
-  const [{ data: companies }, overviews] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, name, cnpj, industry, plan, created_at")
-      .order("created_at", { ascending: false }),
+  let companiesQuery = supabase
+    .from("companies")
+    .select("id, name, cnpj, industry, plan, is_demo, created_at")
+    .order("created_at", { ascending: false });
+  if (!showDemo) companiesQuery = companiesQuery.eq("is_demo", false);
+
+  const [{ data: companies }, overviews, { count: demoCount }] = await Promise.all([
+    companiesQuery,
     getCompanyOverviews(),
+    supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_demo", true),
   ]);
 
   const list = companies ?? [];
-  const totals = Array.from(overviews.values()).reduce(
-    (acc, o) => ({
+  const visibleOverviews = list
+    .map((c) => overviews.get(c.id as string))
+    .filter((o): o is CompanyOverview => !!o);
+  const totals = visibleOverviews.reduce(
+    (acc: { employees: number; reportsOpen: number; plansPending: number; leave: number }, o) => ({
       employees: acc.employees + o.employees,
       reportsOpen: acc.reportsOpen + o.reports_open,
       plansPending: acc.plansPending + o.plans_pending,
@@ -50,7 +64,16 @@ export default async function SentinelPanelPage() {
             Status de cada cliente, só com contagens. Respostas, denúncias e textos nunca aparecem aqui.
           </p>
         </div>
-        <CreateCompanyButton />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/seguranca"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
+          >
+            <Icon name="shield" size={16} />
+            Segurança
+          </Link>
+          <CreateCompanyButton />
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -61,10 +84,23 @@ export default async function SentinelPanelPage() {
         <Stat label="Afastamentos (30 dias)" value={totals.leave} icon="event_busy" />
       </div>
 
+      {(demoCount ?? 0) > 0 && (
+        <div className="flex justify-end">
+          <Link
+            href={showDemo ? "/empresas" : "/empresas?demo=1"}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            {showDemo ? "Ocultar dados de demonstração" : `Mostrar dados de demonstração (${demoCount})`}
+          </Link>
+        </div>
+      )}
+
       {list.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-12 text-center">
           <Icon name="business" size={48} className="mx-auto text-muted-foreground" />
-          <p className="mt-3 text-muted-foreground">Nenhuma empresa cadastrada.</p>
+          <p className="mt-3 text-muted-foreground">
+            Nenhuma empresa cadastrada. Use &quot;Adicionar empresa&quot; para criar a primeira.
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -75,6 +111,7 @@ export default async function SentinelPanelPage() {
               name={company.name as string}
               plan={(company.plan as string | null) ?? "Piloto"}
               industry={company.industry as string | null}
+              isDemo={company.is_demo === true}
               overview={overviews.get(company.id as string) ?? null}
             />
           ))}
@@ -101,12 +138,14 @@ function CompanyCard({
   name,
   plan,
   industry,
+  isDemo,
   overview,
 }: {
   id: string;
   name: string;
   plan: string;
   industry: string | null;
+  isDemo: boolean;
   overview: CompanyOverview | null;
 }) {
   const steps = overview ? onboardingSteps(overview) : [];
@@ -123,7 +162,9 @@ function CompanyCard({
           <h2 className="truncate text-lg font-black">{name}</h2>
           {industry && <p className="truncate text-xs text-muted-foreground">{industry}</p>}
         </div>
-        <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">{plan}</span>
+        <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+          {isDemo ? "Demonstração" : plan}
+        </span>
       </div>
 
       {overview ? (
