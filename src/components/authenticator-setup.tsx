@@ -63,7 +63,7 @@ export function AuthenticatorSetup() {
       </ol>
       {/* QR em data URI gerado pelo Supabase: next/image não ajuda aqui. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={setup.qrCode} alt="QR code do app autenticador" className="h-44 w-44 rounded-lg border border-border bg-white p-2" />
+      <img src={setup.qrCode} alt="QR code do app autenticador" className="h-56 w-56 rounded-lg border border-border bg-white p-3" />
       <p className="break-all text-xs text-muted-foreground">
         Chave manual: <span className="font-mono font-semibold text-foreground">{setup.secret}</span>
       </p>

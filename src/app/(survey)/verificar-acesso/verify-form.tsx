@@ -62,19 +62,19 @@ export function VerifyForm({
   }
 
   const tab = (active: boolean) =>
-    `flex-1 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+    `flex-1 rounded-md px-4 py-3 text-base font-semibold transition-colors ${
       active ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
     }`;
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl font-black tracking-tight">Verificação em duas etapas</CardTitle>
-        <p className="text-sm text-muted-foreground">
+    <Card className="shadow-sm md:-mx-24">
+      <CardHeader className="space-y-2 p-6 pb-2 sm:p-10 sm:pb-4">
+        <CardTitle className="text-3xl font-black tracking-tight">Verificação em duas etapas</CardTitle>
+        <p className="text-base text-muted-foreground">
           Confirme que é você para continuar. Isso é pedido em todo login administrativo.
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6 p-6 pt-4 sm:p-10 sm:pt-4">
         <div className="flex gap-1 rounded-lg bg-muted p-1">
           <button type="button" className={tab(method === "email")} onClick={() => changeMethod("email")}>
             Código por e-mail
@@ -85,18 +85,18 @@ export function VerifyForm({
         </div>
 
         {method === "app" && !hasAuthenticator ? (
-          <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-border bg-muted/40 p-4 text-base text-muted-foreground">
             O app autenticador ainda não foi configurado. Entre agora com o código por e-mail e configure em
             &quot;{setupHint}&quot;. Nos próximos logins você poderá escolher o app.
           </p>
         ) : method === "email" && !sent ? (
-          <Button type="button" className="h-11 w-full" onClick={send} disabled={loading}>
+          <Button type="button" className="h-14 w-full text-base" onClick={send} disabled={loading}>
             {loading ? "Enviando..." : `Enviar código para ${email}`}
           </Button>
         ) : (
-          <form onSubmit={confirm} className="space-y-4">
+          <form onSubmit={confirm} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="code">
+              <Label htmlFor="code" className="text-base">
                 {method === "email" ? "Código recebido por e-mail" : "Código do app autenticador"}
               </Label>
               <Input
@@ -109,10 +109,10 @@ export function VerifyForm({
                 onChange={(e) => setCode(e.target.value.replace(/[^\d\s]/g, ""))}
                 required
                 autoFocus
-                className="h-11 bg-card px-3 text-center text-lg font-bold tracking-[0.4em]"
+                className="h-16 bg-card px-3 text-center text-3xl font-bold tracking-[0.5em]"
               />
             </div>
-            <Button type="submit" className="h-11 w-full" disabled={loading || code.replace(/\s/g, "").length < 6}>
+            <Button type="submit" className="h-14 w-full text-base" disabled={loading || code.replace(/\s/g, "").length < 6}>
               {loading ? "Verificando..." : "Confirmar"}
             </Button>
             {method === "email" && (
@@ -120,7 +120,7 @@ export function VerifyForm({
                 type="button"
                 onClick={send}
                 disabled={loading}
-                className="w-full text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                className="w-full text-sm font-semibold text-primary hover:underline disabled:opacity-50"
               >
                 Reenviar código
               </button>
@@ -128,11 +128,11 @@ export function VerifyForm({
           </form>
         )}
 
-        {info && <p className="text-sm text-emerald-600">{info}</p>}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {info && <p className="text-base text-emerald-600">{info}</p>}
+        {error && <p className="text-base text-destructive">{error}</p>}
 
         <form action={cancelSecondFactor}>
-          <button type="submit" className="w-full text-xs text-muted-foreground hover:underline">
+          <button type="submit" className="w-full text-sm text-muted-foreground hover:underline">
             Cancelar e sair
           </button>
         </form>
