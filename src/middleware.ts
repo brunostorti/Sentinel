@@ -4,6 +4,7 @@ import { matchesAnyRoute, matchesRoute } from "@/lib/auth/routes";
 import { safeNext } from "@/lib/auth/email-link";
 import { homeForRole } from "@/lib/auth/home";
 import {
+  isExemptDemoAccount,
   SECOND_FACTOR_COOKIE,
   secondFactorSecret,
   sessionIdFromAccessToken,
@@ -36,16 +37,18 @@ const ADMIN_API_PREFIXES = [
 async function passedSecondFactor(
   request: NextRequest,
   supabase: Awaited<ReturnType<typeof updateSession>>["supabase"],
-  userId: string
+  user: { id: string; email?: string | null }
 ): Promise<boolean> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  return verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
-    userId,
+  const ok = await verifySecondFactor(request.cookies.get(SECOND_FACTOR_COOKIE)?.value, {
+    userId: user.id,
     sessionId: sessionIdFromAccessToken(session?.access_token) ?? "",
     secret: secondFactorSecret(),
   });
+  // Contas de teste das empresas de demonstração entram sem segundo fator.
+  return ok || isExemptDemoAccount(supabase, user.id, user.email);
 }
 /** Painel Sentinel: só o Master Admin (SUPER_ADMIN com is_master). */
 const MASTER_ROUTES = ["/empresas"];
@@ -100,7 +103,7 @@ export async function middleware(request: NextRequest) {
         .select("id")
         .eq("auth_id", user.id)
         .maybeSingle();
-      if (platformUser && !(await passedSecondFactor(request, supabase, user.id))) {
+      if (platformUser && !(await passedSecondFactor(request, supabase, user))) {
         return NextResponse.json({ error: "Verificação em duas etapas pendente." }, { status: 403 });
       }
     }
@@ -142,7 +145,7 @@ export async function middleware(request: NextRequest) {
   // fator neste login: código por e-mail ou app autenticador.
   if (
     !matchesAnyRoute(path, SECOND_FACTOR_EXEMPT_ROUTES) &&
-    !(await passedSecondFactor(request, supabase, user.id))
+    !(await passedSecondFactor(request, supabase, user))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/verificar-acesso";

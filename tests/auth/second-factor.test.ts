@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isExemptEmail,
   SECOND_FACTOR_TTL_SECONDS,
   sessionIdFromAccessToken,
   signSecondFactor,
@@ -43,5 +44,15 @@ describe("segundo fator do master", () => {
     expect(sessionIdFromAccessToken(`h.${payload}.s`)).toBe("abc-123");
     expect(sessionIdFromAccessToken("lixo")).toBeNull();
     expect(sessionIdFromAccessToken(null)).toBeNull();
+  });
+});
+
+
+describe("contas de teste sem segundo fator", () => {
+  it("libera só os e-mails da lista, sem diferenciar maiúsculas", () => {
+    expect(isExemptEmail("rh@apice.demo")).toBe(true);
+    expect(isExemptEmail(" RH@Bussola.demo ")).toBe(true);
+    expect(isExemptEmail("rh@osborne.com.br")).toBe(false);
+    expect(isExemptEmail(null)).toBe(false);
   });
 });

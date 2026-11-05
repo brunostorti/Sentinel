@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  isExemptDemoAccount,
   SECOND_FACTOR_COOKIE,
   SECOND_FACTOR_TTL_SECONDS,
   secondFactorSecret,
@@ -21,11 +22,16 @@ export async function hasSecondFactor(supabase: SupabaseClient, userId: string):
   const sid = await sessionId(supabase);
   if (!sid) return false;
   const store = await cookies();
-  return verifySecondFactor(store.get(SECOND_FACTOR_COOKIE)?.value, {
+  const ok = await verifySecondFactor(store.get(SECOND_FACTOR_COOKIE)?.value, {
     userId,
     sessionId: sid,
     secret: secondFactorSecret(),
   });
+  if (ok) return true;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return isExemptDemoAccount(supabase, userId, user?.email);
 }
 
 /** Libera o login atual depois de um segundo fator válido. */

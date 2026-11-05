@@ -5,7 +5,36 @@
  * em todo login. Funciona no middleware (Edge) e no servidor: só usa Web Crypto.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export const SECOND_FACTOR_COOKIE = "sentinel_2fa";
+
+/**
+ * Contas de teste sem segundo fator (e-mails fictícios, sem caixa de entrada).
+ * Só valem se a conta for de uma empresa de demonstração (companies.is_demo): uma
+ * conta com esse e-mail numa empresa real continua pedindo o segundo fator.
+ */
+export const SECOND_FACTOR_EXEMPT_EMAILS: readonly string[] = ["rh@apice.demo", "rh@bussola.demo"];
+
+export function isExemptEmail(email: string | null | undefined): boolean {
+  return !!email && SECOND_FACTOR_EXEMPT_EMAILS.includes(email.trim().toLowerCase());
+}
+
+/** Conta de teste liberada: e-mail da lista E empresa marcada como demonstração. */
+export async function isExemptDemoAccount(
+  supabase: SupabaseClient,
+  userId: string,
+  email: string | null | undefined
+): Promise<boolean> {
+  if (!isExemptEmail(email)) return false;
+  const { data } = await supabase
+    .from("users")
+    .select("companies(is_demo)")
+    .eq("auth_id", userId)
+    .maybeSingle();
+  const company = data?.companies as unknown as { is_demo: boolean } | null;
+  return company?.is_demo === true;
+}
 export const SECOND_FACTOR_TTL_SECONDS = 12 * 60 * 60;
 
 const encoder = new TextEncoder();
