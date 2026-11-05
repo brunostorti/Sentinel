@@ -1,3 +1,4 @@
+import type { ReportStatus } from "@/lib/reports/stale";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -136,7 +137,7 @@ export default async function DenunciasAdminPage(props: {
     protocol: r.protocol,
     occurrence_type: r.occurrence_type,
     description: r.description,
-    status: r.status as "PENDING" | "RESOLVED",
+    status: r.status as ReportStatus,
     created_at: r.created_at,
     updated_at: r.updated_at,
     attachments: ((r.attachments as string[] | null) ?? [])

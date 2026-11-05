@@ -7,6 +7,8 @@ import { Header } from "@/components/header";
 import { PageTransition } from "@/components/page-transition";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { LgpdConsentModal } from "@/components/lgpd-consent-modal";
+import { staleCutoffIso } from "@/lib/reports/stale";
+import { countOverdueTasks } from "@/lib/kanban/overdue-server";
 
 /**
  * A geração de planos (3 chamadas de IA, com modelos que raciocinam como o Opus 5.5)
@@ -54,6 +56,24 @@ export default async function DashboardLayout({
     unreadFeedbacks = count ?? 0;
   }
 
+  // Alertas do menu: denúncias aguardando há 7+ dias (RH/Admin) e tarefas atrasadas.
+  let staleReports = 0;
+  let overdueTasks = 0;
+  if (userData.company_id) {
+    const [staleRes, overdue] = await Promise.all([
+      userData.role === "HR" || userData.role === "ADMIN"
+        ? supabase
+            .from("reports")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "PENDING")
+            .lt("created_at", staleCutoffIso())
+        : Promise.resolve({ count: 0 }),
+      countOverdueTasks(supabase, userData.company_id as string),
+    ]);
+    staleReports = staleRes.count ?? 0;
+    overdueTasks = overdue;
+  }
+
   // Detecta rota atual via header injetado pelo middleware
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isFullBleed = FULL_BLEED_PATTERNS.some((re) => re.test(pathname));
@@ -65,6 +85,8 @@ export default async function DashboardLayout({
         companyName={companyName}
         employeeCount={employeeCount}
         unreadFeedbacks={unreadFeedbacks}
+        staleReports={staleReports}
+        overdueTasks={overdueTasks}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header userName={userData.name} userEmail={userData.email} />

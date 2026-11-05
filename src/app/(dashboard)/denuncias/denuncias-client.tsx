@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,6 +14,20 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { OCCURRENCE_TYPES } from "@/lib/reports/occurrence-types";
 import { formatReportDay } from "@/lib/reports/format";
+import {
+  isStaleReport,
+  reportAgeDays,
+  REPORT_STATUSES,
+  REPORT_STATUS_RH,
+  STALE_REPORT_DAYS,
+  type ReportStatus,
+} from "@/lib/reports/stale";
+
+const STATUS_STYLE: Record<ReportStatus, { bar: string; badge: "warning" | "success" | "default" }> = {
+  PENDING: { bar: "bg-amber-500", badge: "warning" },
+  IN_PROGRESS: { bar: "bg-sky-500", badge: "default" },
+  RESOLVED: { bar: "bg-green-500", badge: "success" },
+};
 
 /** Cor da barra por tipo (inclui "Assédio", usado pelas denúncias antigas). */
 const OCCURRENCE_COLORS: Record<string, string> = {
@@ -32,7 +45,7 @@ interface Report {
   protocol: string;
   occurrence_type: string;
   description: string;
-  status: "PENDING" | "RESOLVED";
+  status: ReportStatus;
   created_at: string;
   updated_at: string;
   attachments: string[] | null;
@@ -48,7 +61,7 @@ interface DenunciasClientProps {
   initialDepartment?: string | null;
 }
 
-type FilterStatus = "ALL" | "PENDING" | "RESOLVED";
+type FilterStatus = "ALL" | "STALE" | ReportStatus;
 type SortOption = "recent" | "oldest" | "pending_first" | "resolved_first";
 
 export function DenunciasClient({ initialReports, topSlot, initialDepartment }: DenunciasClientProps) {
@@ -86,6 +99,8 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
   const totalCount = reports.length;
   const pendingCount = reports.filter((r) => r.status === "PENDING").length;
   const resolvedCount = reports.filter((r) => r.status === "RESOLVED").length;
+  const inProgressCount = reports.filter((r) => r.status === "IN_PROGRESS").length;
+  const staleCount = reports.filter((r) => isStaleReport(r.status, r.created_at)).length;
   const resolutionRate =
     totalCount > 0 ? Math.round((resolvedCount / totalCount) * 100) : 0;
 
@@ -116,8 +131,8 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
       if (departmentFilter && report.department_name !== departmentFilter) return false;
 
       // Status Filter
-      if (filter === "PENDING" && report.status !== "PENDING") return false;
-      if (filter === "RESOLVED" && report.status !== "RESOLVED") return false;
+      if (filter === "STALE" && !isStaleReport(report.status, report.created_at)) return false;
+      if (filter !== "ALL" && filter !== "STALE" && report.status !== filter) return false;
 
       // Search Filter (by protocol or description)
       if (searchQuery.trim() !== "") {
@@ -151,8 +166,7 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
     });
 
   // 3. Update Status Handler
-  const handleUpdateStatus = async (reportId: string, currentStatus: "PENDING" | "RESOLVED") => {
-    const newStatus = currentStatus === "PENDING" ? "RESOLVED" : "PENDING";
+  const handleUpdateStatus = async (reportId: string, newStatus: ReportStatus) => {
     setLoadingId(reportId);
 
     try {
@@ -179,11 +193,7 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
         )
       );
 
-      toast.success(
-        newStatus === "RESOLVED"
-          ? "Denúncia marcada como Resolvida com sucesso!"
-          : "Denúncia reaberta com sucesso!"
-      );
+      toast.success(`Status alterado para "${REPORT_STATUS_RH[newStatus]}".`);
     } catch (error: unknown) {
       console.error(error);
       toast.error(
@@ -207,6 +217,26 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
       </div>
 
       {topSlot}
+
+      {staleCount > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          <Icon name="warning" size={20} className="shrink-0 text-amber-600" />
+          <span>
+            <strong>
+              {staleCount === 1 ? "1 denúncia está" : `${staleCount} denúncias estão`} aguardando há mais de{" "}
+              {STALE_REPORT_DAYS} dias
+            </strong>{" "}
+            sem ninguém começar a tratar. Mude para &quot;Em andamento&quot; quando iniciar a apuração.
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilter("STALE")}
+            className="ml-auto text-xs font-bold text-amber-800 hover:underline dark:text-amber-200"
+          >
+            Ver paradas
+          </button>
+        </div>
+      )}
 
       {departmentFilter && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
@@ -242,7 +272,7 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
         <Card className="border border-border/60 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Aguardando Análise
+              Aguardando
             </CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
               <Icon name="pending_actions" size={18} />
@@ -250,14 +280,16 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-black text-amber-500">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">Requerem atenção ou providências</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {inProgressCount > 0 ? `${inProgressCount} em andamento` : "Ainda sem tratamento"}
+            </p>
           </CardContent>
         </Card>
 
         <Card className="border border-border/60 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Casos Resolvidos
+              Concluídas
             </CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
               <Icon name="check_circle" size={18} />
@@ -350,45 +382,37 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
       {/* Filter and Search Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-muted/30 p-4 rounded-xl border border-border/50">
         {/* Tabs */}
-        <div className="flex rounded-lg bg-muted p-1 self-start sm:self-auto">
-          <button
-            onClick={() => setFilter("ALL")}
-            className={cn(
-              "rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all select-none",
-              filter === "ALL"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Todas
-          </button>
-          <button
-            onClick={() => setFilter("PENDING")}
-            className={cn(
-              "rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all select-none flex items-center gap-1",
-              filter === "PENDING"
-                ? "bg-background text-amber-500 shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Pendentes
-            {pendingCount > 0 && (
-              <span className="bg-amber-500/15 text-amber-500 px-1.5 py-0.2 rounded-full text-[9px] font-black">
-                {pendingCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setFilter("RESOLVED")}
-            className={cn(
-              "rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all select-none",
-              filter === "RESOLVED"
-                ? "bg-background text-green-500 shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Resolvidas
-          </button>
+        <div className="flex flex-wrap rounded-lg bg-muted p-1 self-start sm:self-auto">
+          {(
+            [
+              { key: "ALL", label: "Todas", count: 0, active: "text-foreground" },
+              { key: "PENDING", label: "Aguardando", count: pendingCount, active: "text-amber-500" },
+              { key: "IN_PROGRESS", label: "Em andamento", count: inProgressCount, active: "text-sky-600" },
+              { key: "RESOLVED", label: "Concluídas", count: 0, active: "text-green-500" },
+              ...(staleCount > 0
+                ? [{ key: "STALE", label: "Paradas", count: staleCount, active: "text-amber-700" }]
+                : []),
+            ] as { key: FilterStatus; label: string; count: number; active: string }[]
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={cn(
+                "rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all select-none flex items-center gap-1",
+                filter === tab.key
+                  ? `bg-background shadow-sm ${tab.active}`
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.key === "STALE" && <Icon name="warning" size={12} />}
+              {tab.label}
+              {tab.count > 0 && (
+                <span className="bg-amber-500/15 text-amber-600 px-1.5 rounded-full text-[9px] font-black">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Search & Sort */}
@@ -426,8 +450,8 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
             >
               <option value="recent">Mais recentes</option>
               <option value="oldest">Mais antigas</option>
-              <option value="pending_first">Pendentes primeiro</option>
-              <option value="resolved_first">Resolvidas primeiro</option>
+              <option value="pending_first">Aguardando primeiro</option>
+              <option value="resolved_first">Concluídas primeiro</option>
             </select>
             <Icon
               name="sort"
@@ -464,7 +488,7 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
               <div
                 className={cn(
                   "h-1 w-full transition-colors duration-500",
-                  report.status === "PENDING" ? "bg-amber-500" : "bg-green-500"
+                  STATUS_STYLE[report.status]?.bar ?? "bg-muted"
                 )}
               />
               <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4">
@@ -473,9 +497,15 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">
                       {report.protocol}
                     </span>
-                    <Badge variant={report.status === "PENDING" ? "warning" : "success"}>
-                      {report.status === "PENDING" ? "Pendente" : "Resolvido"}
+                    <Badge variant={STATUS_STYLE[report.status]?.badge ?? "default"}>
+                      {REPORT_STATUS_RH[report.status] ?? report.status}
                     </Badge>
+                    {isStaleReport(report.status, report.created_at) && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+                        <Icon name="warning" size={13} />
+                        Parada há {reportAgeDays(report.created_at)} dias
+                      </span>
+                    )}
                   </div>
                   <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                     {report.occurrence_type}
@@ -493,36 +523,23 @@ export function DenunciasClient({ initialReports, topSlot, initialDepartment }: 
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  {/* Status toggle action button */}
-                  <Button
-                    variant={report.status === "PENDING" ? "default" : "outline"}
-                    size="sm"
-                    className={cn(
-                      "font-semibold text-xs transition-all duration-300 flex items-center gap-1.5",
-                      report.status === "PENDING"
-                        ? "bg-green-600 text-white hover:bg-green-700 hover:scale-[1.02]"
-                        : "hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/30"
-                    )}
-                    disabled={loadingId === report.id}
-                    onClick={() => handleUpdateStatus(report.id, report.status)}
-                  >
-                    {loadingId === report.id ? (
-                      <>
-                        <Icon name="sync" className="animate-spin" size={14} />
-                        Processando...
-                      </>
-                    ) : report.status === "PENDING" ? (
-                      <>
-                        <Icon name="check" size={14} />
-                        Marcar como Resolvido
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="lock_open" size={14} />
-                        Reabrir Denúncia
-                      </>
-                    )}
-                  </Button>
+                  {/* Status: o RH acompanha o próprio trabalho; nada é enviado ao colaborador por e-mail. */}
+                  <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    Status
+                    <select
+                      value={report.status}
+                      disabled={loadingId === report.id}
+                      onChange={(e) => handleUpdateStatus(report.id, e.target.value as ReportStatus)}
+                      className="h-8 rounded-md border border-border bg-background px-2 text-xs font-semibold text-foreground disabled:opacity-50"
+                    >
+                      {REPORT_STATUSES.map((st) => (
+                        <option key={st} value={st}>
+                          {REPORT_STATUS_RH[st]}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingId === report.id && <Icon name="sync" className="animate-spin" size={14} />}
+                  </label>
                 </div>
               </CardHeader>
 

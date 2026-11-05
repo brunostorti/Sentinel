@@ -152,6 +152,7 @@ async function DocumentsTab({ companyId }: { companyId: string }) {
     .from("kb_documents")
     .select("id, title, file_name, status, chunk_count, flagged_chunk_count, created_at, updated_at")
     .eq("company_id", companyId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (!docs?.length) {

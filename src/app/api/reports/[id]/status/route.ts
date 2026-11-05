@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isReportStatus } from "@/lib/reports/stale";
 
 export async function POST(
   req: NextRequest,
@@ -23,7 +24,7 @@ export async function POST(
     }
 
     const body = (await req.json()) as { status: string };
-    if (!body.status || !["PENDING", "RESOLVED"].includes(body.status)) {
+    if (!isReportStatus(body.status)) {
       return NextResponse.json({ error: "Status inválido." }, { status: 400 });
     }
 

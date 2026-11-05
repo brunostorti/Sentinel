@@ -17,7 +17,8 @@ describe("formatReportDay", () => {
 
 describe("reportStatus", () => {
   it("traduz os status conhecidos e não quebra com outros", () => {
-    expect(reportStatus("PENDING").label).toBe("Em análise");
+    expect(reportStatus("PENDING").label).toBe("Recebida");
+    expect(reportStatus("IN_PROGRESS").label).toBe("Em análise");
     expect(reportStatus("RESOLVED").label).toBe("Finalizada");
     expect(reportStatus("OUTRO").label).toBe("OUTRO");
   });

@@ -5,9 +5,13 @@ import { KB_BUCKET } from "@/lib/rag/config";
 import { logDocumentEvent } from "@/lib/rag/document-events";
 import { DOCUMENT_USAGE_LABELS, isDocumentUsage } from "@/lib/rag/document-usage";
 
-/** DELETE — apaga um documento da empresa: arquivo, registro e trechos (cascata). */
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * DELETE — move o documento para a lixeira (sai da busca, pode ser restaurado por 30 dias).
+ * `?permanent=1` em documento que já está na lixeira: apaga de vez arquivo, registro e trechos.
+ */
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const permanent = new URL(req.url).searchParams.get("permanent") === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,12 +27,32 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   // Só documentos da própria empresa (a base global não é editável por aqui).
   const { data: doc } = await admin
     .from("kb_documents")
-    .select("id, title, storage_path")
+    .select("id, title, storage_path, deleted_at")
     .eq("id", id)
     .eq("company_id", caller.company_id)
     .maybeSingle();
   if (!doc) return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
 
+  if (!permanent) {
+    if (doc.deleted_at) return NextResponse.json({ ok: true });
+    const { error } = await admin
+      .from("kb_documents")
+      .update({ deleted_at: new Date().toISOString(), deleted_by: caller.id })
+      .eq("id", doc.id);
+    if (error) return NextResponse.json({ error: "Falha ao mover para a lixeira." }, { status: 500 });
+    await logDocumentEvent(admin, {
+      companyId: caller.company_id,
+      documentId: doc.id,
+      documentTitle: doc.title,
+      actorUserId: caller.id,
+      action: "trash",
+    });
+    return NextResponse.json({ ok: true, trashed: true });
+  }
+
+  if (!doc.deleted_at) {
+    return NextResponse.json({ error: "Mova o documento para a lixeira antes de excluir de vez." }, { status: 400 });
+  }
   if (doc.storage_path) {
     const { error } = await admin.storage.from(KB_BUCKET).remove([doc.storage_path]);
     if (error) return NextResponse.json({ error: "Falha ao apagar o arquivo." }, { status: 500 });
@@ -45,7 +69,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   return NextResponse.json({ ok: true });
 }
 
-/** PATCH — muda onde o documento pode ser consultado: chat e planos, só planos ou só chat. */
+/** PATCH — muda onde o documento pode ser consultado ({ usage }) ou restaura da lixeira ({ action: "restore" }). */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -59,17 +83,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Só RH e administradores alteram documentos." }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => null)) as { usage?: unknown } | null;
-  if (!isDocumentUsage(body?.usage)) return NextResponse.json({ error: "Uso inválido." }, { status: 400 });
+  const body = (await req.json().catch(() => null)) as { usage?: unknown; action?: unknown } | null;
 
   const admin = createAdminClient();
   const { data: doc } = await admin
     .from("kb_documents")
-    .select("id, title, usage")
+    .select("id, title, usage, deleted_at")
     .eq("id", id)
     .eq("company_id", caller.company_id)
     .maybeSingle();
   if (!doc) return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
+
+  // Restaurar da lixeira: volta para a lista e para a busca.
+  if (body?.action === "restore") {
+    if (!doc.deleted_at) return NextResponse.json({ ok: true });
+    const { error } = await admin.from("kb_documents").update({ deleted_at: null, deleted_by: null }).eq("id", doc.id);
+    if (error) return NextResponse.json({ error: "Falha ao restaurar." }, { status: 500 });
+    await logDocumentEvent(admin, {
+      companyId: caller.company_id,
+      documentId: doc.id,
+      documentTitle: doc.title,
+      actorUserId: caller.id,
+      action: "restore",
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!isDocumentUsage(body?.usage)) return NextResponse.json({ error: "Uso inválido." }, { status: 400 });
   if (doc.usage === body.usage) return NextResponse.json({ ok: true });
 
   const { error } = await admin.from("kb_documents").update({ usage: body.usage }).eq("id", doc.id);

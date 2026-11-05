@@ -3,6 +3,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Icon } from "@/components/icon";
+import { daysOverdue, isTaskOverdue, overdueLabel } from "@/lib/kanban/overdue";
+import { todayInBrazil } from "@/lib/reports/alerts";
 
 export interface Task {
   id: string;
@@ -26,10 +28,8 @@ interface KanbanCardProps {
   onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
   isDragOverlay?: boolean;
-}
-
-function isOverdue(dateStr: string) {
-  return new Date(dateStr) < new Date();
+  /** Está na coluna de conclusão: nunca aparece como atrasada. */
+  done?: boolean;
 }
 
 export function KanbanCard({
@@ -38,6 +38,7 @@ export function KanbanCard({
   onDelete,
   onEdit,
   isDragOverlay,
+  done = false,
 }: KanbanCardProps) {
   const {
     attributes,
@@ -54,7 +55,9 @@ export function KanbanCard({
     transition,
   };
 
-  const overdue = task.dueDate ? isOverdue(task.dueDate) : false;
+  const today = todayInBrazil();
+  const overdue = isTaskOverdue(task.dueDate, done, today);
+  const lateDays = overdue && task.dueDate ? daysOverdue(task.dueDate, today) : 0;
 
   return (
     <div
@@ -65,9 +68,15 @@ export function KanbanCard({
       className={`group cursor-grab rounded-xl border bg-card p-3.5 transition-all duration-200 active:cursor-grabbing
         ${isDragging ? "opacity-30" : ""}
         ${isDragOverlay ? "shadow-xl ring-2 ring-primary/30 cursor-grabbing" : ""}
-        ${!isDragging && !isDragOverlay ? "border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5" : ""}
+        ${!isDragging && !isDragOverlay ? (overdue ? "border-red-300 shadow-sm ring-1 ring-red-200 hover:shadow-md dark:border-red-500/50 dark:ring-red-500/20" : "border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5") : ""}
       `}
     >
+      {overdue && (
+        <div className="mb-2 flex items-center gap-1 text-[11px] font-bold text-red-700 dark:text-red-400">
+          <Icon name="warning" size={13} />
+          {overdueLabel(lateDays)}
+        </div>
+      )}
       {/* Dimension badge */}
       {(task.dimensionName || task.surveyTitle) && (
         <div className="mb-2 flex flex-wrap gap-1.5">
@@ -135,7 +144,7 @@ export function KanbanCard({
               }`}
             >
               <Icon name={overdue ? "warning" : "schedule"} size={12} />
-              {new Date(task.dueDate).toLocaleDateString("pt-BR", {
+              {new Date(`${task.dueDate.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "short",
               })}

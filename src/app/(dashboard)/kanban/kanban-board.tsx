@@ -24,6 +24,8 @@ import { moveTask, deleteTask } from "./actions";
 import { CreateTaskModal } from "./create-task-modal";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard, type Task } from "./kanban-card";
+import { isTaskOverdue } from "@/lib/kanban/overdue";
+import { todayInBrazil } from "@/lib/reports/alerts";
 import { KanbanOutcomeModal } from "@/components/kanban/outcome-modal";
 import type { ExternalAssignee } from "@/lib/kanban/external-assignees";
 import { AssigneeView } from "./assignee-view";
@@ -72,6 +74,9 @@ export function KanbanBoard({
   const doneColumnId = columns.length > 0
     ? [...columns].sort((a, b) => b.order_index - a.order_index)[0].id
     : null;
+
+  const today = todayInBrazil();
+  const overdueCount = tasks.filter((t) => isTaskOverdue(t.dueDate, t.columnId === doneColumnId, today)).length;
 
   useEffect(() => {
     setTasks(initialTasks);
@@ -208,6 +213,16 @@ export function KanbanBoard({
         )}
       </div>
 
+      {overdueCount > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
+          <Icon name="warning" size={18} className="shrink-0" />
+          <span>
+            <strong>{overdueCount === 1 ? "1 tarefa atrasada" : `${overdueCount} tarefas atrasadas`}</strong>: prazo vencido
+            e ainda fora de &quot;Concluído&quot;. Estão destacadas em vermelho no quadro.
+          </span>
+        </div>
+      )}
+
       {view === "people" && (
         <AssigneeView
           tasks={tasks}
@@ -258,6 +273,7 @@ export function KanbanBoard({
                       canManage={canManage}
                       onDelete={handleDelete}
                       onEdit={(t) => setEditingTask(t)}
+                      done={task.columnId === doneColumnId}
                     />
                   ))}
                 </SortableContext>

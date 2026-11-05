@@ -75,12 +75,15 @@ function NavLink({
   isActive,
   collapsed,
   badge = 0,
+  alert,
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
   /** Contador ao lado do item (ex.: feedbacks não lidos); 0 esconde. */
   badge?: number;
+  /** Alerta (triângulo de cuidado): denúncias paradas, tarefas atrasadas. */
+  alert?: { count: number; label: string };
 }) {
   const badgeText = badge > 99 ? "99+" : String(badge);
   return (
@@ -116,6 +119,23 @@ function NavLink({
           {badgeText}
         </span>
       )}
+      {alert && alert.count > 0 && !collapsed && (
+        <span
+          className={cn(
+            "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+            badge > 0 ? "" : "ml-auto",
+            isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+          )}
+          title={alert.label}
+          aria-label={alert.label}
+        >
+          <Icon name="warning" size={12} />
+          {alert.count > 99 ? "99+" : alert.count}
+        </span>
+      )}
+      {alert && alert.count > 0 && collapsed && (
+        <span className="absolute left-2 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-card" aria-label={alert.label} />
+      )}
       {badge > 0 && collapsed && (
         <span className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-card" aria-label={`${badge} não lidos`} />
       )}
@@ -133,9 +153,21 @@ interface SidebarProps {
   companyName?: string;
   employeeCount?: number;
   unreadFeedbacks?: number;
+  /** Denúncias aguardando há 7+ dias. */
+  staleReports?: number;
+  /** Tarefas do Kanban com prazo vencido. */
+  overdueTasks?: number;
 }
 
-export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks = 0, isMaster = false }: SidebarProps) {
+export function Sidebar({
+  role,
+  companyName,
+  employeeCount = 0,
+  unreadFeedbacks = 0,
+  staleReports = 0,
+  overdueTasks = 0,
+  isMaster = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -220,6 +252,16 @@ export function Sidebar({ role, companyName, employeeCount = 0, unreadFeedbacks 
                         isActive={isActive}
                         collapsed={collapsed}
                         badge={item.href === ROUTES.DASHBOARD.FEEDBACKS ? unreadFeedbacks : 0}
+                        alert={
+                          item.href === ROUTES.DASHBOARD.INCIDENTS
+                            ? {
+                                count: staleReports,
+                                label: `${staleReports} denúncia(s) aguardando há mais de 7 dias`,
+                              }
+                            : item.href === ROUTES.DASHBOARD.KANBAN
+                              ? { count: overdueTasks, label: `${overdueTasks} tarefa(s) atrasada(s) no Kanban` }
+                              : undefined
+                        }
                       />
                     );
                   })}

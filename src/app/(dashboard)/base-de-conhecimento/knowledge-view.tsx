@@ -13,6 +13,8 @@ import {
   DOCUMENT_EVENT_LABELS,
   DOCUMENT_USAGES,
   DOCUMENT_USAGE_LABELS,
+  TRASH_RETENTION_DAYS,
+  trashDaysLeft,
   type DocumentEventAction,
   type DocumentUsage,
 } from "@/lib/rag/document-usage";
@@ -47,14 +49,30 @@ interface DocumentEvent {
   id: string;
   document_title: string;
   action: DocumentEventAction;
-  details: { from?: string; to?: string; reason?: string; count?: number; personal_data?: PersonalDataKind[] } | null;
+  details: {
+    from?: string;
+    to?: string;
+    reason?: string;
+    count?: number;
+    auto?: boolean;
+    personal_data?: PersonalDataKind[];
+  } | null;
   created_at: string;
   actor: string | null;
+}
+
+interface TrashDocument {
+  id: string;
+  title: string;
+  file_name: string | null;
+  deleted_at: string;
+  deleted_by: string | null;
 }
 
 interface KnowledgeData {
   canEdit: boolean;
   events: DocumentEvent[];
+  trash: TrashDocument[];
   searchEnabled: boolean;
   documents: CompanyDocument[];
   global: GlobalDocument[];
@@ -129,11 +147,38 @@ export function KnowledgeView() {
   }
 
   async function remove(doc: CompanyDocument) {
-    if (!window.confirm(`Excluir "${doc.title}"? O arquivo e os trechos indexados serão apagados.`)) return;
+    if (
+      !window.confirm(
+        `Mover "${doc.title}" para a lixeira? Ele sai da busca na hora e pode ser restaurado por ${TRASH_RETENTION_DAYS} dias.`
+      )
+    )
+      return;
     const res = await fetch(`/api/knowledge/documents/${doc.id}`, { method: "DELETE" });
     const json = await res.json();
     if (!res.ok) toast.error(json.error ?? "Falha ao excluir.");
-    else toast.success("Documento excluído.");
+    else toast.success("Documento movido para a lixeira.");
+    void load();
+  }
+
+  async function restore(doc: TrashDocument) {
+    const res = await fetch(`/api/knowledge/documents/${doc.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "restore" }),
+    });
+    const json = await res.json();
+    if (!res.ok) toast.error(json.error ?? "Falha ao restaurar.");
+    else toast.success(`"${doc.title}" restaurado.`);
+    void load();
+  }
+
+  async function purge(doc: TrashDocument) {
+    if (!window.confirm(`Excluir "${doc.title}" de vez? O arquivo e os trechos serão apagados e não dá para desfazer.`))
+      return;
+    const res = await fetch(`/api/knowledge/documents/${doc.id}?permanent=1`, { method: "DELETE" });
+    const json = await res.json();
+    if (!res.ok) toast.error(json.error ?? "Falha ao excluir.");
+    else toast.success("Documento excluído definitivamente.");
     void load();
   }
 
@@ -337,6 +382,51 @@ export function KnowledgeView() {
         </div>
       </Card>
 
+      {/* ── Lixeira ── */}
+      {data.canEdit && data.trash.length > 0 && (
+        <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Icon name="delete" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black tracking-tight">Lixeira</h2>
+              <p className="text-sm text-muted-foreground">
+                Documentos excluídos ficam aqui por {TRASH_RETENTION_DAYS} dias, fora da busca, e depois são apagados de
+                vez automaticamente.
+              </p>
+            </div>
+          </div>
+          <ul className="mt-4 divide-y divide-border text-sm">
+            {data.trash.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center gap-2 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{d.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Excluído em {new Date(d.deleted_at).toLocaleDateString("pt-BR")}
+                    {d.deleted_by ? ` por ${d.deleted_by}` : ""} · apagado de vez em {trashDaysLeft(d.deleted_at)}{" "}
+                    {trashDaysLeft(d.deleted_at) === 1 ? "dia" : "dias"}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => restore(d)}>
+                  <Icon name="restore_from_trash" size={16} />
+                  Restaurar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => purge(d)}
+                >
+                  <Icon name="delete_forever" size={16} />
+                  Excluir de vez
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {/* ── Registro de auditoria ── */}
       {data.canEdit && (
         <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
@@ -347,7 +437,7 @@ export function KnowledgeView() {
             <div>
               <h2 className="text-lg font-black tracking-tight">Registro de atividades dos documentos</h2>
               <p className="text-sm text-muted-foreground">
-                Quem enviou, baixou, mudou o uso ou excluiu cada documento, e quando. Visível só para RH e
+                Quem enviou, baixou, mudou o uso, mandou para a lixeira, restaurou ou excluiu cada documento, e quando. Visível só para RH e
                 administradores. Últimos 50 registros.
               </p>
             </div>
@@ -362,7 +452,9 @@ export function KnowledgeView() {
                     {new Date(e.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="font-semibold">{e.actor ?? "Usuário removido"}</span>{" "}
+                    <span className="font-semibold">
+                      {e.actor ?? (e.details?.auto ? "Sistema" : "Usuário removido")}
+                    </span>{" "}
                     {DOCUMENT_EVENT_LABELS[e.action] ?? e.action}{" "}
                     <span className="font-semibold">&quot;{e.document_title}&quot;</span>
                     {e.action === "usage_change" && e.details?.to && (
@@ -370,6 +462,9 @@ export function KnowledgeView() {
                         {" "}
                         ({e.details.from} → {e.details.to})
                       </span>
+                    )}
+                    {e.action === "delete" && e.details?.auto && (
+                      <span className="text-muted-foreground"> (automático, após {TRASH_RETENTION_DAYS} dias na lixeira)</span>
                     )}
                     {e.action === "blocked_upload" && (
                       <span className="text-muted-foreground"> (continha CPF)</span>

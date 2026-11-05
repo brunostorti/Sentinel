@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PlanDetailView } from "./plan-detail-view";
 import { getReferencesForIntervention } from "@/lib/ai/knowledge-base/references";
 import type { AIRecommendation } from "@/lib/ai/pipeline/types";
+import { countOverdueTasks } from "@/lib/kanban/overdue-server";
 
 const EMPTY: AIRecommendation = {
   title: "",
@@ -68,9 +69,10 @@ export default async function PlanoDetalhePage({
     .eq("action_plan_id", id)
     .maybeSingle();
   const interventionId = outcomeData?.intervention_id ?? null;
-  const references = interventionId
-    ? await getReferencesForIntervention(interventionId)
-    : [];
+  const [references, overdueTasks] = await Promise.all([
+    interventionId ? getReferencesForIntervention(interventionId) : Promise.resolve([]),
+    countOverdueTasks(supabase, userData.company_id!, { actionPlanId: id }),
+  ]);
 
   const raw = (plan.ai_recommendation as Partial<AIRecommendation>) ?? {};
   const recommendation: AIRecommendation = {
@@ -107,6 +109,7 @@ export default async function PlanoDetalhePage({
       recommendation={recommendation}
       canManage={canManage}
       references={references}
+      overdueTasks={overdueTasks}
       initialOutcome={
         actionTaken?.outcome as
           | "successful"

@@ -6,6 +6,7 @@ import { isEmbeddingConfigured } from "@/lib/rag/embeddings";
 import { extractPdfPages, hasUsefulText } from "@/lib/rag/extract";
 import { ingestPages } from "@/lib/rag/ingest";
 import { logDocumentEvent } from "@/lib/rag/document-events";
+import { TRASH_RETENTION_DAYS } from "@/lib/rag/document-usage";
 import { describeKinds, findPersonalData } from "@/lib/privacy/personal-data";
 
 /**
@@ -41,18 +42,46 @@ async function getCaller() {
   };
 }
 
+/** Apaga de vez o que está na lixeira há mais de 30 dias (arquivo, registro e trechos). */
+async function purgeExpiredTrash(companyId: string) {
+  const admin = createAdminClient();
+  const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * 86_400_000).toISOString();
+  const { data: expired } = await admin
+    .from("kb_documents")
+    .select("id, title, storage_path")
+    .eq("company_id", companyId)
+    .lt("deleted_at", cutoff);
+  for (const doc of expired ?? []) {
+    if (doc.storage_path) await admin.storage.from(KB_BUCKET).remove([doc.storage_path]);
+    const { error } = await admin.from("kb_documents").delete().eq("id", doc.id);
+    if (!error) {
+      await logDocumentEvent(admin, {
+        companyId,
+        documentId: doc.id,
+        documentTitle: doc.title,
+        actorUserId: null,
+        action: "delete",
+        details: { auto: true },
+      });
+    }
+  }
+}
+
 export async function GET() {
   const caller = await getCaller();
   if (!caller) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   const { supabase, companyId } = caller;
 
-  const [{ data: companyDocs, error }, { data: globalDocs }] = await Promise.all([
+  await purgeExpiredTrash(companyId);
+
+  const [{ data: companyDocs, error }, { data: globalDocs }, { data: trashDocs }] = await Promise.all([
     supabase
       .from("kb_documents")
       .select(
-        "id, title, file_name, status, error_message, chunk_count, flagged_chunk_count, usage, personal_data_kinds, created_at, users(name)"
+        "id, title, file_name, status, error_message, chunk_count, flagged_chunk_count, usage, personal_data_kinds, created_at, users:users!kb_documents_uploaded_by_fkey(name)"
       )
       .eq("company_id", companyId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("kb_documents")
@@ -60,6 +89,12 @@ export async function GET() {
       .is("company_id", null)
       .eq("status", "ready")
       .order("source_type"),
+    supabase
+      .from("kb_documents")
+      .select("id, title, file_name, deleted_at, deleter:users!kb_documents_deleted_by_fkey(name)")
+      .eq("company_id", companyId)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false }),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -104,6 +139,13 @@ export async function GET() {
         .map((f) => ({ reason: f.flag_reason, page: f.page_start, excerpt: f.content.slice(0, 240) })),
     })),
     global: globalDocs ?? [],
+    trash: (trashDocs ?? []).map((d) => ({
+      id: d.id,
+      title: d.title,
+      file_name: d.file_name,
+      deleted_at: d.deleted_at,
+      deleted_by: (d.deleter as unknown as { name: string } | null)?.name ?? null,
+    })),
   });
 }
 
@@ -135,7 +177,8 @@ export async function POST(req: NextRequest) {
   const { count } = await admin
     .from("kb_documents")
     .select("id", { count: "exact", head: true })
-    .eq("company_id", caller.companyId);
+    .eq("company_id", caller.companyId)
+    .is("deleted_at", null);
   if ((count ?? 0) >= MAX_DOCUMENTS) {
     return NextResponse.json({ error: `Limite de ${MAX_DOCUMENTS} documentos por empresa.` }, { status: 400 });
   }

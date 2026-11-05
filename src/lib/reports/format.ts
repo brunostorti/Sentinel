@@ -2,9 +2,14 @@
 
 export const REPORT_STATUS: Record<string, { label: string; icon: string; cls: string }> = {
   PENDING: {
-    label: "Em análise",
+    label: "Recebida",
     icon: "schedule",
     cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  },
+  IN_PROGRESS: {
+    label: "Em análise",
+    icon: "manage_search",
+    cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
   },
   RESOLVED: {
     label: "Finalizada",

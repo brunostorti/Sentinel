@@ -41,6 +41,8 @@ interface Props {
   references: KbReferenceWithRelevance[];
   initialOutcome?: "successful" | "partial" | "unsuccessful" | "in_progress" | null;
   initialOutcomeNotes?: string | null;
+  /** Tarefas deste plano no Kanban com prazo vencido. */
+  overdueTasks?: number;
 }
 
 export function PlanDetailView({
@@ -58,6 +60,7 @@ export function PlanDetailView({
   references,
   initialOutcome,
   initialOutcomeNotes,
+  overdueTasks = 0,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -134,6 +137,22 @@ export function PlanDetailView({
             status={surveyStatus}
             current="planos"
           />
+        )}
+
+        {overdueTasks > 0 && (
+          <Link
+            href="/kanban"
+            className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 shadow-sm transition-colors hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+          >
+            <Icon name="warning" size={18} className="shrink-0" />
+            <span>
+              <strong>
+                {overdueTasks === 1 ? "1 tarefa deste plano está atrasada" : `${overdueTasks} tarefas deste plano estão atrasadas`}
+              </strong>{" "}
+              no Kanban.
+            </span>
+            <span className="ml-auto text-xs font-bold">Abrir Kanban →</span>
+          </Link>
         )}
 
         {/* ─── Barra de acoes do plano ─── */}
