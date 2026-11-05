@@ -2,7 +2,11 @@
 
 ## Diagramas e Material Complementar do TCC
 
-**[Acessar os diagramas atuais para a banca](docs/artigo_diagramas_tcc/README.md)**: arquitetura geral em C4 e diagrama de atividades UML completo do ciclo de pesquisas, com imagens em alta resolução e fontes editáveis. A página também identifica o material histórico do artigo.
+**[Acessar os diagramas atuais para a banca](docs/artigo_diagramas_tcc/atuais)**, em PNG de alta resolução:
+
+- [Arquitetura geral em C4](docs/artigo_diagramas_tcc/atuais/arquitetura-geral.png).
+- [Diagrama de atividades UML completo do ciclo de pesquisas](docs/artigo_diagramas_tcc/atuais/atividades-ciclo.png).
+- [Geração de planos de ação com três agentes e RAG](docs/artigo_diagramas_tcc/atuais/pipeline-ia-rag.png).
 
 O **Sentinel** é uma plataforma web desenvolvida em Next.js para auxiliar empresas a avaliarem o bem-estar psicológico de seus colaboradores, em total conformidade com a **Lei Federal nº 14.831**. A plataforma implementa o questionário científico *Copenhagen Psychosocial Questionnaire* (COPSOQ II), permitindo monitorar a saúde ocupacional e gerar planos de ação eficientes baseados em dados reais.
 
