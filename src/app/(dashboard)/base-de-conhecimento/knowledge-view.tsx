@@ -10,15 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/icon";
 import { SOURCE_TYPE_LABELS, type KbSourceType } from "@/lib/rag/config";
 import {
-  DOCUMENT_EVENT_LABELS,
   DOCUMENT_USAGES,
   DOCUMENT_USAGE_LABELS,
   TRASH_RETENTION_DAYS,
   trashDaysLeft,
-  type DocumentEventAction,
   type DocumentUsage,
 } from "@/lib/rag/document-usage";
 import { describeKinds, type PersonalDataKind } from "@/lib/privacy/personal-data";
+import { ActivityLogDialog } from "./activity-log-dialog";
 
 interface CompanyDocument {
   id: string;
@@ -45,22 +44,6 @@ interface GlobalDocument {
   chunk_count: number;
 }
 
-interface DocumentEvent {
-  id: string;
-  document_title: string;
-  action: DocumentEventAction;
-  details: {
-    from?: string;
-    to?: string;
-    reason?: string;
-    count?: number;
-    auto?: boolean;
-    personal_data?: PersonalDataKind[];
-  } | null;
-  created_at: string;
-  actor: string | null;
-}
-
 interface TrashDocument {
   id: string;
   title: string;
@@ -71,7 +54,6 @@ interface TrashDocument {
 
 interface KnowledgeData {
   canEdit: boolean;
-  events: DocumentEvent[];
   trash: TrashDocument[];
   searchEnabled: boolean;
   documents: CompanyDocument[];
@@ -427,58 +409,8 @@ export function KnowledgeView() {
         </Card>
       )}
 
-      {/* ── Registro de auditoria ── */}
-      {data.canEdit && (
-        <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Icon name="fact_check" size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-black tracking-tight">Registro de atividades dos documentos</h2>
-              <p className="text-sm text-muted-foreground">
-                Quem enviou, baixou, mudou o uso, mandou para a lixeira, restaurou ou excluiu cada documento, e quando. Visível só para RH e
-                administradores. Últimos 50 registros.
-              </p>
-            </div>
-          </div>
-          {data.events.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Nenhuma atividade registrada ainda.</p>
-          ) : (
-            <ul className="mt-4 divide-y divide-border text-sm">
-              {data.events.map((e) => (
-                <li key={e.id} className="flex flex-wrap items-baseline gap-x-2 py-2">
-                  <span className="w-36 shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {new Date(e.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="font-semibold">
-                      {e.actor ?? (e.details?.auto ? "Sistema" : "Usuário removido")}
-                    </span>{" "}
-                    {DOCUMENT_EVENT_LABELS[e.action] ?? e.action}{" "}
-                    <span className="font-semibold">&quot;{e.document_title}&quot;</span>
-                    {e.action === "usage_change" && e.details?.to && (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        ({e.details.from} → {e.details.to})
-                      </span>
-                    )}
-                    {e.action === "delete" && e.details?.auto && (
-                      <span className="text-muted-foreground"> (automático, após {TRASH_RETENTION_DAYS} dias na lixeira)</span>
-                    )}
-                    {e.action === "blocked_upload" && (
-                      <span className="text-muted-foreground"> (continha CPF)</span>
-                    )}
-                    {e.action === "upload" && e.details?.personal_data && e.details.personal_data.length > 0 && (
-                      <span className="text-amber-700"> (aviso: {describeKinds(e.details.personal_data)})</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      )}
+      {/* ── Registro de auditoria (abre num modal) ── */}
+      {data.canEdit && <ActivityLogDialog />}
 
       {/* ── Base global ── */}
       <Card className="rounded-xl border-slate-200 p-6 shadow-sm">

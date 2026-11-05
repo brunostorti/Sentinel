@@ -109,26 +109,8 @@ export async function GET() {
         .order("chunk_index")
     : { data: [] };
 
-  // Registro de auditoria: só ADMIN e RH (a RLS também limita).
-  const { data: events } = caller.canEdit
-    ? await supabase
-        .from("kb_document_events")
-        .select("id, document_title, action, details, created_at, users(name)")
-        .eq("company_id", companyId)
-        .order("created_at", { ascending: false })
-        .limit(50)
-    : { data: [] };
-
   return NextResponse.json({
     canEdit: caller.canEdit,
-    events: (events ?? []).map((e) => ({
-      id: e.id,
-      document_title: e.document_title,
-      action: e.action,
-      details: e.details,
-      created_at: e.created_at,
-      actor: (e.users as unknown as { name: string } | null)?.name ?? null,
-    })),
     searchEnabled: isEmbeddingConfigured(),
     documents: (companyDocs ?? []).map((d) => ({
       ...d,
