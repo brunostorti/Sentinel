@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/icon";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DOCUMENT_EVENT_LABELS } from "@/lib/rag/document-usage";
 import {
   describeEventDetails,
@@ -29,8 +27,8 @@ function todayParts() {
   return { today, year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) };
 }
 
-/** Registro de atividades dos documentos: fechado num cartão, abre num modal com filtro e CSV. */
-export function ActivityLogDialog() {
+/** Registro de atividades dos documentos: cartão recolhido que expande na própria página, com filtro e CSV. */
+export function ActivityLog() {
   const { today, year: thisYear, month: thisMonth } = todayParts();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<EventsFilter["mode"]>("recent");
@@ -74,37 +72,31 @@ export function ActivityLogDialog() {
     }`;
 
   return (
-    <>
-      <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Icon name="fact_check" size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-black tracking-tight">Registro de atividades dos documentos</h2>
-              <p className="text-sm text-muted-foreground">
-                Quem enviou, baixou, mudou o uso, mandou para a lixeira, restaurou ou excluiu cada documento, e quando.
-                Visível só para RH e administradores.
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={() => setOpen(true)} className="shrink-0">
-            <Icon name="open_in_full" size={16} />
-            Abrir registro
-          </Button>
+    <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-start gap-3 text-left"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon name="fact_check" size={20} />
         </div>
-      </Card>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-black tracking-tight">Registro de atividades dos documentos</h2>
+          <p className="text-sm text-muted-foreground">
+            Quem enviou, baixou, mudou o uso, mandou para a lixeira, restaurou ou excluiu cada documento, e quando.
+            Visível só para RH e administradores.
+          </p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 self-center text-xs font-bold text-primary">
+          {open ? "Recolher" : "Expandir"}
+          <Icon name={open ? "expand_less" : "expand_more"} size={20} />
+        </span>
+      </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">Registro de atividades</DialogTitle>
-            <DialogDescription>
-              Filtre por mês ou por período e baixe em CSV (abre no Excel). O registro não é apagado.
-            </DialogDescription>
-          </DialogHeader>
-
+      {open && (
+        <div className="mt-5 space-y-3 border-t border-border pt-5">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex rounded-lg bg-muted p-1">
               <button type="button" className={tab(mode === "recent")} onClick={() => setMode("recent")}>
@@ -184,9 +176,13 @@ export function ActivityLogDialog() {
             </a>
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            Filtre por mês ou por período e baixe em CSV (abre no Excel). O registro não é apagado.
+          </p>
+
           {periodInvalid && <p className="text-xs text-destructive">A data inicial precisa ser antes da final.</p>}
 
-          <div className="min-h-[200px] overflow-y-auto rounded-lg border border-border" style={{ maxHeight: "50vh" }}>
+          <div className="max-h-[420px] min-h-[120px] overflow-y-auto rounded-lg border border-border">
             {loading || events === null ? (
               <p className="p-6 text-sm text-muted-foreground">Carregando…</p>
             ) : events.length === 0 ? (
@@ -225,8 +221,8 @@ export function ActivityLogDialog() {
               {truncated ? " (limite atingido: reduza o período)" : ""}
             </p>
           )}
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+      )}
+    </Card>
   );
 }

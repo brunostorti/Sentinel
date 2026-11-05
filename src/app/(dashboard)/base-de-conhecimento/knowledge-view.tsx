@@ -17,7 +17,7 @@ import {
   type DocumentUsage,
 } from "@/lib/rag/document-usage";
 import { describeKinds, type PersonalDataKind } from "@/lib/privacy/personal-data";
-import { ActivityLogDialog } from "./activity-log-dialog";
+import { ActivityLog } from "./activity-log";
 
 interface CompanyDocument {
   id: string;
@@ -409,8 +409,8 @@ export function KnowledgeView() {
         </Card>
       )}
 
-      {/* ── Registro de auditoria (abre num modal) ── */}
-      {data.canEdit && <ActivityLogDialog />}
+      {/* ── Registro de auditoria (expande na página) ── */}
+      {data.canEdit && <ActivityLog />}
 
       {/* ── Base global ── */}
       <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
