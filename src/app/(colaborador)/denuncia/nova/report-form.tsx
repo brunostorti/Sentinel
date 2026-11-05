@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { OCCURRENCE_TYPES } from "@/lib/reports/occurrence-types";
 import { addSavedReport } from "@/lib/reports/saved-reports";
 import { PrivacyNotice } from "@/components/privacy-notice";
+import { findPersonalData, personalDataBlockMessage } from "@/lib/privacy/personal-data";
 
 const NO_DEPARTMENT = "nao-informar";
 
@@ -66,6 +67,8 @@ export function ReportForm({
     if (fileInput.current) fileInput.current.value = "";
   }
 
+  const personal = findPersonalData(description);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -77,6 +80,7 @@ export function ReportForm({
     if (description.trim().length < MIN_DESCRIPTION) {
       return setError(`Conte um pouco mais (pelo menos ${MIN_DESCRIPTION} caracteres).`);
     }
+    if (personal.kinds.length) return setError(personalDataBlockMessage(personal.kinds));
 
     setSubmitting(true);
     try {
@@ -228,6 +232,12 @@ export function ReportForm({
               {description.trim().length}
             </span>
           </div>
+          {personal.kinds.length > 0 && (
+            <p className="mt-2 flex gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+              <Icon name="privacy_tip" size={16} className="shrink-0" />
+              {personalDataBlockMessage(personal.kinds)}
+            </p>
+          )}
         </Section>
 
         <Section number={step(3)} title="Provas (opcional)">

@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     companyId: userData.company_id,
     query: searchQuery,
     matchCount: 6,
+    purpose: "chat",
   });
   const { block: sourcesBlock, sources } = formatSourcesBlock(retrieved);
   systemPrompt += retrieved.length

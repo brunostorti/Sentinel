@@ -80,7 +80,7 @@ async function retrieveSources(
     // o texto do questionário — que a IA já recebe — ocupava as 3 vagas (medido em 10/10).
     ...queries.map(async (query) => {
       const [company, references, examples] = await Promise.all([
-        searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["documento_empresa"] }),
+        searchKnowledge(admin, { companyId, query, matchCount: 2, sourceTypes: ["documento_empresa"], purpose: "plans" }),
         searchKnowledge(admin, {
           companyId,
           query,

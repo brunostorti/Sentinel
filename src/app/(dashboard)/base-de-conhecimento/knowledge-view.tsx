@@ -9,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/icon";
 import { SOURCE_TYPE_LABELS, type KbSourceType } from "@/lib/rag/config";
+import {
+  DOCUMENT_EVENT_LABELS,
+  DOCUMENT_USAGES,
+  DOCUMENT_USAGE_LABELS,
+  type DocumentEventAction,
+  type DocumentUsage,
+} from "@/lib/rag/document-usage";
+import { describeKinds, type PersonalDataKind } from "@/lib/privacy/personal-data";
 
 interface CompanyDocument {
   id: string;
@@ -18,6 +26,8 @@ interface CompanyDocument {
   error_message: string | null;
   chunk_count: number;
   flagged_chunk_count: number;
+  usage: DocumentUsage;
+  personal_data_kinds: PersonalDataKind[];
   created_at: string;
   uploaded_by: string | null;
   flagged: { reason: string | null; page: number | null; excerpt: string }[];
@@ -33,8 +43,18 @@ interface GlobalDocument {
   chunk_count: number;
 }
 
+interface DocumentEvent {
+  id: string;
+  document_title: string;
+  action: DocumentEventAction;
+  details: { from?: string; to?: string; reason?: string; count?: number; personal_data?: PersonalDataKind[] } | null;
+  created_at: string;
+  actor: string | null;
+}
+
 interface KnowledgeData {
   canEdit: boolean;
+  events: DocumentEvent[];
   searchEnabled: boolean;
   documents: CompanyDocument[];
   global: GlobalDocument[];
@@ -78,7 +98,12 @@ export function KnowledgeView() {
     try {
       const res = await fetch("/api/knowledge/documents", { method: "POST", body: form });
       const json = await res.json();
-      if (!res.ok) toast.error(json.error ?? "Falha ao enviar.");
+      if (!res.ok) toast.error(json.error ?? "Falha ao enviar.", { duration: 8000 });
+      else if (json.personalDataWarning)
+        toast.warning(
+          `Documento indexado, mas encontramos ${json.personalDataWarning}. Se forem de pessoas (e não contatos institucionais), remova e envie de novo.`,
+          { duration: 8000 }
+        );
       else if (json.flaggedCount > 0)
         toast.warning(`Documento indexado. ${json.flaggedCount} trecho(s) ficaram fora da busca pela triagem de segurança.`);
       else toast.success(`Documento indexado em ${json.chunkCount} trechos.`);
@@ -89,6 +114,18 @@ export function KnowledgeView() {
       setUploading(false);
       void load();
     }
+  }
+
+  async function changeUsage(doc: CompanyDocument, usage: DocumentUsage) {
+    const res = await fetch(`/api/knowledge/documents/${doc.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usage }),
+    });
+    const json = await res.json();
+    if (!res.ok) toast.error(json.error ?? "Falha ao salvar.");
+    else toast.success(`"${doc.title}": ${DOCUMENT_USAGE_LABELS[usage].toLowerCase()}.`);
+    void load();
   }
 
   async function remove(doc: CompanyDocument) {
@@ -192,9 +229,10 @@ export function KnowledgeView() {
             </div>
             <p className="mt-3 flex gap-1.5 text-xs text-muted-foreground">
               <Icon name="privacy_tip" size={14} className="mt-px shrink-0" />
-              Não envie documentos com dados pessoais (nomes, CPF, prontuários, laudos). O texto é
-              enviado à OpenAI para gerar a indexação (veja Privacidade) e trechos com cara de
-              instrução para IA ficam fora da busca.
+              Não envie documentos com dados pessoais (nomes, CPF, prontuários, laudos). Documento
+              com CPF é recusado antes de qualquer processamento; e-mail e telefone geram aviso. O
+              texto é enviado à OpenAI para gerar a indexação (veja Privacidade) e trechos com cara
+              de instrução para IA ficam fora da busca.
             </p>
           </div>
         )}
@@ -249,6 +287,32 @@ export function KnowledgeView() {
                 {" "}· enviado em {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                 {doc.uploaded_by ? ` por ${doc.uploaded_by}` : ""}
               </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-muted-foreground">Usado em:</span>
+                {data.canEdit ? (
+                  <select
+                    value={doc.usage}
+                    onChange={(e) => changeUsage(doc, e.target.value as DocumentUsage)}
+                    className="h-8 rounded-md border border-border bg-card px-2 text-xs font-semibold"
+                    aria-label={`Onde "${doc.title}" pode ser consultado`}
+                  >
+                    {DOCUMENT_USAGES.map((u) => (
+                      <option key={u} value={u}>
+                        {DOCUMENT_USAGE_LABELS[u]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Badge variant="outline">{DOCUMENT_USAGE_LABELS[doc.usage]}</Badge>
+                )}
+              </div>
+              {doc.personal_data_kinds.length > 0 && (
+                <p className="mt-2 flex gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <Icon name="privacy_tip" size={14} className="mt-px shrink-0" />
+                  Possíveis dados pessoais neste documento: {describeKinds(doc.personal_data_kinds)}. Se forem de
+                  pessoas, e não contatos institucionais, exclua e envie uma versão sem eles.
+                </p>
+              )}
               {doc.status === "error" && doc.error_message && (
                 <p className="mt-1 text-xs text-red-600">{doc.error_message}</p>
               )}
@@ -272,6 +336,54 @@ export function KnowledgeView() {
           ))}
         </div>
       </Card>
+
+      {/* ── Registro de auditoria ── */}
+      {data.canEdit && (
+        <Card className="rounded-xl border-slate-200 p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Icon name="fact_check" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black tracking-tight">Registro de atividades dos documentos</h2>
+              <p className="text-sm text-muted-foreground">
+                Quem enviou, baixou, mudou o uso ou excluiu cada documento, e quando. Visível só para RH e
+                administradores. Últimos 50 registros.
+              </p>
+            </div>
+          </div>
+          {data.events.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma atividade registrada ainda.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-border text-sm">
+              {data.events.map((e) => (
+                <li key={e.id} className="flex flex-wrap items-baseline gap-x-2 py-2">
+                  <span className="w-36 shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {new Date(e.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-semibold">{e.actor ?? "Usuário removido"}</span>{" "}
+                    {DOCUMENT_EVENT_LABELS[e.action] ?? e.action}{" "}
+                    <span className="font-semibold">&quot;{e.document_title}&quot;</span>
+                    {e.action === "usage_change" && e.details?.to && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        ({e.details.from} → {e.details.to})
+                      </span>
+                    )}
+                    {e.action === "blocked_upload" && (
+                      <span className="text-muted-foreground"> (continha CPF)</span>
+                    )}
+                    {e.action === "upload" && e.details?.personal_data && e.details.personal_data.length > 0 && (
+                      <span className="text-amber-700"> (aviso: {describeKinds(e.details.personal_data)})</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       {/* ── Base global ── */}
       <Card className="rounded-xl border-slate-200 p-6 shadow-sm">

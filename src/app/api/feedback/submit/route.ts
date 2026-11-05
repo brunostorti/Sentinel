@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmployeeContext } from "@/lib/colaborador/session";
+import { findPersonalData, personalDataBlockMessage } from "@/lib/privacy/personal-data";
 import { getFeedbackOptions, isFeedbackRating } from "@/lib/feedback/options";
 
 const MIN_MESSAGE = 10;
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
       return fail(`Escreva pelo menos ${MIN_MESSAGE} caracteres.`, 400);
     }
     if (message.length > MAX_MESSAGE) return fail("Resuma em até 4 mil caracteres.", 400);
+    const personal = findPersonalData(message);
+    if (personal.kinds.length) return fail(personalDataBlockMessage(personal.kinds), 400);
 
     // Data cortada para o dia pelo trigger action_plan_feedback_day_only.
     const { error } = await createAdminClient().from("action_plan_feedback").insert({

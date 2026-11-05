@@ -10,6 +10,7 @@ import {
   type FeedbackRating,
 } from "@/lib/feedback/constants";
 import type { FeedbackCompanyOption } from "@/lib/feedback/options";
+import { findPersonalData, personalDataBlockMessage } from "@/lib/privacy/personal-data";
 import { PrivacyNotice } from "@/components/privacy-notice";
 
 const MIN_MESSAGE = 10;
@@ -43,6 +44,8 @@ export function FeedbackForm({ options }: { options: FeedbackCompanyOption[] }) 
     setSent(false);
   }
 
+  const personal = findPersonalData(message);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -51,6 +54,7 @@ export function FeedbackForm({ options }: { options: FeedbackCompanyOption[] }) 
     if (message.trim().length < MIN_MESSAGE) {
       return setError(`Escreva pelo menos ${MIN_MESSAGE} caracteres.`);
     }
+    if (personal.kinds.length) return setError(personalDataBlockMessage(personal.kinds));
 
     setSubmitting(true);
     try {
@@ -190,6 +194,12 @@ export function FeedbackForm({ options }: { options: FeedbackCompanyOption[] }) 
                   placeholder="Ex.: As pausas foram boas, mas a carga de trabalho continua alta no fim do mês..."
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
+                {personal.kinds.length > 0 && (
+                  <p className="mt-2 flex gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <Icon name="privacy_tip" size={16} className="shrink-0" />
+                    {personalDataBlockMessage(personal.kinds)}
+                  </p>
+                )}
               </Field>
 
               {error && (

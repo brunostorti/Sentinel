@@ -46,6 +46,8 @@ export async function searchKnowledge(
     matchCount?: number;
     sourceTypes?: KbSourceType[];
     minSimilarity?: number;
+    /** Onde o resultado vai ser usado: a empresa pode restringir cada documento a chat ou planos. */
+    purpose?: "chat" | "plans";
   }
 ): Promise<RetrievedChunk[]> {
   const query = args.query.trim().slice(0, 2000);
@@ -62,6 +64,7 @@ export async function searchKnowledge(
       p_query_text: query,
       p_match_count: args.matchCount ?? 6,
       p_source_types: args.sourceTypes ?? null,
+      p_purpose: args.purpose ?? null,
     });
     if (error) throw new Error(error.message);
 

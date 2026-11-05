@@ -5,6 +5,8 @@ import { EMBEDDING_MODEL_ID, KB_BUCKET, KB_MAX_FILE_BYTES } from "@/lib/rag/conf
 import { isEmbeddingConfigured } from "@/lib/rag/embeddings";
 import { extractPdfPages, hasUsefulText } from "@/lib/rag/extract";
 import { ingestPages } from "@/lib/rag/ingest";
+import { logDocumentEvent } from "@/lib/rag/document-events";
+import { describeKinds, findPersonalData } from "@/lib/privacy/personal-data";
 
 /**
  * Base de conhecimento da empresa (RAG).
@@ -47,7 +49,9 @@ export async function GET() {
   const [{ data: companyDocs, error }, { data: globalDocs }] = await Promise.all([
     supabase
       .from("kb_documents")
-      .select("id, title, file_name, status, error_message, chunk_count, flagged_chunk_count, created_at, users(name)")
+      .select(
+        "id, title, file_name, status, error_message, chunk_count, flagged_chunk_count, usage, personal_data_kinds, created_at, users(name)"
+      )
       .eq("company_id", companyId)
       .order("created_at", { ascending: false }),
     supabase
@@ -70,8 +74,26 @@ export async function GET() {
         .order("chunk_index")
     : { data: [] };
 
+  // Registro de auditoria: só ADMIN e RH (a RLS também limita).
+  const { data: events } = caller.canEdit
+    ? await supabase
+        .from("kb_document_events")
+        .select("id, document_title, action, details, created_at, users(name)")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false })
+        .limit(50)
+    : { data: [] };
+
   return NextResponse.json({
     canEdit: caller.canEdit,
+    events: (events ?? []).map((e) => ({
+      id: e.id,
+      document_title: e.document_title,
+      action: e.action,
+      details: e.details,
+      created_at: e.created_at,
+      actor: (e.users as unknown as { name: string } | null)?.name ?? null,
+    })),
     searchEnabled: isEmbeddingConfigured(),
     documents: (companyDocs ?? []).map((d) => ({
       ...d,
@@ -157,9 +179,47 @@ export async function POST(req: NextRequest) {
     return fail("Não encontramos texto no arquivo. PDFs escaneados (só imagem) ainda não são aceitos.", 422);
   }
 
+  // Dados pessoais: CPF bloqueia antes de qualquer envio à OpenAI (o arquivo é apagado);
+  // e-mail e telefone (comuns em contatos institucionais) só geram aviso no documento.
+  const personal = findPersonalData(pages.join("\n"));
+  if (personal.counts.cpf > 0) {
+    await admin.storage.from(KB_BUCKET).remove([storagePath]);
+    await admin.from("kb_documents").delete().eq("id", doc.id);
+    await logDocumentEvent(admin, {
+      companyId: caller.companyId,
+      documentId: null,
+      documentTitle: title,
+      actorUserId: caller.userId,
+      action: "blocked_upload",
+      details: { reason: "cpf", count: personal.counts.cpf },
+    });
+    return NextResponse.json(
+      {
+        error: `Encontramos ${personal.counts.cpf === 1 ? "um CPF" : `${personal.counts.cpf} CPFs`} no documento. Para proteger os colaboradores, remova os CPFs e envie de novo. O arquivo não foi guardado.`,
+      },
+      { status: 422 }
+    );
+  }
+  const warnKinds = personal.kinds.filter((k) => k !== "cpf");
+  if (warnKinds.length) {
+    await admin.from("kb_documents").update({ personal_data_kinds: warnKinds }).eq("id", doc.id);
+  }
+
   try {
     const result = await ingestPages(admin, { id: doc.id, title }, pages, { paged: isPdf });
-    return NextResponse.json({ documentId: doc.id, ...result });
+    await logDocumentEvent(admin, {
+      companyId: caller.companyId,
+      documentId: doc.id,
+      documentTitle: title,
+      actorUserId: caller.userId,
+      action: "upload",
+      details: { file_name: file.name.slice(0, 200), ...(warnKinds.length ? { personal_data: warnKinds } : {}) },
+    });
+    return NextResponse.json({
+      documentId: doc.id,
+      ...result,
+      personalDataWarning: warnKinds.length ? describeKinds(warnKinds) : null,
+    });
   } catch (err) {
     console.error("rag: ingestão falhou:", err);
     // ingestPages já gravou status "error" com a mensagem.

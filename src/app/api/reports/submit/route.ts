@@ -5,6 +5,7 @@ import { getEmployeeContext } from "@/lib/colaborador/session";
 import { generateProtocol } from "@/lib/reports/protocol";
 import { isOccurrenceType } from "@/lib/reports/occurrence-types";
 import { isEligibleDepartment } from "@/lib/privacy/departments";
+import { findPersonalData, personalDataBlockMessage } from "@/lib/privacy/personal-data";
 import {
   ATTACHMENT_TYPES,
   AttachmentError,
@@ -62,6 +63,9 @@ export async function POST(req: Request) {
     if (description.length > MAX_DESCRIPTION) {
       return fail("O relato está muito longo. Resuma em até 10 mil caracteres.", 400);
     }
+    // CPF, e-mail e telefone identificam quem escreve ou quem é citado: não entram no relato.
+    const personal = findPersonalData(description);
+    if (personal.kinds.length) return fail(personalDataBlockMessage(personal.kinds), 400);
 
     // Setor opcional: só com 5+ colaboradores (regra dos 5), validado aqui e não só na tela.
     if (departmentId && !(await isEligibleDepartment(company.id, departmentId))) {
