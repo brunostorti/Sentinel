@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="ACTIVITY" style="width:1750px;height:1981px;background:#FFFFFF;" width="1750.625px" height="1981.146px" viewBox="0 0 1750 1981" zoomAndPan="magnify" preserveAspectRatio="xMidYMid meet" contentStyleType="text/css">
+  <defs />
+  <g transform="translate(300 0)">
+    <?plantuml 1.2026.9beta4?>
+    <g font-family="sans-serif" lengthAdjust="spacing">
+      <rect x="-277.083" y="19.252" width="1697.494" height="18.674" fill="#E2E8F0" style="stroke:#E2E8F0;stroke-width:1.146;" />
+      <ellipse cx="228.245" cy="55.113" rx="11.458" ry="11.458" fill="#172033" style="stroke:#222;stroke-width:1.146;" />
+      <rect x="125.542" y="89.488" width="205.406" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="137" y="115.837" fill="#172033" font-size="16.042" textLength="182.49" font-family="Arial">Criar ciclo e configurar</text>
+      <text x="137" y="134.51" fill="#172033" font-size="16.042" textLength="129.673" font-family="Arial">a pesquisa base</text>
+      <rect x="153.631" y="306.265" width="149.229" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="165.089" y="332.614" fill="#172033" font-size="16.042" textLength="126.312" font-family="Arial">Revisar e ativar</text>
+      <text x="165.089" y="351.287" fill="#172033" font-size="16.042" textLength="86.334" font-family="Arial">a pesquisa</text>
+      <rect x="134.291" y="638.987" width="187.908" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="145.75" y="665.335" fill="#172033" font-size="16.042" textLength="164.991" font-family="Arial">Acompanhar adesão</text>
+      <text x="145.75" y="684.009" fill="#172033" font-size="16.042" textLength="152.419" font-family="Arial">e encerrar a coleta</text>
+      <rect x="82.262" y="805.347" width="291.967" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="93.72" y="831.696" fill="#172033" font-size="16.042" textLength="253.4" font-family="Arial">Consultar dashboard, relatórios</text>
+      <text x="93.72" y="850.369" fill="#172033" font-size="16.042" textLength="269.05" font-family="Arial">e situação da geração dos planos</text>
+      <rect x="108.016" y="962.201" width="240.458" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="119.474" y="988.55" fill="#172033" font-size="16.042" textLength="192.289" font-family="Arial">Revisar planos e decidir</text>
+      <text x="119.474" y="1007.223" fill="#172033" font-size="16.042" textLength="217.542" font-family="Arial">pela aprovação ou rejeição</text>
+      <rect x="104.558" y="1145.749" width="247.375" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="116.016" y="1172.098" fill="#172033" font-size="16.042" textLength="224.458" font-family="Arial">Registrar acompanhamento</text>
+      <text x="116.016" y="1190.771" fill="#172033" font-size="16.042" textLength="171.038" font-family="Arial">das ações no Kanban</text>
+      <polygon points="228.245,888.528,305.081,911.614,228.245,934.701,151.409,911.614" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <text x="232.829" y="949.591" fill="#000" font-size="16.042" textLength="40.958" font-family="Arial">[sim]</text>
+      <text x="165.159" y="917.168" fill="#172033" font-size="16.042" textLength="126.171" font-family="Arial">Revisar planos?</text>
+      <text x="105.08" y="904.224" fill="#000" font-size="16.042" textLength="42.329" font-family="Arial">[não]</text>
+      <polygon points="228.245,1228.93,241.995,1242.68,228.245,1256.43,214.495,1242.68,228.245,1228.93" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <rect x="60.729" y="1279.346" width="335.032" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="72.188" y="1305.695" fill="#172033" font-size="16.042" textLength="234.045" font-family="Arial">Consultar evidências do ciclo</text>
+      <text x="72.188" y="1324.368" fill="#172033" font-size="16.042" textLength="312.115" font-family="Arial">e evolução entre medições disponíveis</text>
+      <polygon points="228.245,1362.527,323.645,1385.614,228.245,1408.7,132.846,1385.614" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <text x="232.829" y="1423.59" fill="#000" font-size="16.042" textLength="40.958" font-family="Arial">[sim]</text>
+      <text x="146.596" y="1391.167" fill="#172033" font-size="16.042" textLength="163.299" font-family="Arial">Solicitar certificado?</text>
+      <text x="86.517" y="1378.223" fill="#000" font-size="16.042" textLength="42.329" font-family="Arial">[não]</text>
+      <polygon points="228.245,1713.241,241.995,1726.991,228.245,1740.741,214.495,1726.991,228.245,1713.241" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <polygon points="228.245,255.849,241.995,269.599,228.245,283.349,214.495,269.599,228.245,255.849" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <polygon points="228.245,1763.658,284.007,1786.745,228.245,1809.831,172.484,1786.745" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <text x="232.829" y="1824.722" fill="#000" font-size="16.042" textLength="42.329" font-family="Arial">[não]</text>
+      <text x="186.234" y="1792.298" fill="#000" font-size="16.042" textLength="84.023" font-family="Arial">Reavaliar?</text>
+      <text x="125.526" y="1779.354" fill="#000" font-size="16.042" textLength="40.958" font-family="Arial">[sim]</text>
+      <rect x="-242.026" y="957.51" width="204.051" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="-230.568" y="983.859" fill="#172033" font-size="16.042" textLength="181.135" font-family="Arial">Abrir nova reavaliação</text>
+      <text x="-230.568" y="1002.532" fill="#172033" font-size="16.042" textLength="125.842" font-family="Arial">no mesmo ciclo</text>
+      <rect x="108.38" y="1849.357" width="239.73" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="119.839" y="1875.706" fill="#172033" font-size="16.042" textLength="216.813" font-family="Arial">Concluir acompanhamento</text>
+      <text x="119.839" y="1894.379" fill="#172033" font-size="16.042" textLength="110.537" font-family="Arial">nesta ocasião</text>
+      <ellipse cx="228.245" cy="1945.142" rx="12.604" ry="12.604" fill="none" style="stroke:#222;stroke-width:1.146;" />
+      <ellipse cx="228.245" cy="1945.142" rx="6.875" ry="6.875" fill="#222" style="stroke:#222;stroke-width:1.146;" />
+      <line x1="-277.083" y1="19.252" x2="-277.083" y2="1957.746" style="stroke:#94A3B8;stroke-width:1.719;" />
+      <rect x="750.512" y="172.668" width="206.244" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="761.97" y="199.017" fill="#172033" font-size="16.042" textLength="183.328" font-family="Arial">Salvar ciclo e pesquisa</text>
+      <text x="761.97" y="217.69" fill="#172033" font-size="16.042" textLength="104.514" font-family="Arial">em rascunho</text>
+      <rect x="698.412" y="389.446" width="310.445" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="709.87" y="415.794" fill="#172033" font-size="16.042" textLength="279.711" font-family="Arial">Verificar participantes, abrir coleta</text>
+      <text x="709.87" y="434.468" fill="#172033" font-size="16.042" textLength="287.528" font-family="Arial">e solicitar envio dos links de acesso</text>
+      <rect x="679.225" y="555.806" width="348.818" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="690.683" y="582.155" fill="#172033" font-size="16.042" textLength="227.92" font-family="Arial">Validar respostas e registrar</text>
+      <text x="690.683" y="600.828" fill="#172033" font-size="16.042" textLength="325.901" font-family="Arial">conteúdo e participação separadamente</text>
+      <rect x="691.55" y="722.167" width="324.168" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="703.008" y="748.516" fill="#172033" font-size="16.042" textLength="301.251" font-family="Arial">Encerrar pesquisa e disparar geração</text>
+      <text x="703.008" y="767.189" fill="#172033" font-size="16.042" textLength="284.442" font-family="Arial">de planos por IA em segundo plano</text>
+      <rect x="725.901" y="1062.569" width="255.466" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="737.359" y="1088.918" fill="#172033" font-size="16.042" textLength="232.205" font-family="Arial">Registrar decisões e vincular</text>
+      <text x="737.359" y="1107.591" fill="#172033" font-size="16.042" textLength="232.549" font-family="Arial">planos aprovados ao Kanban</text>
+      <rect x="718.017" y="1436.2" width="271.234" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="729.476" y="1462.549" fill="#172033" font-size="16.042" textLength="197.826" font-family="Arial">Avaliar checklist do ciclo</text>
+      <text x="729.476" y="1481.222" fill="#172033" font-size="16.042" textLength="248.317" font-family="Arial">e determinar nível documental</text>
+      <polygon points="853.634,1519.381,935.048,1542.467,853.634,1565.554,772.22,1542.467" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <text x="785.97" y="1548.021" fill="#172033" font-size="16.042" textLength="135.328" font-family="Arial">Nível disponível?</text>
+      <text x="731.262" y="1529.347" fill="#000" font-size="16.042" textLength="40.958" font-family="Arial">[sim]</text>
+      <text x="935.048" y="1535.076" fill="#000" font-size="16.042" textLength="42.329" font-family="Arial">[não]</text>
+      <rect x="622.729" y="1577.012" width="218.988" height="78.937" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="634.187" y="1603.361" fill="#172033" font-size="16.042" textLength="196.072" font-family="Arial">Gerar PDF com QR Code</text>
+      <text x="634.187" y="1622.035" fill="#172033" font-size="16.042" textLength="173.623" font-family="Arial">e registrar certificado</text>
+      <text x="634.187" y="1640.708" fill="#172033" font-size="16.042" textLength="139.62" font-family="Arial">no nível 1, 2 ou 3</text>
+      <rect x="864.634" y="1577.012" width="220.821" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="876.093" y="1603.361" fill="#172033" font-size="16.042" textLength="159.61" font-family="Arial">Informar evidências</text>
+      <text x="876.093" y="1622.035" fill="#172033" font-size="16.042" textLength="197.905" font-family="Arial">pendentes para emissão</text>
+      <polygon points="853.634,1662.825,867.384,1676.575,853.634,1690.325,839.884,1676.575,853.634,1662.825" fill="#FFF" style="stroke:#334155;stroke-width:0.573;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="615.854" y1="19.252" x2="615.854" y2="1957.746" style="stroke:#94A3B8;stroke-width:1.719;" />
+      <rect x="1096.914" y="472.626" width="317.267" height="60.264" fill="#EFF6FF" style="stroke:#315D8A;stroke-width:0.573;" rx="14.323" ry="14.323" />
+      <text x="1108.372" y="498.975" fill="#172033" font-size="16.042" textLength="294.35" font-family="Arial">Acessar e responder ao questionário</text>
+      <text x="1108.372" y="517.648" fill="#172033" font-size="16.042" textLength="231.288" font-family="Arial">(participantes que aderirem)</text>
+      <line x1="1090.039" y1="19.252" x2="1090.039" y2="1957.746" style="stroke:#94A3B8;stroke-width:1.719;" />
+      <line x1="1418.764" y1="19.252" x2="1418.764" y2="1957.746" style="stroke:#94A3B8;stroke-width:1.719;" />
+      <line x1="228.245" y1="66.571" x2="228.245" y2="89.488" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,78.03,228.245,89.488,232.829,78.03,228.245,82.613" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="934.701" x2="228.245" y2="962.201" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,950.743,228.245,962.201,232.829,950.743,228.245,955.326" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="151.409" y1="911.614" x2="89.054" y2="911.614" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="84.471,1076.574,89.054,1088.033,93.637,1076.574,89.054,1081.158" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="89.054" y1="911.614" x2="89.054" y2="1242.68" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="89.054" y1="1242.68" x2="214.495" y2="1242.68" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="203.037,1238.096,214.495,1242.68,203.037,1247.263,207.62,1242.68" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1206.013" x2="228.245" y2="1228.93" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1217.471,228.245,1228.93,232.829,1217.471,228.245,1222.055" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="865.611" x2="228.245" y2="888.528" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,877.069,228.245,888.528,232.829,877.069,228.245,881.653" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1256.43" x2="228.245" y2="1279.346" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1267.888,228.245,1279.346,232.829,1267.888,228.245,1272.471" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="132.846" y1="1385.614" x2="44.688" y2="1385.614" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="40.104,1538.542,44.688,1550,49.271,1538.542,44.688,1543.125" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="44.688" y1="1385.614" x2="44.688" y2="1726.991" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="44.688" y1="1726.991" x2="214.495" y2="1726.991" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="203.037,1722.408,214.495,1726.991,203.037,1731.575,207.62,1726.991" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1339.61" x2="228.245" y2="1362.527" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1351.068,228.245,1362.527,232.829,1351.068,228.245,1355.652" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="283.349" x2="228.245" y2="306.265" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,294.807,228.245,306.265,232.829,294.807,228.245,299.39" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1740.741" x2="228.245" y2="1763.658" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1752.2,228.245,1763.658,232.829,1752.2,228.245,1756.783" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1809.831" x2="228.245" y2="1849.357" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1837.899,228.245,1849.357,232.829,1837.899,228.245,1842.482" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1909.621" x2="228.245" y2="1932.537" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1921.079,228.245,1932.537,232.829,1921.079,228.245,1925.662" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="772.22" y1="1542.467" x2="732.223" y2="1542.467" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="732.223" y1="1542.467" x2="732.223" y2="1577.012" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="727.64,1565.554,732.223,1577.012,736.807,1565.554,732.223,1570.137" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="935.048" y1="1542.467" x2="975.045" y2="1542.467" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="975.045" y1="1542.467" x2="975.045" y2="1577.012" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="970.462,1565.554,975.045,1577.012,979.628,1565.554,975.045,1570.137" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="732.223" y1="1655.95" x2="732.223" y2="1676.575" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="732.223" y1="1676.575" x2="839.884" y2="1676.575" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="828.426,1671.991,839.884,1676.575,828.426,1681.158,833.009,1676.575" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="975.045" y1="1637.276" x2="975.045" y2="1676.575" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="975.045" y1="1676.575" x2="867.384" y2="1676.575" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="878.842,1671.991,867.384,1676.575,878.842,1681.158,874.259,1676.575" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="1496.464" x2="853.634" y2="1519.381" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,1507.922,853.634,1519.381,858.217,1507.922,853.634,1512.506" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="149.752" x2="228.245" y2="155.481" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="155.481" x2="853.634" y2="155.481" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="155.481" x2="853.634" y2="172.668" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,161.21,853.634,172.668,858.217,161.21,853.634,165.793" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="366.529" x2="228.245" y2="372.258" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="372.258" x2="853.634" y2="372.258" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="372.258" x2="853.634" y2="389.446" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,377.987,853.634,389.446,858.217,377.987,853.634,382.571" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="449.709" x2="853.634" y2="455.439" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="455.439" x2="1255.547" y2="455.439" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="1255.547" y1="455.439" x2="1255.547" y2="472.626" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="1250.964,461.168,1255.547,472.626,1260.131,461.168,1255.547,465.751" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="1255.547" y1="532.89" x2="1255.547" y2="538.619" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="1255.547" y1="538.619" x2="853.634" y2="538.619" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="538.619" x2="853.634" y2="555.806" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,544.348,853.634,555.806,858.217,544.348,853.634,548.931" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="616.07" x2="853.634" y2="621.799" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="621.799" x2="228.245" y2="621.799" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="621.799" x2="228.245" y2="638.987" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,627.528,228.245,638.987,232.829,627.528,228.245,632.112" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="699.25" x2="228.245" y2="704.98" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="704.98" x2="853.634" y2="704.98" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="704.98" x2="853.634" y2="722.167" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,710.709,853.634,722.167,858.217,710.709,853.634,715.292" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="782.431" x2="853.634" y2="788.16" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="788.16" x2="228.245" y2="788.16" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="788.16" x2="228.245" y2="805.347" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,793.889,228.245,805.347,232.829,793.889,228.245,798.472" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1022.465" x2="228.245" y2="1042.517" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="1042.517" x2="853.634" y2="1042.517" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="1042.517" x2="853.634" y2="1062.569" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,1051.111,853.634,1062.569,858.217,1051.111,853.634,1055.694" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="1122.833" x2="853.634" y2="1128.562" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="1128.562" x2="228.245" y2="1128.562" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="1128.562" x2="228.245" y2="1145.749" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1134.291,228.245,1145.749,232.829,1134.291,228.245,1138.874" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="228.245" y1="1408.7" x2="228.245" y2="1422.45" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="1422.45" x2="853.634" y2="1422.45" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="1422.45" x2="853.634" y2="1436.2" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="849.051,1424.742,853.634,1436.2,858.217,1424.742,853.634,1429.325" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="1690.325" x2="853.634" y2="1699.491" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="1699.491" x2="228.245" y2="1699.491" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="1699.491" x2="228.245" y2="1713.241" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,1701.783,228.245,1713.241,232.829,1701.783,228.245,1706.366" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <line x1="853.634" y1="232.932" x2="853.634" y2="238.661" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="853.634" y1="238.661" x2="228.245" y2="238.661" style="stroke:#334155;stroke-width:1.146;" />
+      <line x1="228.245" y1="238.661" x2="228.245" y2="255.849" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="223.662,244.39,228.245,255.849,232.829,244.39,228.245,248.974" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <text x="77.537" y="34.142" fill="#172033" font-size="16.042" textLength="183.696" font-weight="700" font-family="Arial">Gestão (RH / Admin)</text>
+      <text x="815.537" y="34.142" fill="#172033" font-size="16.042" textLength="74.819" font-weight="700" font-family="Arial">Sentinel</text>
+      <text x="1188.802" y="34.142" fill="#172033" font-size="16.042" textLength="131.2" font-weight="700" font-family="Arial">Colaboradores</text>
+      <?plantuml-src TLN1RXit5BphAmZqOWC6Qbbswrg7GfQjr2WGD5RHIzG3jNoINiqbDoHtXJJgnnGz52ZGKz5Bh_gn3BchrSfIVOd3ztPcthmXxL_O5DB9NAY2HRz_sVFx4rh8KeU9DU6jp4cC74jzkZxbNqdqhpj5lvBAhjainK9gJvrAPetYmDPCmqTDuibuLlJ0CiTvfsqkivUbiwLHOwkj4rzCqa-dO-ISNJV5mU2wVtFJASeiSCNXe_ZK4-B-DTRZPF8Li52nJf7RWVHl7cv7E8qZDMVzhwyk1mESDGhl_qVMlk40iPRL5ay1JuDqHuUFBNvpz5lNspNdMXggP-loVNCz6jpVulH73fgEnxvwl9rSxigdnBI5UZbpgnMeUvib-I3jvWt-sVvXnTdpT-9BCL8vc_FUnhCFbClDb4nWGxgtoQoMS-iG0RSPxtydtoBrV1oxTpT6g9p8EDDMKCp6WfUbasvcf2Z8VoZPIsJ1qt3FqxkRIbrrFjirpWpbmacVbMPbXtikHmN9WF7kdgb2dyCt4lauf1cYOS-1vf_8yO8pjCFtm1aNqWJo5qBE7OFTQWgHKtYhKGqHrrHiXR9UQ3Ol7dS4IIJlRGBlsX89Hh6KrC2Q0laW9wGL7qhenWNP_kxOpipP0Nki2ebETfIV7skMcXKW4o2czmbyYOvaAWmEjFrF9TTsiDi_uquznNGft7Iq9DoTVKcfpS6_0ZAuFVhZt6GoSYwUDMOSoNdSTRIx9A7OHoOdbkHgxXac5mKY3TyAvF5f9B18Jqj4rzQ5ruB6rdWyFa1Hqg_cLZfrWK6r3Dj_u9fFQ-5GDiCfkMTBwwdP8Yel4ESc5lNfj-SYhCY8i_UUyv_FqTD9JYCJOr36Yk5f0LOX2sUh1j-MKF8BSVhVC7tUDIM1DHj9A7xxBqN4YarMwhYcXgG6ZNAHYk-bcKlJmEsTE42JkpN59KPRiVyeAkARBWJXJSPy1WBJW8GtUN7eA-PLsxzCni305j9TIqklh2xhGK7YIEIakE68gqLk_ww8Ms-dxUL054AwKCgUilYLHwCAKOvVhIXxqIWTg50KoE7vGKFYqwXcPHnRwjgZoFssARMoz2bYaBsXQDyF3nC4EHVldiNOAeeyxTtfgfyPcDdGzY_4LTpue6PzRMn2Vp8Bw_93JsDk4FjqfUDrGEBP-pOmkuKSxFhqrk9VoZNo3ylIksIG6UYMoR_cVa5lJZvl31msBw9OhnYlFE9VDpkumtxd3O32dYqc8zCb7uVCH7t2Pj9pak-3BJu3?>
+      <path d="M 172.484 1786.745 H -140 V 1017.774" fill="none" style="stroke:#334155;stroke-width:1.146;" />
+      <path d="M -140 957.51 V 269.599 H 214.495" fill="none" style="stroke:#334155;stroke-width:1.146;" />
+      <polygon points="-144.583,1029.232,-140,1017.774,-135.417,1029.232,-140,1024.649" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+      <polygon points="203.037,265.016,214.495,269.599,203.037,274.182,207.62,269.599" fill="#334155" style="stroke:#334155;stroke-width:1.146;stroke-linejoin:miter;stroke-miterlimit:10;" />
+    </g>
+  </g>
+</svg>
