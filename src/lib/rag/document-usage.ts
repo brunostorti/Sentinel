@@ -5,8 +5,8 @@ export type DocumentUsage = (typeof DOCUMENT_USAGES)[number];
 
 export const DOCUMENT_USAGE_LABELS: Record<DocumentUsage, string> = {
   all: "Chat e planos de ação",
-  plans: "Só planos de ação",
-  chat: "Só chat",
+  plans: "Somente planos de ação",
+  chat: "Somente chat",
 };
 
 export function isDocumentUsage(value: unknown): value is DocumentUsage {
