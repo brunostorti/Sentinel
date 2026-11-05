@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { streamText, generateText } from "ai";
+import { logAiUsage } from "@/lib/ai/usage-log";
 import { createModel, describeAiError, resolveAiConfig } from "@/lib/ai/provider-factory";
 import {
   getOrCreateThread,
@@ -175,7 +176,10 @@ export async function POST(req: NextRequest) {
       system: systemPrompt,
       messages: messagesForLLM,
       onError: () => {}, // tratado no laço abaixo
-      onFinish: async ({ text }) => {
+      onFinish: async ({ text, totalUsage }) => {
+        void logAiUsage(companyId, "chat", [
+          { model: aiConfig.model, inputTokens: totalUsage?.inputTokens, outputTokens: totalUsage?.outputTokens },
+        ]);
         // Salva mensagem completa
         await saveMessage(supabase, {
           threadId: thread.id,
@@ -240,13 +244,16 @@ export async function POST(req: NextRequest) {
 
   // ── Síncrono (fallback / clientes que não querem stream) ─────────
   try {
-    const { text } = await generateText({
+    const { text, totalUsage } = await generateText({
       model,
       temperature: isMaua ? 0.2 : undefined,
       maxOutputTokens: isMaua ? 1500 : undefined,
       system: systemPrompt,
       messages: messagesForLLM,
     });
+    void logAiUsage(companyId, "chat", [
+      { model: aiConfig.model, inputTokens: totalUsage?.inputTokens, outputTokens: totalUsage?.outputTokens },
+    ]);
 
     const reply = text || "(sem resposta da IA)";
 

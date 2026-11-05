@@ -3,7 +3,20 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/icon";
 import { CreateCompanyButton } from "./create-company-button";
-import { getCompanyOverviews, getMasterAdmin } from "@/lib/sentinel/server";
+import {
+  getAiUsage,
+  getCompanyAttention,
+  getCompanyOverviews,
+  getMasterAdmin,
+  monthStartIso,
+} from "@/lib/sentinel/server";
+import {
+  companyAlerts,
+  formatUsd,
+  summarizeAiUsage,
+  type AiUsageSummary,
+  type CompanyAlert,
+} from "@/lib/sentinel/attention";
 import { onboardingSteps, responseRate, type CompanyOverview } from "@/lib/sentinel/onboarding";
 
 const SURVEY_STATUS: Record<string, string> = {
@@ -34,9 +47,11 @@ export default async function SentinelPanelPage({
     .order("created_at", { ascending: false });
   if (!showDemo) companiesQuery = companiesQuery.eq("is_demo", false);
 
-  const [{ data: companies }, overviews, { count: demoCount }] = await Promise.all([
+  const [{ data: companies }, overviews, attention, usage, { count: demoCount }] = await Promise.all([
     companiesQuery,
     getCompanyOverviews(),
+    getCompanyAttention(),
+    getAiUsage(monthStartIso()),
     supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_demo", true),
   ]);
 
@@ -44,6 +59,25 @@ export default async function SentinelPanelPage({
   const visibleOverviews = list
     .map((c) => overviews.get(c.id as string))
     .filter((o): o is CompanyOverview => !!o);
+  // Alertas e consumo de IA de cada empresa visível.
+  const perCompany = new Map(
+    list.map((c) => {
+      const id = c.id as string;
+      return [
+        id,
+        {
+          alerts: companyAlerts(overviews.get(id) ?? null, attention.get(id) ?? null),
+          ai: summarizeAiUsage(usage.get(id) ?? []),
+        },
+      ];
+    })
+  );
+  const attentionList = list.flatMap((c) =>
+    (perCompany.get(c.id as string)?.alerts ?? []).map((a) => ({ ...a, companyId: c.id as string, companyName: c.name as string }))
+  );
+  attentionList.sort((a, b) => (a.level === b.level ? 0 : a.level === "alta" ? -1 : 1));
+  const aiCostMonth = [...perCompany.values()].reduce((acc, p) => acc + (p.ai.costUsd ?? 0), 0);
+
   const totals = visibleOverviews.reduce(
     (acc: { employees: number; reportsOpen: number; plansPending: number; leave: number }, o) => ({
       employees: acc.employees + o.employees,
@@ -76,12 +110,45 @@ export default async function SentinelPanelPage({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <details className="group rounded-xl border border-border bg-card px-4 py-3 text-sm">
+        <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold">
+          <Icon name="help" size={18} className="text-primary" />
+          Como usar este painel
+          <Icon name="expand_more" size={18} className="ml-auto transition-transform group-open:rotate-180" />
+        </summary>
+        <ul className="mt-3 space-y-1.5 text-muted-foreground">
+          <li>
+            <strong className="text-foreground">Quem vê:</strong> só a conta Master da equipe Sentinel. Os clientes nunca
+            veem esta tela.
+          </li>
+          <li>
+            <strong className="text-foreground">Cada card é um cliente.</strong> Clique para ver detalhes, consumo de IA,
+            notas da equipe, linha do tempo e o relatório do piloto.
+          </li>
+          <li>
+            <strong className="text-foreground">Precisa de atenção:</strong> lista o que pede contato com o cliente
+            (denúncia parada, sem chave de IA, adesão baixa, plano parado, erro em documento, tarefa atrasada).
+          </li>
+          <li>
+            <strong className="text-foreground">Nova empresa:</strong> &quot;Adicionar empresa&quot; já cria o cliente no
+            banco. Todos os clientes ficam no mesmo banco, separados por empresa (cada um só enxerga o que é seu).
+          </li>
+          <li>
+            <strong className="text-foreground">Privacidade:</strong> aqui só aparecem contagens e datas. Respostas,
+            relatos e textos de documentos nunca aparecem.
+          </li>
+        </ul>
+      </details>
+
+      <AttentionBand items={attentionList} />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <Stat label="Empresas" value={list.length} icon="business" />
         <Stat label="Colaboradores" value={totals.employees} icon="groups" />
         <Stat label="Planos pendentes" value={totals.plansPending} icon="pending_actions" />
         <Stat label="Denúncias abertas" value={totals.reportsOpen} icon="shield" />
         <Stat label="Afastamentos (30 dias)" value={totals.leave} icon="event_busy" />
+        <Stat label="IA no mês (estimado)" value={formatUsd(aiCostMonth)} icon="toll" />
       </div>
 
       {(demoCount ?? 0) > 0 && (
@@ -112,6 +179,8 @@ export default async function SentinelPanelPage({
               plan={(company.plan as string | null) ?? "Piloto"}
               industry={company.industry as string | null}
               isDemo={company.is_demo === true}
+              alerts={perCompany.get(company.id as string)?.alerts ?? []}
+              ai={perCompany.get(company.id as string)?.ai ?? null}
               overview={overviews.get(company.id as string) ?? null}
             />
           ))}
@@ -121,7 +190,48 @@ export default async function SentinelPanelPage({
   );
 }
 
-function Stat({ label, value, icon }: { label: string; value: number; icon: string }) {
+function AttentionBand({
+  items,
+}: {
+  items: (CompanyAlert & { companyId: string; companyName: string })[];
+}) {
+  if (items.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+        <Icon name="check_circle" size={18} />
+        Tudo em dia: nenhum cliente precisa de atenção agora.
+      </div>
+    );
+  }
+  return (
+    <section className="rounded-xl border border-amber-300 bg-amber-50/60 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+      <h2 className="flex items-center gap-2 text-sm font-black text-amber-900 dark:text-amber-200">
+        <Icon name="warning" size={18} />
+        Precisa de atenção ({items.length})
+      </h2>
+      <ul className="mt-2 grid gap-1.5 md:grid-cols-2">
+        {items.map((a) => (
+          <li key={`${a.companyId}-${a.key}`}>
+            <Link
+              href={`/empresas/${a.companyId}`}
+              className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-amber-100/70 dark:hover:bg-amber-500/10"
+            >
+              <span
+                className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${a.level === "alta" ? "bg-red-500" : "bg-amber-500"}`}
+                aria-label={a.level === "alta" ? "Prioridade alta" : "Prioridade média"}
+              />
+              <span>
+                <strong>{a.companyName}:</strong> {a.text}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Stat({ label, value, icon }: { label: string; value: number | string; icon: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
@@ -139,6 +249,8 @@ function CompanyCard({
   plan,
   industry,
   isDemo,
+  alerts,
+  ai,
   overview,
 }: {
   id: string;
@@ -146,6 +258,8 @@ function CompanyCard({
   plan: string;
   industry: string | null;
   isDemo: boolean;
+  alerts: CompanyAlert[];
+  ai: AiUsageSummary | null;
   overview: CompanyOverview | null;
 }) {
   const steps = overview ? onboardingSteps(overview) : [];
@@ -209,7 +323,27 @@ function CompanyCard({
         <p className="mt-4 text-sm text-muted-foreground">Sem dados agregados.</p>
       )}
 
-      <span className="mt-4 flex items-center gap-1 text-xs font-bold text-primary">
+      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        {alerts.length > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 font-bold text-amber-800 dark:text-amber-200">
+            <Icon name="warning" size={13} />
+            {alerts.length === 1 ? "1 ponto de atenção" : `${alerts.length} pontos de atenção`}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-bold text-emerald-700 dark:text-emerald-300">
+            <Icon name="check_circle" size={13} />
+            Em dia
+          </span>
+        )}
+        {ai && ai.calls > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+            <Icon name="toll" size={13} />
+            IA no mês: {formatUsd(ai.costUsd)}
+          </span>
+        )}
+      </div>
+
+      <span className="mt-3 flex items-center gap-1 text-xs font-bold text-primary">
         Abrir empresa
         <Icon name="arrow_forward" size={14} className="transition-transform group-hover:translate-x-0.5" />
       </span>

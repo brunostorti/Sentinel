@@ -5,6 +5,8 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withUsageRecorder } from "../usage";
+import { logAiUsage } from "../usage-log";
 import {
   fetchSurveyDimensionScores,
   fetchDepartments,
@@ -49,7 +51,18 @@ interface OrchestratorResult {
   error?: string;
 }
 
+/** Roda o pipeline e grava os tokens gastos pela empresa (Painel Master). */
 export async function runPipeline(
+  surveyId: string,
+  companyId: string,
+  onProgress?: (step: number, label: string) => void
+): Promise<OrchestratorResult> {
+  const { result, usage } = await withUsageRecorder(() => runPipelineSteps(surveyId, companyId, onProgress));
+  await logAiUsage(companyId, "planos", usage);
+  return result;
+}
+
+async function runPipelineSteps(
   surveyId: string,
   companyId: string,
   onProgress?: (step: number, label: string) => void

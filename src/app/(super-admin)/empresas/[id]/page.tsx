@@ -3,23 +3,33 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Icon } from "@/components/icon";
-import { getCompanyOverviews, getMasterAdmin } from "@/lib/sentinel/server";
+import {
+  getCompanyAttention,
+  getCompanyOverviews,
+  getCompanyTimeline,
+  getMasterAdmin,
+  monthStartIso,
+  type CompanyTimeline,
+} from "@/lib/sentinel/server";
+import { companyAlerts, formatTokens, formatUsd, summarizeAiUsage, type AiUsageRow } from "@/lib/sentinel/attention";
+import { modelLabel } from "@/lib/ai/models";
+import { AiKeyTest } from "./ai-key-test";
+import { adminActionLabel } from "@/lib/sentinel/audit-labels";
+import { NotesPanel, type CompanyNote } from "./notes-panel";
 import { onboardingSteps, responseRate } from "@/lib/sentinel/onboarding";
 import { CommercialForm } from "./commercial-form";
 
 const TABS = [
   { key: "visao", label: "Visão geral", icon: "dashboard" },
   { key: "documentos", label: "Documentos", icon: "description" },
+  { key: "ia", label: "Consumo de IA", icon: "toll" },
+  { key: "acompanhamento", label: "Notas e linha do tempo", icon: "timeline" },
   { key: "configuracao", label: "Configuração", icon: "settings" },
   { key: "usuarios", label: "Usuários", icon: "group" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
 const ROLE_LABEL: Record<string, string> = { ADMIN: "Administrador", HR: "RH", MANAGER: "Gestor", SUPER_ADMIN: "Sentinel" };
-const ACTION_LABEL: Record<string, string> = {
-  "company.create": "Empresa criada",
-  "company.update_commercial": "Plano ou e-mails alterados",
-};
 
 function fmt(iso: string | null | undefined): string {
   return iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
@@ -44,7 +54,9 @@ export default async function CompanyDetailPage(props: {
     .maybeSingle();
   if (!company) notFound();
 
-  const overview = (await getCompanyOverviews()).get(id) ?? null;
+  const [overviews, attentionMap] = await Promise.all([getCompanyOverviews(), getCompanyAttention()]);
+  const overview = overviews.get(id) ?? null;
+  const alerts = companyAlerts(overview, attentionMap.get(id) ?? null);
   const steps = overview ? onboardingSteps(overview) : [];
   const rate = overview ? responseRate(overview) : null;
 
@@ -59,9 +71,19 @@ export default async function CompanyDetailPage(props: {
           <h1 className="text-3xl font-black tracking-tight">{company.name}</h1>
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">{company.plan}</span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {[company.cnpj, company.industry, `Cliente desde ${fmt(company.created_at as string)}`].filter(Boolean).join(" · ")}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {[company.cnpj, company.industry, `Cliente desde ${fmt(company.created_at as string)}`].filter(Boolean).join(" · ")}
+          </p>
+          <Link
+            href={`/relatorio-piloto/${id}`}
+            target="_blank"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
+          >
+            <Icon name="picture_as_pdf" size={16} />
+            Relatório do piloto
+          </Link>
+        </div>
       </div>
 
       <nav className="flex flex-wrap gap-1 border-b border-border" aria-label="Seções da empresa">
@@ -79,6 +101,23 @@ export default async function CompanyDetailPage(props: {
           </Link>
         ))}
       </nav>
+
+      {tab === "visao" && alerts.length > 0 && (
+        <section className="rounded-xl border border-amber-300 bg-amber-50/60 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+          <h2 className="flex items-center gap-2 text-sm font-black text-amber-900 dark:text-amber-200">
+            <Icon name="warning" size={18} />
+            Precisa de atenção
+          </h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {alerts.map((a) => (
+              <li key={a.key} className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${a.level === "alta" ? "bg-red-500" : "bg-amber-500"}`} />
+                {a.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {tab === "visao" && overview && (
         <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
@@ -119,6 +158,15 @@ export default async function CompanyDetailPage(props: {
       )}
 
       {tab === "documentos" && <DocumentsTab companyId={id} />}
+
+      {tab === "ia" && (
+        <div className="space-y-6">
+          <AiUsageTab companyId={id} />
+          <AiKeyTest companyId={id} hasKey={overview?.ai_key_configured ?? false} />
+        </div>
+      )}
+
+      {tab === "acompanhamento" && <FollowUpTab companyId={id} />}
 
       {tab === "configuracao" && (
         <CommercialForm
@@ -249,7 +297,7 @@ async function AuditLog({ companyId }: { companyId: string }) {
         <ul className="mt-3 space-y-2">
           {rows.map((r) => (
             <li key={r.id} className="text-xs">
-              <span className="font-semibold">{ACTION_LABEL[r.action as string] ?? r.action}</span>
+              <span className="font-semibold">{adminActionLabel(r.action as string)}</span>
               <span className="block text-muted-foreground">
                 {(r.users as unknown as { name: string } | null)?.name ?? "—"} · {new Date(r.created_at as string).toLocaleString("pt-BR")}
               </span>
@@ -258,5 +306,159 @@ async function AuditLog({ companyId }: { companyId: string }) {
         </ul>
       )}
     </section>
+  );
+}
+
+const MONTH_LABEL = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });
+
+/** Consumo de IA da empresa: mês atual e os dois anteriores, por modelo. */
+async function AiUsageTab({ companyId }: { companyId: string }) {
+  const start = new Date(monthStartIso());
+  start.setUTCMonth(start.getUTCMonth() - 2);
+  const { data } = await createAdminClient()
+    .from("ai_usage_events")
+    .select("model, source, input_tokens, output_tokens, created_at")
+    .eq("company_id", companyId)
+    .gte("created_at", start.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(20000);
+
+  const months = new Map<string, Map<string, AiUsageRow>>();
+  for (const r of data ?? []) {
+    const key = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" })
+      .format(new Date(r.created_at as string))
+      .slice(0, 7);
+    const byModel = months.get(key) ?? new Map<string, AiUsageRow>();
+    const row = byModel.get(r.model as string) ?? {
+      company_id: companyId,
+      model: r.model as string,
+      calls: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+    };
+    row.calls += 1;
+    row.input_tokens += (r.input_tokens as number) ?? 0;
+    row.output_tokens += (r.output_tokens as number) ?? 0;
+    byModel.set(row.model, row);
+    months.set(key, byModel);
+  }
+
+  if (months.size === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+        Nenhum uso de IA registrado nos últimos 3 meses. O registro começa a contar a partir desta versão.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {[...months.entries()].map(([key, byModel]) => {
+        const rows = [...byModel.values()];
+        const total = summarizeAiUsage(rows);
+        return (
+          <section key={key} className="rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-bold capitalize">{MONTH_LABEL.format(new Date(`${key}-15T12:00:00Z`))}</h2>
+              <p className="text-sm">
+                <span className="font-black">{formatUsd(total.costUsd)}</span>{" "}
+                <span className="text-muted-foreground">
+                  estimado · {total.calls} chamadas · {formatTokens(total.inputTokens + total.outputTokens)} tokens
+                </span>
+              </p>
+            </div>
+            <table className="mt-3 w-full text-sm">
+              <thead className="text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-1 font-semibold">Modelo</th>
+                  <th className="py-1 text-right font-semibold">Chamadas</th>
+                  <th className="py-1 text-right font-semibold">Entrada</th>
+                  <th className="py-1 text-right font-semibold">Saída</th>
+                  <th className="py-1 text-right font-semibold">Custo estimado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((r) => (
+                  <tr key={r.model}>
+                    <td className="py-1.5">{modelLabel(r.model)}</td>
+                    <td className="py-1.5 text-right tabular-nums">{r.calls}</td>
+                    <td className="py-1.5 text-right tabular-nums">{formatTokens(r.input_tokens)}</td>
+                    <td className="py-1.5 text-right tabular-nums">{formatTokens(r.output_tokens)}</td>
+                    <td className="py-1.5 text-right tabular-nums">{formatUsd(summarizeAiUsage([r]).costUsd)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {total.partial && (
+              <p className="mt-2 text-xs text-muted-foreground">Há modelo sem preço de referência: o custo pode estar abaixo do real.</p>
+            )}
+          </section>
+        );
+      })}
+      <p className="text-xs text-muted-foreground">
+        Estimativa pelos preços de referência do Sentinel (respostas do chat e geração de planos). O valor cobrado de
+        fato está no painel do provedor da empresa.
+      </p>
+    </div>
+  );
+}
+
+const MILESTONES: { key: keyof CompanyTimeline; label: string }[] = [
+  { key: "company_created_at", label: "Empresa criada" },
+  { key: "first_user_at", label: "Primeiro usuário (RH ou administrador)" },
+  { key: "first_employee_at", label: "Colaboradores importados" },
+  { key: "first_document_at", label: "Primeiro documento enviado" },
+  { key: "first_survey_at", label: "Primeira pesquisa aberta" },
+  { key: "first_plan_approved_at", label: "Primeiro plano de ação aprovado" },
+  { key: "first_task_done_at", label: "Primeira tarefa concluída no Kanban" },
+];
+
+/** Linha do tempo da implantação e notas internas da equipe. */
+async function FollowUpTab({ companyId }: { companyId: string }) {
+  const [timeline, { data: notes }] = await Promise.all([
+    getCompanyTimeline(companyId),
+    createAdminClient()
+      .from("company_notes")
+      .select("id, body, created_at, users(name)")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .limit(200),
+  ]);
+
+  const noteList: CompanyNote[] = (notes ?? []).map((n) => ({
+    id: n.id as string,
+    body: n.body as string,
+    created_at: n.created_at as string,
+    author: (n.users as unknown as { name: string } | null)?.name ?? null,
+  }));
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
+      <section className="rounded-xl border border-border bg-card p-5">
+        <h2 className="font-bold">Linha do tempo da implantação</h2>
+        <ol className="mt-4 space-y-0">
+          {MILESTONES.map((m, i) => {
+            const date = timeline?.[m.key] ?? null;
+            return (
+              <li key={m.key} className="relative flex gap-3 pb-4">
+                {i < MILESTONES.length - 1 && (
+                  <span className="absolute left-[9px] top-5 h-full w-px bg-border" aria-hidden />
+                )}
+                <Icon
+                  name={date ? "check_circle" : "radio_button_unchecked"}
+                  size={20}
+                  className={`relative shrink-0 bg-card ${date ? "text-emerald-600" : "text-muted-foreground"}`}
+                />
+                <div>
+                  <p className={`text-sm ${date ? "font-semibold" : "text-muted-foreground"}`}>{m.label}</p>
+                  <p className="text-xs text-muted-foreground">{date ? fmt(date) : "Ainda não"}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+      <NotesPanel companyId={companyId} notes={noteList} />
+    </div>
   );
 }

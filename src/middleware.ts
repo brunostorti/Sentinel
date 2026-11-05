@@ -51,7 +51,7 @@ async function passedSecondFactor(
   return ok || isExemptDemoAccount(supabase, user.id, user.email);
 }
 /** Painel Sentinel: só o Master Admin (SUPER_ADMIN com is_master). */
-const MASTER_ROUTES = ["/empresas"];
+const MASTER_ROUTES = ["/empresas", "/atividade", "/relatorio-piloto"];
 
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request);

@@ -22,9 +22,15 @@ export interface UsageEntry {
 const storage = new AsyncLocalStorage<UsageEntry[]>();
 
 export async function withUsageRecorder<T>(fn: () => Promise<T>): Promise<{ result: T; usage: UsageEntry[] }> {
+  const outer = storage.getStore();
   const entries: UsageEntry[] = [];
-  const result = await storage.run(entries, fn);
-  return { result, usage: entries };
+  try {
+    const result = await storage.run(entries, fn);
+    return { result, usage: entries };
+  } finally {
+    // Registro aninhado (ex.: script de benchmark em volta do pipeline): o de fora também vê.
+    if (outer) outer.push(...entries);
+  }
 }
 
 export function recordUsage(

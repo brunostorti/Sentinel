@@ -14,8 +14,12 @@ interface NavItem {
   icon: string;
 }
 
+/** Itens só do Master Admin (equipe Sentinel). */
+const MASTER_ONLY = [ROUTES.SUPER_ADMIN.COMPANIES, "/atividade"] as string[];
+
 const SUPER_ADMIN_NAV: NavItem[] = [
   { label: "Painel Sentinel", href: ROUTES.SUPER_ADMIN.COMPANIES, icon: "space_dashboard" },
+  { label: "Atividade da equipe", href: "/atividade", icon: "history" },
   { label: "Usuários", href: ROUTES.SUPER_ADMIN.USERS, icon: "group" },
   { label: "Segurança", href: "/seguranca", icon: "shield" },
 ];
@@ -210,7 +214,7 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {role === "SUPER_ADMIN" ? (
           <nav className="space-y-1">
-            {SUPER_ADMIN_NAV.filter((item) => isMaster || item.href !== ROUTES.SUPER_ADMIN.COMPANIES).map((item) => (
+            {SUPER_ADMIN_NAV.filter((item) => isMaster || !MASTER_ONLY.includes(item.href)).map((item) => (
               <NavLink
                 key={item.href}
                 item={item}
