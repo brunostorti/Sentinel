@@ -1,13 +1,5 @@
 # Sentinel — Plataforma de Gestão de Riscos Psicossociais (COPSOQ II)
 
-## Diagramas e Material Complementar do TCC
-
-**[Acessar os diagramas atuais para a banca](docs/artigo_diagramas_tcc/atuais)**, em PNG de alta resolução:
-
-- [Arquitetura geral em C4](docs/artigo_diagramas_tcc/atuais/arquitetura-geral.png).
-- [Diagrama de atividades UML completo do ciclo de pesquisas](docs/artigo_diagramas_tcc/atuais/atividades-ciclo.png).
-- [Geração de planos de ação com três agentes e RAG](docs/artigo_diagramas_tcc/atuais/pipeline-ia-rag.png).
-
 O **Sentinel** é uma plataforma web desenvolvida em Next.js para auxiliar empresas a avaliarem o bem-estar psicológico de seus colaboradores, em total conformidade com a **Lei Federal nº 14.831**. A plataforma implementa o questionário científico *Copenhagen Psychosocial Questionnaire* (COPSOQ II), permitindo monitorar a saúde ocupacional e gerar planos de ação eficientes baseados em dados reais.
 
 ---
@@ -66,3 +58,24 @@ O pilar mais crítico do Sentinel é a garantia de anonimato para os respondente
 * **Gustavo Hideki** — `gustavohideki124@gmail.com`
 * **Pedro Bertolucci** — `pedrovictorbertolucci@gmail.com`
 * **Pedro Wagner** - `alessandra.pedro.wagner@hotmail.com`
+
+---
+
+## Diagramas para a Banca do TCC
+
+> **[ABRIR OS DIAGRAMAS ATUAIS DO SENTINEL](docs/artigo_diagramas_tcc/)**
+>
+> Material técnico de apoio à banca, em PNG de alta resolução. Os diagramas atuais estão diretamente nessa pasta; os três arquivos da primeira banca ficam separados no histórico.
+
+### Diagramas Principais
+
+- [Arquitetura geral em C4](docs/artigo_diagramas_tcc/arquitetura-geral.png).
+- [Diagrama de atividades UML completo do ciclo de pesquisas](docs/artigo_diagramas_tcc/atividades-ciclo.png).
+- [Pipeline de IA e RAG: visão geral já publicada](docs/artigo_diagramas_tcc/pipeline-ia-rag.png).
+- [Entidade-relacionamento: ciclos, instrumentos e respostas](docs/artigo_diagramas_tcc/der-ciclos-coleta.png).
+- [Pipeline de IA e RAG: fluxo detalhado das três etapas e recuperação documental](docs/artigo_diagramas_tcc/pipeline-ia-rag-detalhado.png).
+- [Implantação UML: Vercel, Supabase e serviços externos de IA](docs/artigo_diagramas_tcc/implantacao-uml.png).
+
+**[Histórico: diagramas da banca TCC 1](docs/artigo_diagramas_tcc/diagramas_banca_tcc_1/)**. Esses três arquivos foram preservados como material da primeira banca e não devem ser usados como referência da versão atual do sistema.
+
+O DER usa notação Information Engineering (pé de galinha) e mostra um recorte do esquema físico relacionado a ciclos, instrumentos e respostas; não é um dicionário completo do banco. A implantação usa notação UML em uma visão lógica dos ambientes, sem especificar região, hardware ou quantidade de instâncias. O pipeline é um diagrama descritivo de processamento e fluxo de dados, não um diagrama UML. As figuras foram conferidas contra o código e as migrações da revisão `86bf9d1`; a hospedagem na Vercel foi confirmada pela equipe.
