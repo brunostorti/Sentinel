@@ -73,9 +73,12 @@ O pilar mais crítico do Sentinel é a garantia de anonimato para os respondente
 - [Diagrama de atividades UML completo do ciclo de pesquisas](docs/artigo_diagramas_tcc/atividades-ciclo.png).
 - [Pipeline de IA e RAG: visão geral já publicada](docs/artigo_diagramas_tcc/pipeline-ia-rag.png).
 - [Entidade-relacionamento: ciclos, instrumentos e respostas](docs/artigo_diagramas_tcc/der-ciclos-coleta.png).
+- [Controle de privacidade do colaborador: participação, respostas e resultados agregados](docs/artigo_diagramas_tcc/controle-privacidade-colaborador.png).
 - [Pipeline de IA e RAG: fluxo detalhado das três etapas e recuperação documental](docs/artigo_diagramas_tcc/pipeline-ia-rag-detalhado.png).
 - [Implantação UML: Vercel, Supabase e serviços externos de IA](docs/artigo_diagramas_tcc/implantacao-uml.png).
 
 **[Histórico: diagramas da banca TCC 1](docs/artigo_diagramas_tcc/diagramas_banca_tcc_1/)**. Esses três arquivos foram preservados como material da primeira banca e não devem ser usados como referência da versão atual do sistema.
 
 O DER usa notação Information Engineering (pé de galinha) e mostra um recorte do esquema físico relacionado a ciclos, instrumentos e respostas; não é um dicionário completo do banco. A implantação usa notação UML em uma visão lógica dos ambientes, sem especificar região, hardware ou quantidade de instâncias. O pipeline é um diagrama descritivo de processamento e fluxo de dados, não um diagrama UML. As figuras foram conferidas contra o código e as migrações da revisão `86bf9d1`; a hospedagem na Vercel foi confirmada pela equipe.
+
+O controle de privacidade é uma representação descritiva da separação entre participação identificada e respostas, da agregação e das regras de supressão. Não constitui auditoria de segurança nem atesta anonimato absoluto.
