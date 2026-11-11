@@ -67,6 +67,8 @@ O pilar mais crítico do Sentinel é a garantia de anonimato para os respondente
 >
 > Material técnico de apoio à banca, em PNG de alta resolução. Os diagramas atuais estão diretamente nessa pasta; os três arquivos da primeira banca ficam separados no histórico.
 
+**[Artigo final para a banca (Word)](docs/artigo_diagramas_tcc/artigo-banca-final.docx)**. Arquivo original fornecido pela equipe, disponível junto dos diagramas atuais.
+
 ### Diagramas Principais
 
 - [Arquitetura geral em C4](docs/artigo_diagramas_tcc/arquitetura-geral.png).
